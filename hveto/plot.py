@@ -44,7 +44,7 @@ rcParams.update({
 
 def before_after_histogram(
         outfile, x, y, label1='Before', label2='After',
-        bins=100, histtype='stepfilled', range=None, **kwargs):
+        bins=100, histtype='stepfilled', range=None, figsize=[9, 6], **kwargs):
     """Plot a histogram of SNR for two event distributions
     """
     # format axis arguments
@@ -56,7 +56,7 @@ def before_after_histogram(
     }
     axargs.update(kwargs)
     # create figure
-    plot = HistogramPlot()
+    plot = HistogramPlot(figsize=figsize)
     ax = plot.gca()
     # make histogram
     if range is None:
@@ -83,7 +83,8 @@ def before_after_histogram(
 
 def veto_scatter(
         outfile, a, b, label1='All', label2='Vetoed', x='time', y='snr',
-        color=None, clim=None, clabel=None, cmap=None, clog=True, **kwargs):
+        color=None, clim=None, clabel=None, cmap=None, clog=True,
+        figsize=[9, 6],**kwargs):
     """Plot an x-y scatter of all/vetoed events
     """
     # format axis arguments
@@ -95,7 +96,8 @@ def veto_scatter(
         axargs['xscale'] = 'log'
     axargs.update(kwargs)
     # create figure
-    plot = EventTablePlot(base=x=='time' and TimeSeriesPlot or Plot)
+    plot = EventTablePlot(base=x=='time' and TimeSeriesPlot or Plot,
+                          figsize=figsize)
     ax = plot.gca()
     # add data
     scatterargs = {'s': 40}
