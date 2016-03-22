@@ -1,0 +1,264 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (C) Joshua Smith (2016-)
+#
+# This file is part of the hveto python package.
+#
+# hveto is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# hveto is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with hveto.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Run the HierarchichalVeto (hveto) algorithm over some data
+"""
+
+from __future__ import division
+
+import argparse
+import os
+import multiprocessing
+
+try:
+    import configparser
+except ImportError:  # python 2.x
+    import ConfigParser as configparser
+
+from gwpy.time import to_gps
+from gwpy.segments import DataQualityFlag
+
+from hveto import (version, log, config, core)
+from hveto.triggers import (get_triggers, find_auxiliary_channels)
+
+IFO = os.getenv('IFO')
+
+__version__ = version.version
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
+
+logger = log.Logger('hveto')
+
+# -- parse command line -------------------------------------------------------
+
+parser = argparse.ArgumentParser(description=__doc__)
+
+parser.add_argument('gpsstart', type=to_gps, help='GPS start time of analysis')
+parser.add_argument('gpsend', type=to_gps, help='GPS end time of analysis')
+parser.add_argument('-f', '--config-file', action='append', default=[],
+                    type=os.path.expanduser,
+                    help='path to hveto configuration file, can be given '
+                         'multiple times (files read in order)')
+parser.add_argument('-i', '--ifo', default=IFO, required=IFO is None,
+                    help='prefix of IFO to process, default: %(default)s')
+parser.add_argument('-j', '--nproc', type=int, default=1,
+                    help='number of cores to use for multiprocessing, '
+                         'default: %(default)s')
+
+pout = parser.add_argument_group('Output options')
+pout.add_argument('-o', '--output-directory', default=os.curdir,
+                  help='path of output directory, default: %(default)s')
+
+args = parser.parse_args()
+
+ifo = args.ifo
+start = args.gpsstart.seconds
+end = args.gpsend.seconds
+duration = end - start
+
+logger.info("-- Welcome to Hveto --")
+logger.info("GPS start time: %d" % start)
+logger.info("GPS end time: %d" % end)
+logger.info("Interferometer: %s" % ifo)
+
+# -- initialisation -----------------------------------------------------------
+
+# read configuration
+cp = config.HvetoConfigParser(ifo=args.ifo)
+cp.read(args.config_file)
+logger.info("Parsed configuration file(s)")
+
+# format output directory
+outdir = os.path.abspath(os.path.expanduser(args.output_directory))
+if not os.path.isdir(outdir):
+    os.makedirs(outdir)
+os.chdir(outdir)
+logger.info("Working directory:\n%s" % outdir)
+
+# get segments
+aflag = cp.get('segments', 'analysis-flag')
+url = cp.get('segments', 'url')
+padding = cp.getfloats('segments', 'padding')
+analysis = DataQualityFlag.query(aflag, start, end, url=url)
+analysis.pad(*padding)
+livetime = int(abs(analysis.active))
+livetimepc = livetime / duration * 100.
+logger.info("Retrieved %d segments for %s with %ss (%.2f%%) livetime"
+            % (len(analysis.active), aflag, livetime, livetimepc))
+if livetime == 0:
+    logger.warning("No livetime for analysis")
+
+snrs = cp.getfloats('hveto', 'snr-thresholds')
+minsnr = min(snrs)
+windows = cp.getfloats('hveto', 'time-windows')
+
+# -- load triggers ------------------------------------------------------------
+
+# load primary triggers
+pchannel = cp.get('primary', 'channel')
+petg = cp.get('primary', 'trigger-generator')
+psnr = cp.getfloat('primary', 'snr-threshold')
+pfreq = cp.getfloats('primary', 'frequency-range')
+primary = get_triggers(pchannel, petg, analysis.active, snr=psnr, frange=pfreq)
+if len(primary):
+    logger.info("Read %d events for %s" % (len(primary), pchannel))
+else:
+    logger.warning("No events found for %s" % pchannel)
+
+# load auxiliary triggers
+auxetg = cp.get('auxiliary', 'trigger-generator')
+auxfreq = cp.getfloats('auxiliary', 'frequency-range')
+try:
+    auxchannels = cp.get('auxiliary', 'channels').strip('\n').split('\n')
+except config.configparser.NoOptionError:
+    auxchannels = find_auxiliary_channels(auxetg, ifo=args.ifo)
+    try:
+        auxchannels.pop(auxchannels.index(primary))
+    except ValueError:
+        pass
+    logger.info("Found %d channels to process" % len(auxchannels))
+else:
+    logger.info("Parsed %d channels from config" % len(auxchannels))
+naux = len(auxchannels)
+
+logger.info("Reading triggers for aux channels...")
+if args.nproc > 1:
+    counter = multiprocessing.Value('i', 0)
+    def _get_triggers(channel):
+        trigs = get_triggers(channel, auxetg, analysis.active, snr=minsnr,
+                             frange=auxfreq)
+        with counter.get_lock():
+            counter.value += 1
+            tag = '[%d/%d]' % (counter.value, naux)
+            if trigs.size:
+                logger.debug("    %s Read %d events for %s"
+                             % (tag, trigs.size, channel))
+            else:
+                logger.warning("    %s No events found for %s" % (tag, channel))
+        return (channel, trigs)
+    pool = multiprocessing.Pool(processes=args.nproc)
+    results = pool.map(_get_triggers, auxchannels)
+    pool.close()
+    auxiliary = dict(results)
+else:
+    auxiliary = {}
+    for i, c in enumerate(auxchannels):
+        auxiliary[c] = get_triggers(c, auxetg, analysis.active,
+                                    snr=minsnr, frange=auxfreq)
+        tag = '[%d/%d]' % (i, naux)
+        if auxiliary[c].size:
+            logger.debug("    %s Read %d events for %s"
+                         % (tag, auxiliary[c].size, c))
+        else:
+            logger.warning("    %s No events found for %r" % (tag, c))
+logger.info("All aux events loaded")
+
+# -- execute hveto analysis ---------------------------------------------------
+
+minsig = cp.getfloat('hveto', 'minimum-significance')
+significance = 1e9
+
+rounds = {}
+round = core.HvetoRound(1)
+round.segments = analysis.active
+
+while True:
+    logger.info("-- Processing round %d --" % round.n)
+    # calculate significances for this round
+    def _find_max_significance(channel):
+        return core.find_max_significance(primary['time'], auxiliary[channel],
+                                          channel, snrs, windows,
+                                          round.livetime)
+    if args.nproc > 1:  # multiprocessing
+        pool = multiprocessing.Pool(processes=args.nproc)
+        results = pool.map(_find_max_significance, auxiliary.keys())
+        pool.close()
+    else:  # single process
+        results = map(_find_max_significance, auxiliary.keys())
+
+    # find winner
+    winner = sorted(results, key=lambda x: x.significance)[-1]
+
+    # plot significance drop
+    newsignificances = dict([(c, results[i].significance)
+                            for i, c in enumerate(auxchannels)])
+    #if round.n > 1:
+    #    plot_significance_drop(newsignificances, oldsignificances)
+    oldsignificances = newsignificances
+
+    # break out of the loop if the significance is below the stopping point
+    if winner.significance < minsig:
+        logger.info("    Maximum signifiance below stopping point")
+        logger.debug("        (%.2f < %.2f)" % (winner.significance, minsig))
+        logger.info("Rounds complete!")
+        break
+
+    # work out the livetime and # FIXME
+    wtrigs = auxiliary[winner.name]
+    round.vetoes = winner.get_segments(
+        wtrigs[wtrigs['snr'] >= winner.snr]['time'])
+
+    # apply vetoes to primary
+    primary, vetoed = core.veto(primary, round.vetoes)
+    use = core.count_used(vetoed, round.vetoes)
+
+    # record results
+    round.winner = winner
+    round.efficiency = (vetoed.size, primary.size + vetoed.size)
+    round.use_percentage = (use, winner.nevents)
+    if round.n > 1:
+        round.cum_efficiency = (
+            vetoed.size + rounds[round.n-1].cum_efficiency[0],
+            rounds[1].efficiency[1])
+        round.cum_deadtime = (
+            round.deadtime[0] + rounds[round.n-1].cum_deadtime[0],
+            livetime)
+    else:
+        round.cum_efficiency = round.efficiency
+        round.cum_deadtime = round.deadtime
+
+    for channel in auxiliary:
+        auxiliary[channel], v = core.veto(auxiliary[channel], round.vetoes)
+
+    # log results
+    logger.info("""    Results for round %d
+winner :          %s
+significance :    %s
+snr :             %s
+dt :              %s
+use_percentage :  %s
+efficiency :      %s
+deadtime :        %s
+cum. efficiency : %s
+cum. deadtime :   %s""" % (
+        round.n, round.winner.name, round.winner.significance, round.winner.snr,
+        round.winner.window, round.use_percentage, round.efficiency,
+        round.deadtime, round.cum_efficiency, round.cum_deadtime))
+
+    # write files
+    segfile = '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.txt' % (
+        ifo, round.n, start, duration)
+    round.vetoes.write(segfile, coltype=float)
+    logger.debug("Round %d vetoes written to\n%s" % (round.n, segfile))
+
+    # move to the next round
+    rounds[round.n] = round
+    round = core.HvetoRound(round.n + 1, segments=round.segments-round.vetoes)
+
+logger.info("-- Hveto complete --")
