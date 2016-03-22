@@ -22,6 +22,9 @@
 
 from __future__ import (division, print_function)
 
+import time
+jobstart = time.time()
+
 import argparse
 import os
 import warnings
@@ -35,7 +38,7 @@ except ImportError:  # python 2.x
 from gwpy.time import to_gps
 from gwpy.segments import DataQualityFlag
 
-from hveto import (version, log, config, core, plot)
+from hveto import (version, log, config, core, plot, html)
 from hveto.triggers import (get_triggers, find_auxiliary_channels)
 
 IFO = os.getenv('IFO')
@@ -207,7 +210,11 @@ else:
 minsig = cp.getfloat('hveto', 'minimum-significance')
 significance = 1e9
 
-rounds = {}
+pevents = [primary]
+pvetoed = []
+statlabel = 'Signal-to-noise ratio (SNR)'
+
+rounds = []
 round = core.HvetoRound(1)
 round.segments = analysis.active
 
@@ -240,13 +247,14 @@ while True:
         plot.significance_drop(png, oldsignificances, newsignificances,
                                title=title, subtitle=subtitle)
         logger.debug("Figure written to %s" % png)
+        rounds[-1].plots.append(png)
     oldsignificances = newsignificances
 
     # break out of the loop if the significance is below the stopping point
     if winner.significance < minsig:
         logger.info("    Maximum signifiance below stopping point")
         logger.debug("        (%.2f < %.2f)" % (winner.significance, minsig))
-        logger.info("Rounds complete!")
+        logger.info("-- Rounds complete! --")
         break
 
     # work out the vetoes for this round
@@ -263,6 +271,8 @@ while True:
 
     # apply vetoes to primary
     primary, vetoed = core.veto(primary, round.vetoes)
+    pevents.append(primary)
+    pvetoed.append(vetoed)
     use = core.count_used(vetoed, round.vetoes)
 
     # record results
@@ -271,10 +281,10 @@ while True:
     round.use_percentage = (winner.events.size, allaux.size)
     if round.n > 1:
         round.cum_efficiency = (
-            vetoed.size + rounds[round.n-1].cum_efficiency[0],
-            rounds[1].efficiency[1])
+            vetoed.size + rounds[-1].cum_efficiency[0],
+            rounds[0].efficiency[1])
         round.cum_deadtime = (
-            round.deadtime[0] + rounds[round.n-1].cum_deadtime[0],
+            round.deadtime[0] + rounds[-1].cum_deadtime[0],
             livetime)
     else:
         round.cum_efficiency = round.efficiency
@@ -313,13 +323,12 @@ cum. deadtime :   %s""" % (
     else:
         wname = round.winner.name
     beforel = 'Before round %d [%d events]' % (round.n, before.size)
-    afterl = 'Before round %d [%d events]' % (round.n, primary.size)
+    afterl = 'After round %d [%d events]' % (round.n, primary.size)
     vetoedl = 'Vetoed by round %d [%d events]' % (round.n, vetoed.size)
     beforeauxl = 'Aux. before round %d [%d events]' % (round.n, beforeaux.size)
     usedl = 'Used by round %d [%d events]' % (round.n, winner.events.size)
     title = '%s Hveto round %d' % (ifo, round.n)
     subtitle = '[%d-%d] | winner: %s' % (start, end, wname)
-    statlabel = 'Signal-to-noise ratio (SNR)'
 
     # before/after histogram
     png = pngname % 'HISTOGRAM'
@@ -328,6 +337,7 @@ cum. deadtime :   %s""" % (
         label1=beforel, label2=afterl, xlabel=statlabel,
         title=title, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
+    round.plots.append(png)
 
     # snr versus time
     png = pngname % 'SNR_TIME'
@@ -336,6 +346,7 @@ cum. deadtime :   %s""" % (
         epoch=start, xlim=[start, end], ylabel=statlabel,
         title=title, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
+    round.plots.append(png)
 
     # snr versus frequency
     png = pngname % 'SNR_FREQUENCY'
@@ -344,6 +355,7 @@ cum. deadtime :   %s""" % (
         label2=vetoedl, xlabel='Frequency [Hz]', ylabel=statlabel,
         title=title, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
+    round.plots.append(png)
 
     # frequency versus time coloured by SNR
     png = pngname % 'FREQUENCY_TIME'
@@ -353,6 +365,7 @@ cum. deadtime :   %s""" % (
         clabel=statlabel, clim=[3, 100], cmap='YlGnBu',
         epoch=start, xlim=[start, end], title=title, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
+    round.plots.append(png)
 
     # aux used versus frequency
     png = pngname % 'USED_FREQUENCY_TIME'
@@ -361,6 +374,7 @@ cum. deadtime :   %s""" % (
         label2=vetoedl, ylabel='Frequency [Hz]',
         epoch=start, xlim=[start, end], title=title, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
+    round.plots.append(png)
 
     # snr versus time
     png = pngname % 'AUX_SNR_TIME'
@@ -369,6 +383,7 @@ cum. deadtime :   %s""" % (
         label2=usedl, epoch=start, xlim=[start, end], ylabel=statlabel,
         title=title, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
+    round.plots.append(png)
 
     # snr versus frequency
     png = pngname % 'AUX_SNR_FREQUENCY'
@@ -377,6 +392,7 @@ cum. deadtime :   %s""" % (
         label1=beforeauxl, label2=usedl, xlabel='Frequency [Hz]',
         ylabel=statlabel, title=title, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
+    round.plots.append(png)
 
     # frequency versus time coloured by SNR
     png = pngname % 'AUX_FREQUENCY_TIME'
@@ -386,9 +402,61 @@ cum. deadtime :   %s""" % (
         clabel=statlabel, clim=[3, 100], cmap='YlGnBu',
         epoch=start, xlim=[start, end], title=title, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
+    round.plots.append(png)
 
     # move to the next round
-    rounds[round.n] = round
+    rounds.append(round)
     round = core.HvetoRound(round.n + 1, segments=round.segments-round.vetoes)
 
+logger.debug("Making summary figures...")
+
+# -- plot all rounds impact
+pngname = os.path.join(plotdir, '%s-HVETO_%%s_ALL_ROUNDS-%d-%d.png' %
+    (ifo, start, duration))
+plots = []
+title = '%s Hveto all rounds' % args.ifo
+subtitle = '%d rounds | %d-%d' % (len(rounds), start, end)
+
+# before/after histogram
+png = pngname % 'HISTOGRAM'
+plot.before_after_histogram(
+    png, pevents[0]['snr'], pevents[-1]['snr'],
+    label1='Before round 1', label2=afterl, xlabel=statlabel,
+    title=title, subtitle=subtitle)
+plots.append(png)
+logger.debug("Figure written to %s" % png)
+
+# efficiency/deadtime curve
+png = pngname % 'ROC'
+plot.hveto_roc(png, rounds, title=title, subtitle=subtitle)
+plots.append(png)
+logger.debug("Figure written to %s" % png)
+
+# frequency versus time
+png = pngname % 'FREQUENCY_TIME'
+label2 = ['After round %d' % r.n for r in rounds]
+plot.veto_scatter(
+    png, pevents[0], pvetoed,
+    label1='Before round 1', label2=label2, title=title,
+    subtitle=subtitle, ylabel='Frequency [Hz]', x='time', y='frequency',
+    epoch=start, xlim=[start, end])
+plots.append(png)
+logger.debug("Figure written to %s" % png)
+
+# snr versus time
+png = pngname % 'SNR_TIME'
+label2 = ['After round %d' % r.n for r in rounds]
+plot.veto_scatter(
+    png, pevents[0], pvetoed,
+    label1='Before round 1', label2=label2, title=title,
+    subtitle=subtitle, ylabel=statlabel, x='time', y='snr',
+    epoch=start, xlim=[start, end])
+plots.append(png)
+logger.debug("Figure written to %s" % png)
+
+# -- write HTML and finish
+index = html.write_hveto_page(rounds, plots, ifo, start, end,
+                              title='%s Hveto | %d-%d' % (ifo, start, end))
+logger.debug("HTML written to %s" % index)
+logger.debug("Analysis completed in %d seconds" % (time.time() - jobstart))
 logger.info("-- Hveto complete --")
