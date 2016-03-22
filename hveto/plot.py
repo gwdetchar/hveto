@@ -19,6 +19,10 @@
 """Plotting routines for hveto
 """
 
+from __future__ import division
+
+from math import (log10, floor)
+
 from matplotlib.colors import LogNorm
 
 from gwpy.plotter import (rcParams, HistogramPlot, EventTablePlot,
@@ -186,3 +190,40 @@ def significance_drop(outfile, old, new, **kwargs):
 
     kwargs.setdefault('ylabel', 'Significance')
     _finalize_plot(plot, ax, outfile, **kwargs)
+
+
+def hveto_roc(outfile, rounds, figsize=[9, 6], **kwargs):
+    efficiency = []
+    deadtime = []
+    for r in rounds:
+        try:
+            efficiency.append(r.cum_efficiency[0] / r.cum_efficiency[1])
+        except ZeroDivisionError:
+            efficiency.append(0.)
+        try:
+            deadtime.append(r.cum_deadtime[0] / r.cum_deadtime[1])
+        except ZeroDivisionError:
+            deadtime.append(0.)
+    plot = Plot(figsize=figsize)
+    ax = plot.gca()
+    ax.plot(deadtime, efficiency, marker='o', linestyle='-')
+    try:
+        xbound = 10 ** floor(log10(deadtime[0]))
+    except ValueError:
+        xbound = 1e-4
+    try:
+        ybound = 10 ** floor(log10(efficiency[0]))
+    except ValueError:
+        ybound = 1e-4
+    bound = min(xbound, ybound)
+    axargs = {
+        'xlabel': 'Fractional deadtime',
+        'ylabel': 'Fractional efficiency',
+        'xscale': 'log',
+        'yscale': 'log',
+        'xlim': (bound, 1.),
+        'ylim': (bound, 1.),
+    }
+    axargs.update(kwargs)
+    ax.grid(True, axis='both', which='both')
+    _finalize_plot(plot, ax, outfile, **axargs)
