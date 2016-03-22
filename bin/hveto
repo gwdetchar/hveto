@@ -35,7 +35,7 @@ except ImportError:  # python 2.x
 from gwpy.time import to_gps
 from gwpy.segments import DataQualityFlag
 
-from hveto import (version, log, config, core)
+from hveto import (version, log, config, core, plot)
 from hveto.triggers import (get_triggers, find_auxiliary_channels)
 
 IFO = os.getenv('IFO')
@@ -90,7 +90,12 @@ outdir = os.path.abspath(os.path.expanduser(args.output_directory))
 if not os.path.isdir(outdir):
     os.makedirs(outdir)
 os.chdir(outdir)
-logger.info("Working directory:\n%s" % outdir)
+logger.info("Working directory: %s" % outdir)
+segdir = 'segments'
+plotdir = 'plots'
+for d in [segdir, plotdir]:
+    if not os.path.isdir(d):
+        os.makedirs(d)
 
 # get segments
 aflag = cp.get('segments', 'analysis-flag')
@@ -208,6 +213,7 @@ round.segments = analysis.active
 
 while True:
     logger.info("-- Processing round %d --" % round.n)
+
     # calculate significances for this round
     def _find_max_significance(channel):
         return core.find_max_significance(primary['time'], auxiliary[channel],
@@ -222,12 +228,18 @@ while True:
 
     # find winner
     winner = sorted(results, key=lambda x: x.significance)[-1]
+    logger.info("Round %d winner: %s" % (round.n, winner.name))
 
-    # plot significance drop
+    # plot significance drop here for the last round
+    #   only now do we actually have the new data to calculate significance
+    #   drop
     newsignificances = dict([(c, results[i].significance)
-                            for i, c in enumerate(auxchannels)])
-    #if round.n > 1:
-    #    plot_significance_drop(newsignificances, oldsignificances)
+                            for i, c in enumerate(auxiliary)])
+    if round.n > 1:
+        png = pngname % 'SIG_DROP'
+        plot.significance_drop(png, oldsignificances, newsignificances,
+                               title=title, subtitle=subtitle)
+        logger.debug("Figure written to %s" % png)
     oldsignificances = newsignificances
 
     # break out of the loop if the significance is below the stopping point
@@ -237,10 +249,17 @@ while True:
         logger.info("Rounds complete!")
         break
 
-    # work out the livetime and # FIXME
-    wtrigs = auxiliary[winner.name]
-    round.vetoes = winner.get_segments(
-        wtrigs[wtrigs['snr'] >= winner.snr]['time'])
+    # work out the vetoes for this round
+    allaux = auxiliary[winner.name][
+        auxiliary[winner.name]['snr'] >= winner.snr]
+    coincs = core.find_coincidences(allaux['time'], primary['time'],
+                                    dt=winner.window)
+    winner.events = allaux[coincs]
+    round.vetoes = winner.get_segments(allaux['time'])
+
+    # link events before veto for plotting
+    before = primary
+    beforeaux = auxiliary[winner.name]
 
     # apply vetoes to primary
     primary, vetoed = core.veto(primary, round.vetoes)
@@ -249,7 +268,7 @@ while True:
     # record results
     round.winner = winner
     round.efficiency = (vetoed.size, primary.size + vetoed.size)
-    round.use_percentage = (use, winner.nevents)
+    round.use_percentage = (winner.events.size, allaux.size)
     if round.n > 1:
         round.cum_efficiency = (
             vetoed.size + rounds[round.n-1].cum_efficiency[0],
@@ -280,10 +299,93 @@ cum. deadtime :   %s""" % (
         round.deadtime, round.cum_efficiency, round.cum_deadtime))
 
     # write files
-    segfile = '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.txt' % (
-        ifo, round.n, start, duration)
+    segfile = os.path.join(segdir, '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.txt' % (
+        ifo, round.n, start, duration))
     round.vetoes.write(segfile, coltype=float)
-    logger.debug("Round %d vetoes written to\n%s" % (round.n, segfile))
+    logger.debug("Round %d vetoes written to %s" % (round.n, segfile))
+
+    # -- make some plots --
+
+    pngname = os.path.join(plotdir, '%s-HVETO_%%s_ROUND_%d-%d-%d.png' %
+        (ifo, round.n, start, duration))
+    if plot.rcParams['text.usetex']:
+        wname = round.winner.name.replace('_', r'\_')
+    else:
+        wname = round.winner.name
+    beforel = 'Before round %d [%d events]' % (round.n, before.size)
+    afterl = 'Before round %d [%d events]' % (round.n, primary.size)
+    vetoedl = 'Vetoed by round %d [%d events]' % (round.n, vetoed.size)
+    beforeauxl = 'Aux. before round %d [%d events]' % (round.n, beforeaux.size)
+    usedl = 'Used by round %d [%d events]' % (round.n, winner.events.size)
+    title = '%s Hveto round %d' % (ifo, round.n)
+    subtitle = '[%d-%d] | winner: %s' % (start, end, wname)
+    statlabel = 'Signal-to-noise ratio (SNR)'
+
+    # before/after histogram
+    png = pngname % 'HISTOGRAM'
+    plot.before_after_histogram(
+        png, before['snr'], primary['snr'],
+        label1=beforel, label2=afterl, xlabel=statlabel,
+        title=title, subtitle=subtitle)
+    logger.debug("Figure written to %s" % png)
+
+    # snr versus time
+    png = pngname % 'SNR_TIME'
+    plot.veto_scatter(
+        png, before, vetoed, x='time', y='snr', label1=beforel, label2=vetoedl,
+        epoch=start, xlim=[start, end], ylabel=statlabel,
+        title=title, subtitle=subtitle)
+    logger.debug("Figure written to %s" % png)
+
+    # snr versus frequency
+    png = pngname % 'SNR_FREQUENCY'
+    plot.veto_scatter(
+        png, before, vetoed, x='frequency', y='snr', label1=beforel,
+        label2=vetoedl, xlabel='Frequency [Hz]', ylabel=statlabel,
+        title=title, subtitle=subtitle)
+    logger.debug("Figure written to %s" % png)
+
+    # frequency versus time coloured by SNR
+    png = pngname % 'FREQUENCY_TIME'
+    plot.veto_scatter(
+        png, before, vetoed, x='time', y='frequency', color='snr',
+        label1=None, label2=None, ylabel='Frequency [Hz]',
+        clabel=statlabel, clim=[3, 100], cmap='YlGnBu',
+        epoch=start, xlim=[start, end], title=title, subtitle=subtitle)
+    logger.debug("Figure written to %s" % png)
+
+    # aux used versus frequency
+    png = pngname % 'USED_FREQUENCY_TIME'
+    plot.veto_scatter(
+        png, winner.events, vetoed, x='time', y='frequency', label1=usedl,
+        label2=vetoedl, ylabel='Frequency [Hz]',
+        epoch=start, xlim=[start, end], title=title, subtitle=subtitle)
+    logger.debug("Figure written to %s" % png)
+
+    # snr versus time
+    png = pngname % 'AUX_SNR_TIME'
+    plot.veto_scatter(
+        png, beforeaux, winner.events, x='time', y='snr', label1=beforeauxl,
+        label2=usedl, epoch=start, xlim=[start, end], ylabel=statlabel,
+        title=title, subtitle=subtitle)
+    logger.debug("Figure written to %s" % png)
+
+    # snr versus frequency
+    png = pngname % 'AUX_SNR_FREQUENCY'
+    plot.veto_scatter(
+        png, beforeaux, winner.events, x='frequency', y='snr',
+        label1=beforeauxl, label2=usedl, xlabel='Frequency [Hz]',
+        ylabel=statlabel, title=title, subtitle=subtitle)
+    logger.debug("Figure written to %s" % png)
+
+    # frequency versus time coloured by SNR
+    png = pngname % 'AUX_FREQUENCY_TIME'
+    plot.veto_scatter(
+        png, beforeaux, winner.events, x='time', y='frequency', color='snr',
+        label1=None, label2=None, ylabel='Frequency [Hz]',
+        clabel=statlabel, clim=[3, 100], cmap='YlGnBu',
+        epoch=start, xlim=[start, end], title=title, subtitle=subtitle)
+    logger.debug("Figure written to %s" % png)
 
     # move to the next round
     rounds[round.n] = round
