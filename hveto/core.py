@@ -90,32 +90,30 @@ def find_max_significance(primary, auxiliary, channel,
     if isinstance(primary, numpy.recarray):
         primary = primary['time']
     for snr in snrs:
-        b = auxiliary[auxiliary['snr'] >= snr]['time']
+        b = auxiliary[auxiliary['snr'] >= snr]
         for dt in windows:
-            n, sig = hveto_significance(
-               primary, b, dt=dt, livetime=livetime)
+            _, sig = hveto_significance(
+               primary, b['time'], dt=dt, livetime=livetime)
             if sig > winner.significance:
                 winner.significance = sig
                 winner.snr = snr
                 winner.window = dt
-                winner.nevents = b.size
-                winner.ncoinc = n
     return winner
 
 
 class HvetoWinner(object):
     __slots__ = ['name', 'significance', 'snr', 'window', 'segments',
-                 'nevents', 'ncoinc']
+                 'events', 'ncoinc']
 
     def __init__(self, name=None, significance=None, snr=None,
-                 window=None, segments=None, nevents=0, ncoinc=0):
+                 window=None, segments=None, events=None, ncoinc=0):
         super(HvetoWinner, self).__init__()
         self.name = name
         self.significance = significance
         self.snr = snr
         self.window = window
         self.segments = segments
-        self.nevents = nevents
+        self.events = events
 
     def get_segments(self, times):
         return SegmentList([Segment(t - self.window/2., t + self.window/2.)
@@ -138,16 +136,17 @@ def hveto_significance(a, b, dt, livetime):
 
     Returns
     -------
-    n : `int`
-        the number of coincidences, and
+    coincs : `numpy.ndarray`
+        the indices of array `a` that were coincident with an entry in `b`
     significance : `float`
         the Poisson significance of the number of coincidences found as
         compared to the number expected by random chance
     """
     # find coincidences
-    n = number_of_coincidences(a, b, dt=dt)
+    coincs = find_coincidences(a, b, dt=dt)
+    n = coincs.size
     if n == 0:
-        return n, 0
+        return coincs, 0
     # calculate significance
     try:
         prob = a.size * dt / livetime
@@ -156,13 +155,14 @@ def hveto_significance(a, b, dt, livetime):
     mu = prob * b.size
     g = gammainc(n, mu)
     if g == 0:
-        return n, -n * log10(mu) + log10(exp(1)) + gammaln(n+1) / log(10)
+        sig = -n * log10(mu) + log10(exp(1)) + gammaln(n+1) / log(10)
     else:
-        return n, -log(g, 10)
+        sig = -log(g, 10)
+    return coincs, sig
 
 
-def number_of_coincidences(a, b, dt=1):
-    """Find the number of coincidences between values in two numpy arrays
+def find_coincidences(a, b, dt=1):
+    """Find the coincidences between values in two numpy arrays
 
     Parameters
     ----------
@@ -175,13 +175,14 @@ def number_of_coincidences(a, b, dt=1):
 
     Returns
     -------
-    ncoinc : `int`
-        the number of coincidences found between the two arrays
+    coinc : `numpy.ndarray`
+        the indices of all items in `a` within [-dt/2., +dt/2.) of an item
+        in `b`
     """
     def _is_coincident(t):
         return (numpy.abs(b - t) <= dt/2.).any()
     is_coincident = numpy.vectorize(_is_coincident)
-    return is_coincident(a).sum()
+    return is_coincident(a).nonzero()[0]
 
 
 def veto(table, segmentlist):
