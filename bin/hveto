@@ -20,7 +20,7 @@
 """Run the HierarchichalVeto (hveto) algorithm over some data
 """
 
-from __future__ import division
+from __future__ import (division, print_function)
 
 import argparse
 import os
@@ -180,6 +180,22 @@ else:
 logger.info("All aux events loaded")
 
 auxiliary = dict(x for x in results if x is not None)
+auxchannels = sorted(auxiliary.keys())
+chanfile = '%s-HVETO_CHANNEL_LIST-%d-%d.txt' % (ifo, start, duration)
+with open(chanfile, 'w') as f:
+    for chan in auxchannels:
+        print(chan, file=f)
+logger.info("Recorded list of valid auxiliary channels in %s" % chanfile)
+cp.set('auxiliary', 'channels', '\n\t%s' % '\n\t'.join(auxchannels))
+
+inifile = '%s-HVETO_CONFIGURATION-%d-%d.ini' % (ifo, start, duration)
+if os.path.isfile(inifile) and any(
+        os.path.samefile(inifile, x) for x in args.config_file):
+    logger.debug("Cannot write INI file to %s, file was given as input")
+else:
+    with open(inifile, 'w') as f:
+        cp.write(f)
+    logger.info("Configuration recorded as %s" % inifile)
 
 # -- execute hveto analysis ---------------------------------------------------
 
