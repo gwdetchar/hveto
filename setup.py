@@ -63,8 +63,8 @@ else:
 # set basic metadata
 PACKAGENAME = 'hveto'
 DISTNAME = 'hveto'
-AUTHOR = 'Duncan Macleod'
-AUTHOR_EMAIL = 'duncan.macleod@ligo.org'
+AUTHOR = 'Joshua Smith'
+AUTHOR_EMAIL = 'joshua.smith@ligo.org'
 LICENSE = 'GPLv3'
 
 VERSION_PY = os.path.join(PACKAGENAME.replace('.', os.path.sep), 'version.py')
