@@ -54,7 +54,8 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     trigs = lsctables.New(Table, columns=columns)
     for segment in segments:
         if len(cache.sieve(segment=segment)):
-            trigs.extend(Table.read(cache.sieve(segment=segment)))
+            filt = lambda t: float(t.get_peak()) in segment
+            trigs.extend(Table.read(cache.sieve(segment=segment), filt=filt))
     recarray = trigs.to_recarray(columns=columns)
     # rename columns for convenience later
     if issubclass(Table, lsctables.SnglInspiralTable):
