@@ -127,15 +127,16 @@ auxfreq = cp.getfloats('auxiliary', 'frequency-range')
 try:
     auxchannels = cp.get('auxiliary', 'channels').strip('\n').split('\n')
 except config.configparser.NoOptionError:
-    auxchannels = find_auxiliary_channels(auxetg, ifo=args.ifo)
-    try:
-        auxchannels.pop(auxchannels.index(primary))
-    except ValueError:
-        pass
-    logger.info("Found %d channels to process" % len(auxchannels))
-else:
-    logger.info("Parsed %d channels from config" % len(auxchannels))
+    auxchannels = find_auxiliary_channels(auxetg, start, ifo=args.ifo)
+# remove duplicates
+auxchannels = list(set(auxchannels))
+# remove primary
+try:
+    auxchannels.pop(auxchannels.index(pchannel))
+except ValueError:
+    pass
 naux = len(auxchannels)
+logger.info("Identified %d auxiliary channels to process" % naux)
 
 logger.info("Reading triggers for aux channels...")
 if args.nproc > 1:
