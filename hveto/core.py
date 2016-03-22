@@ -46,12 +46,14 @@ class HvetoRound(object):
         'efficiency',
         'cum_efficiency',
         'cum_deadtime',
+        'plots',
     )
 
-    def __init__(self, round, segments=None, vetoes=None):
+    def __init__(self, round, segments=None, vetoes=None, plots=[]):
         self.n = round
         self.segments = segments
         self.vetoes = vetoes
+        self.plots = []
 
     @property
     def livetime(self):
