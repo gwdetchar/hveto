@@ -122,8 +122,18 @@ def veto_scatter(
         plot.add_colorbar(mappable=m, ax=ax, cmap=cmap, label=clabel)
         # unsort them
         a.sort(order='time')
-    ax.scatter(b[x], b[y], color='red', marker='+', linewidth=1.5,
-               label=label2, s=40)
+    if isinstance(b, list):
+        colors = list(rcParams['axes.prop_cycle'])
+    else:
+        b = [b]
+        label2 = [label2]
+        colors = [{'color': 'red'}]
+    for i, data in enumerate(b):
+        # setting the color here looks complicated, but is just a fancy
+        # way of looping through the color cycle when scattering, but using
+        # red if we only have one other data set
+        ax.scatter(data[x], data[y], marker='+', linewidth=1.5,
+                   label=label2[i], s=40, **colors[i % len(colors)])
     # add legend
     if ax.get_legend_handles_labels()[0]:
         ax.legend(loc='upper right')
