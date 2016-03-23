@@ -24,7 +24,7 @@ before_install:
   - pip install -q --upgrade pip
 
 install:
-  - pip install -q ${PRE} -r requirements.txt
+  - pip install ${PRE} -r requirements.txt
 
 script:
   - pip install .
