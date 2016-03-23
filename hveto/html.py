@@ -71,7 +71,14 @@ def write_summary(rounds, plots=[]):
         # link round down page
         page.td(html_link('#hveto-round-%d' % r.n, r.n, target=None,
                           title="Jump to round %d details" % r.n))
-        for attr in ['name', 'window', 'snr', 'significance']:
+        # link name to CIS
+        page.td(html_link(
+            "https://cis.ligo.org/channel/byname/%s" % r.winner.name,
+            r.winner.name,
+            style="font-family: Monaco, \"Courier New\", monospace;",
+            title="CIS entry for %s" % r.winner.name,
+        ))
+        for attr in ['window', 'snr', 'significance']:
             v = getattr(r.winner, attr)
             if isinstance(v, float):
                 page.td('%.2f' % v)
