@@ -68,8 +68,17 @@ def write_summary(rounds, plots=[]):
     page.tbody()
     for r in rounds:
         page.tr()
-        page.td(r.n)
-        for attr in ['name', 'window', 'snr', 'significance']:
+        # link round down page
+        page.td(html_link('#hveto-round-%d' % r.n, r.n, target=None,
+                          title="Jump to round %d details" % r.n))
+        # link name to CIS
+        page.td(html_link(
+            "https://cis.ligo.org/channel/byname/%s" % r.winner.name,
+            r.winner.name,
+            style="font-family: Monaco, \"Courier New\", monospace;",
+            title="CIS entry for %s" % r.winner.name,
+        ))
+        for attr in ['window', 'snr', 'significance']:
             v = getattr(r.winner, attr)
             if isinstance(v, float):
                 page.td('%.2f' % v)
@@ -98,9 +107,14 @@ def write_round(round):
     """Write the HTML summary for a specific round
     """
     page = markup.page()
-    page.div(class_='panel panel-info', id_='round-%d' % round.n)
+    page.div(class_='panel panel-info', id_='hveto-round-%d' % round.n)
     # -- make heading
-    page.div(class_='panel-heading')
+    page.div(class_='panel-heading clearfix')
+    # link to top of page
+    page.div(class_='pull-right')
+    page.a("<small>[top]</small>", href='#')
+    page.div.close()  # pull-right
+    # heading
     page.h3('Round %d, Winner = %s, window = %s, SNR thresh = %s'
             % (round.n, round.winner.name, round.winner.window,
                round.winner.snr), class_='panel-title')
@@ -110,7 +124,7 @@ def write_round(round):
     page.div(class_='panel-body')
     page.div(class_='row')
     # summary information
-    page.div(class_='col-md-3', id_='round-%d-summary' % round.n)
+    page.div(class_='col-md-3', id_='hveto-round-%d-summary' % round.n)
     page.add(bold_param('Winner', round.winner.name))
     page.add(bold_param('SNR threshold', round.winner.snr))
     page.add(bold_param('Window', round.winner.window))
@@ -123,12 +137,12 @@ def write_round(round):
             files = [round.files[tag]]
         else:
             files = round.files[tag]
-        link = ' '.join([file_link(
+        link = ' '.join([html_link(
             f, '[%s]' % os.path.splitext(f)[1].strip('.')) for f in files])
         page.add(bold_param(desc, link))
     page.div.close()  # col
     # plots
-    page.div(class_='col-md-9', id_='round-%d-plots' % round.n)
+    page.div(class_='col-md-9', id_='hveto-round-%d-plots' % round.n)
     page.add(scaffold_plots(round.plots[:-1], nperrow=4))
     # add significance drop plot at end
     page.div(class_='row')
@@ -247,5 +261,7 @@ def write_hveto_page(rounds, plots, ifo, start, end,
     return index
 
 
-def file_link(href, txt, target='_blank', **params):
-    return markup.oneliner.a(txt, href=href, target=target, **params)
+def html_link(href, txt, target="_blank", **params):
+    if target is not None:
+        params.setdefault('target', target)
+    return markup.oneliner.a(txt, href=href, **params)
