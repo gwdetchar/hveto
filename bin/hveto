@@ -36,10 +36,10 @@ except ImportError:  # python 2.x
     import ConfigParser as configparser
 
 from gwpy.time import to_gps
-from gwpy.segments import DataQualityFlag
+from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
 from hveto import (version, log, config, core, plot, html)
-from hveto.triggers import (get_triggers, find_auxiliary_channels)
+from hveto.triggers import (get_triggers, find_auxiliary_channels, write_ascii)
 
 IFO = os.getenv('IFO')
 
@@ -96,7 +96,8 @@ os.chdir(outdir)
 logger.info("Working directory: %s" % outdir)
 segdir = 'segments'
 plotdir = 'plots'
-for d in [segdir, plotdir]:
+trigdir = 'triggers'
+for d in [segdir, plotdir, trigdir]:
     if not os.path.isdir(d):
         os.makedirs(d)
 
@@ -116,6 +117,10 @@ if livetime == 0:
 snrs = cp.getfloats('hveto', 'snr-thresholds')
 minsnr = min(snrs)
 windows = cp.getfloats('hveto', 'time-windows')
+
+# record all segments
+segments = DataQualityDict()
+segments[analysis.name] = analysis
 
 # -- load triggers ------------------------------------------------------------
 
@@ -264,6 +269,12 @@ while True:
                                     dt=winner.window)
     winner.events = allaux[coincs]
     round.vetoes = winner.get_segments(allaux['time'])
+    flag = DataQualityFlag(
+        '%s:HVT-ROUND_%d:1' % (ifo, round.n), active=round.vetoes,
+        known=round.segments,
+        description="winner=%s, window=%s, snr=%s" % (
+            winner.name, winner.window, winner.snr))
+    segments[flag.name] = flag
 
     # link events before veto for plotting
     before = primary
@@ -308,11 +319,27 @@ cum. deadtime :   %s""" % (
         round.winner.window, round.use_percentage, round.efficiency,
         round.deadtime, round.cum_efficiency, round.cum_deadtime))
 
-    # write files
+    # write segments
     segfile = os.path.join(segdir, '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.txt' % (
         ifo, round.n, start, duration))
     round.vetoes.write(segfile, coltype=float)
     logger.debug("Round %d vetoes written to %s" % (round.n, segfile))
+    segxml = os.path.join(segdir, '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.xml' % (
+        ifo, round.n, start, duration))
+    flag.write(segxml, coltype=float)
+    logger.debug("Round %d vetoes written to %s" % (round.n, segxml))
+    round.files['VETO_SEGS'] = (segfile, segxml)
+    # write triggers
+    trigfile = os.path.join(trigdir, '%s-HVETO_%%s_TRIGS_ROUND_%d-%d-%d.txt'
+                                     % (ifo, round.n, start, duration))
+    for tag, arr in zip(
+            ['WINNER', 'VETOED', 'RAW'],
+            [winner.events, vetoed, primary]):
+        f = trigfile % tag
+        write_ascii(f, arr)
+        logger.debug("Round %d %s events written to %s"
+                     % (round.n, tag.lower(), f))
+        round.files[tag] = f
 
     # -- make some plots --
 
@@ -407,6 +434,12 @@ cum. deadtime :   %s""" % (
     # move to the next round
     rounds.append(round)
     round = core.HvetoRound(round.n + 1, segments=round.segments-round.vetoes)
+
+# write file with all segments
+segfile = os.path.join(
+    segdir, '%s-HVETO_SEGMENTS-%d-%d.xml.gz' % (ifo, start, duration))
+segments.write(segfile)
+logger.debug("Segment summary written to %s" % segfile)
 
 logger.debug("Making summary figures...")
 

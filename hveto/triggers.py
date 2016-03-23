@@ -23,6 +23,7 @@ import glob
 import os.path
 import re
 
+import numpy
 from numpy.lib import recfunctions
 
 from glue.lal import Cache
@@ -40,10 +41,9 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     """
     Table = TABLE[etg.lower()]
     if columns is None and issubclass(Table, lsctables.SnglInspiralTable):
-        columns = ['end_time', 'end_time_ns', 'snr', 'chisq', 'chisq_dof',
-                   'mchirp']
+        columns = ['end_time', 'end_time_ns', 'mchirp', 'snr']
     elif columns is None and issubclass(Table, lsctables.SnglBurstTable):
-        columns = ['peak_time', 'peak_time_ns', 'snr', 'peak_frequency']
+        columns = ['peak_time', 'peak_time_ns', 'peak_frequency', 'snr']
 
     # find triggers
     if cache is None:
@@ -64,6 +64,9 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         tcols = ['peak_time', 'peak_time_ns']
         recarray = recfunctions.rename_fields(
             recarray, {'peak_frequency': 'frequency'})
+        idx = columns.index('peak_frequency')
+        columns.pop(idx)
+        columns.insert(idx, 'frequency')
     else:
         tcols = None
     if tcols:
@@ -71,6 +74,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         recarray = recfunctions.rec_append_fields(
             recarray, 'time', times, times.dtype)
         recarray = recfunctions.rec_drop_fields(recarray, tcols)
+        columns = ['time'] + columns[2:]
     # filter
     if snr is not None:
         recarray = recarray[recarray['snr'] >= snr]
@@ -78,7 +82,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         recarray = recarray[
             (recarray['frequency'] >= frange[0]) &
             (recarray['frequency'] < frange[1])]
-    return recarray
+    return recarray[columns]
 
 
 re_delim = re.compile('[_-]')
@@ -97,3 +101,25 @@ def find_auxiliary_channels(etg, gps='*', ifo='*'):
         ifo, name = path[:-len(stub)].rsplit(os.path.sep)[-2:]
         out.add('%s:%s' % (ifo, name))
     return sorted(out)
+
+
+def write_ascii(outfile, recarray, fmt='%s', **kwargs):
+    """Write a `numpy.recarray` to file as ASCII
+
+    Parameters
+    ----------
+    outfile : `str`
+        path of output file
+    recarray : `numpy.recarray`
+        array to write
+    fmt : `str`
+        format string, or list of format strings
+
+    See Also
+    --------
+    numpy.savetxt
+        for details on the writer, including the `fmt` keyword argument
+    """
+    kwargs.setdefault('header', ' '.join(recarray.dtype.names))
+    numpy.savetxt(outfile, recarray, fmt=fmt, **kwargs)
+    return outfile
