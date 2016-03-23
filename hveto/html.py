@@ -103,6 +103,17 @@ def write_round(round):
     page.add(bold_param('SNR threshold', round.winner.snr))
     page.add(bold_param('Window', round.winner.window))
     page.add(bold_param('Significance', '%.2f' % round.winner.significance))
+    for desc, tag in zip(
+            ['Veto segments', 'Veto triggers', 'Vetoed primary triggers',
+             'Unvetoed primary triggers'],
+            ['VETO_SEGS', 'WINNER', 'VETOED', 'RAW']):
+        if isinstance(round.files[tag], str):
+            files = [round.files[tag]]
+        else:
+            files = round.files[tag]
+        link = ' '.join([file_link(
+            f, '[%s]' % os.path.splitext(f)[1].strip('.')) for f in files])
+        page.add(bold_param(desc, link))
     page.div.close()  # col
     # plots
     page.div(class_='col-md-9', id_='round-%d-plots' % round.n)
@@ -206,3 +217,7 @@ def write_hveto_page(rounds, plots, ifo, start, end,
     with open(index, 'w') as f:
         f.write(page())
     return index
+
+
+def file_link(href, txt, target='_blank', **params):
+    return markup.oneliner.a(txt, href=href, target=target, **params)
