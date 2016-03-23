@@ -31,12 +31,24 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda'
 __version__ = version.version
 
+# -- set up default JS and CSS files
+
 JQUERY_JS = "//code.jquery.com/jquery-1.11.2.min.js"
 
 BOOTSTRAP_CSS = (
     "//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css")
 BOOTSTRAP_JS = (
     "//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js")
+
+FANCYBOX_CSS = (
+    "//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css")
+FANCYBOX_JS = (
+    "//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.js")
+
+CSS_FILES = [BOOTSTRAP_CSS, FANCYBOX_CSS]
+JS_FILES = [JQUERY_JS, BOOTSTRAP_JS, FANCYBOX_JS]
+
+# --
 
 
 def write_summary(rounds, plots=[]):
@@ -142,7 +154,11 @@ def image_markup(img):
     """
     page = markup.page()
     imgname = os.path.basename(img)
-    page.a(href=img, target='_blank', title=imgname)
+    page.a(
+        href=img, title=imgname,
+        class_="fancybox", rel="hveto-image",  # hooks for fancybox
+        target='_blank',  # open in new window/tab
+    )
     page.img(src=img, alt=imgname, class_='img-responsive')
     page.a.close()
     return str(page)
@@ -173,12 +189,15 @@ def write_hveto_page(rounds, plots, ifo, start, end,
 
     # add bootstrap CSS and JS if needed
     css = kwargs.pop('css', [])
-    if BOOTSTRAP_CSS not in css:
-        css.insert(0, BOOTSTRAP_CSS)
+    for cssf in CSS_FILES[::-1]:
+        b = os.path.basename(cssf)
+        if not any(f.endswith(b) for f in css):
+            css.insert(0, cssf)
     script = kwargs.pop('script', [])
-    for js in [BOOTSTRAP_JS, JQUERY_JS]:
-        if js not in script:
-            script.insert(0, js)
+    for jsf in JS_FILES[::-1]:
+        b = os.path.basename(jsf)
+        if not any(f.endswith(b) for f in script):
+            script.insert(0, jsf)
 
     # create page and init
     kwargs['css'] = css
@@ -207,6 +226,15 @@ def write_hveto_page(rounds, plots, ifo, start, end,
     # load content
     page.script("$('#content').load('%s');" % contentf)
     page.div.close()  # container
+
+    # run fancybox
+    page.script("""
+  $(document).ready(function() {
+    $(\".fancybox\").fancybox({
+      nextEffect: 'none',
+      prevEffect: 'none',
+    });
+  });""")
 
     # close
     page.body.close()
