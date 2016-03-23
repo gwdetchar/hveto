@@ -23,6 +23,7 @@ import glob
 import os.path
 import re
 
+import numpy
 from numpy.lib import recfunctions
 
 from glue.lal import Cache
@@ -100,3 +101,25 @@ def find_auxiliary_channels(etg, gps='*', ifo='*'):
         ifo, name = path[:-len(stub)].rsplit(os.path.sep)[-2:]
         out.add('%s:%s' % (ifo, name))
     return sorted(out)
+
+
+def write_ascii(outfile, recarray, fmt='%s', **kwargs):
+    """Write a `numpy.recarray` to file as ASCII
+
+    Parameters
+    ----------
+    outfile : `str`
+        path of output file
+    recarray : `numpy.recarray`
+        array to write
+    fmt : `str`
+        format string, or list of format strings
+
+    See Also
+    --------
+    numpy.savetxt
+        for details on the writer, including the `fmt` keyword argument
+    """
+    kwargs.setdefault('header', ' '.join(recarray.dtype.names))
+    numpy.savetxt(outfile, recarray, fmt=fmt, **kwargs)
+    return outfile
