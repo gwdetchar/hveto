@@ -45,7 +45,11 @@ FANCYBOX_CSS = (
 FANCYBOX_JS = (
     "//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.js")
 
-CSS_FILES = [BOOTSTRAP_CSS, FANCYBOX_CSS]
+FONT_LATO_CSS = (
+    "//fonts.googleapis.com/css?family=Lato:300,700"
+)
+
+CSS_FILES = [BOOTSTRAP_CSS, FANCYBOX_CSS, FONT_LATO_CSS]
 JS_FILES = [JQUERY_JS, BOOTSTRAP_JS, FANCYBOX_JS]
 
 # --
@@ -202,6 +206,11 @@ def write_hveto_page(rounds, plots, ifo, start, end,
     # create page and init
     kwargs['css'] = css
     kwargs['script'] = script
+    kwargs.setdefault('bodyattrs', {
+        'style': 'font-family: \"Lato\", \"Helvetica Neue\", '
+                     'Helvetica, Arial, sans-serif; '
+                 '-webkit-font-smoothing: antialiased;',
+    })
     page.init(**kwargs)
 
     # write banner
