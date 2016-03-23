@@ -123,7 +123,7 @@ def write_round(round):
             files = [round.files[tag]]
         else:
             files = round.files[tag]
-        link = ' '.join([file_link(
+        link = ' '.join([html_link(
             f, '[%s]' % os.path.splitext(f)[1].strip('.')) for f in files])
         page.add(bold_param(desc, link))
     page.div.close()  # col
@@ -247,5 +247,7 @@ def write_hveto_page(rounds, plots, ifo, start, end,
     return index
 
 
-def file_link(href, txt, target='_blank', **params):
-    return markup.oneliner.a(txt, href=href, target=target, **params)
+def html_link(href, txt, target="_blank", **params):
+    if target is not None:
+        params.setdefault('target', target)
+    return markup.oneliner.a(txt, href=href, **params)
