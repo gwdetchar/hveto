@@ -36,7 +36,7 @@ except ImportError:  # python 2.x
     import ConfigParser as configparser
 
 from gwpy.time import to_gps
-from gwpy.segments import DataQualityFlag
+from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
 from hveto import (version, log, config, core, plot, html)
 from hveto.triggers import (get_triggers, find_auxiliary_channels)
@@ -116,6 +116,10 @@ if livetime == 0:
 snrs = cp.getfloats('hveto', 'snr-thresholds')
 minsnr = min(snrs)
 windows = cp.getfloats('hveto', 'time-windows')
+
+# record all segments
+segments = DataQualityDict()
+segments[analysis.name] = analysis
 
 # -- load triggers ------------------------------------------------------------
 
@@ -264,6 +268,12 @@ while True:
                                     dt=winner.window)
     winner.events = allaux[coincs]
     round.vetoes = winner.get_segments(allaux['time'])
+    flag = DataQualityFlag(
+        '%s:HVT-ROUND_%d:1' % (ifo, round.n), active=round.vetoes,
+        known=round.segments,
+        description="winner=%s, window=%s, snr=%s" % (
+            winner.name, winner.window, winner.snr))
+    segments[flag.name] = flag
 
     # link events before veto for plotting
     before = primary
@@ -407,6 +417,12 @@ cum. deadtime :   %s""" % (
     # move to the next round
     rounds.append(round)
     round = core.HvetoRound(round.n + 1, segments=round.segments-round.vetoes)
+
+# write file with all segments
+segfile = os.path.join(
+    segdir, '%s-HVETO_SEGMENTS-%d-%d.xml.gz' % (ifo, start, duration))
+segments.write(segfile)
+logger.debug("Segment summary written to %s" % segfile)
 
 logger.debug("Making summary figures...")
 
