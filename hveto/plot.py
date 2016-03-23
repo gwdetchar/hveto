@@ -159,14 +159,20 @@ def _finalize_plot(plot, ax, outfile, bbox_inches=None, **axargs):
         ax.title.set_position(pos)
         ax.text(.5, 1., subtitle, transform=ax.transAxes, va='bottom',
                 ha='center')
+    # set minor grid for log scale
+    if ax.get_xscale() == 'log':
+        ax.grid(True, axis='x', which='both')
+    if ax.get_yscale() == 'log':
+        ax.grid(True, axis='y', which='both')
     # set limits after everything else (matplotlib might undo it)
     if xlim is not None:
         ax.set_xlim(*xlim)
     if ylim is not None:
         ax.set_ylim(*ylim)
-    # save and close
+     # add colorbar
     if not plot.colorbars:
         plot.add_colorbar(ax=ax, visible=False)
+    # save and close
     plot.save(outfile, bbox_inches=bbox_inches)
     plot.close()
 
@@ -235,5 +241,4 @@ def hveto_roc(outfile, rounds, figsize=[9, 6], **kwargs):
         'ylim': (bound, 1.),
     }
     axargs.update(kwargs)
-    ax.grid(True, axis='both', which='both')
     _finalize_plot(plot, ax, outfile, **axargs)
