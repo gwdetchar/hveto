@@ -135,6 +135,24 @@ if len(primary):
 else:
     logger.warning("No events found for %s" % pchannel)
 
+# load unsafe channels list
+_unsafe = cp.get('safety', 'unsafe-channels')
+if os.path.isfile(_unsafe):  # from file
+    unsafe = set()
+    with open(_unsafe, 'rb') as f:
+        for c in f.read().rstrip('\n').split('\n'):
+            if c.startswith('%(IFO)s'):
+                unsafe.add(c.replace('%(IFO)s', ifo))
+            elif not c.startswith('%s:' % ifo):
+                unsafe.add('%s:%s' % (ifo, c))
+            else:
+                unsafe.add(c)
+else:  # or from line-seprated list
+    unsafe = set(_unsafe.strip('\n').split('\n'))
+unsafe.add(pchannel)
+cp.set('safety', 'unsafe-channels', '\n'.join(sorted(unsafe)))
+logger.debug("Read list of %d unsafe channels" % len(unsafe))
+
 # load auxiliary triggers
 auxetg = cp.get('auxiliary', 'trigger-generator')
 auxfreq = cp.getfloats('auxiliary', 'frequency-range')
@@ -143,12 +161,19 @@ try:
 except config.configparser.NoOptionError:
     auxchannels = find_auxiliary_channels(auxetg, start, ifo=args.ifo)
 # remove duplicates
-auxchannels = list(set(auxchannels))
-# remove primary
-try:
-    auxchannels.pop(auxchannels.index(pchannel))
-except ValueError:
-    pass
+auxchannels = sorted(set(auxchannels))
+logger.debug("Read list of %d auxiliary channels" % len(auxchannels))
+
+# remove unsafe channels
+nunsafe = 0
+for chan in auxchannels:
+    if chan in unsafe:
+        logger.warning("Auxiliary channel %r identified as unsafe and has "
+                       "been removed" % chan)
+        auxchannels.pop(auxchannels.index(chan))
+        nunsafe += 1
+logger.debug("%d auxiliary channels identified as unsafe" % nunsafe)
+
 naux = len(auxchannels)
 logger.info("Identified %d auxiliary channels to process" % naux)
 
