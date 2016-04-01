@@ -53,6 +53,14 @@ class HvetoConfigParser(configparser.ConfigParser):
             'trigger-generator': 'Omicron',
             'frequency-range': (30, 2048),
         },
+        'safety': {
+            'unsafe-channels': ['%(IFO)s:GDS-CALIB_STRAIN',
+                                '%(IFO)s:LDAS-STRAIN',
+                                '%(IFO)s:CAL-DELTAL_EXTERNAL_DQ',
+                                '%(IFO)s:DER_DATA_H',
+                                '%(IFO)s:h_4096Hz',
+                                '%(IFO)s:h_16384Hz'],
+        }
     }
 
     def __init__(self, ifo=None, defaults=dict(), **kwargs):
@@ -65,7 +73,9 @@ class HvetoConfigParser(configparser.ConfigParser):
         for section in self.HVETO_DEFAULTS:
             self.add_section(section)
             for key, val in self.HVETO_DEFAULTS[section].iteritems():
-                if isinstance(val, tuple):
+                if key.endswith('channels') and isinstance(val, (tuple, list)):
+                    self.set(section, key, '\n'.join(list(val)))
+                elif isinstance(val, tuple):
                     self.set(section, key, ', '.join(map(str, val)))
                 else:
                     self.set(section, key, str(val))
