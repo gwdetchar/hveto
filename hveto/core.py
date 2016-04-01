@@ -20,6 +20,7 @@
 """
 
 from math import (log, exp, log10)
+from bisect import (bisect_left, bisect_right)
 
 import numpy
 
@@ -183,10 +184,17 @@ def find_coincidences(a, b, dt=1):
         the indices of all items in `a` within [-dt/2., +dt/2.) of an item
         in `b`
     """
+    dx = dt/2.
     def _is_coincident(t):
-        return (numpy.abs(b - t) <= dt/2.).any()
-    is_coincident = numpy.vectorize(_is_coincident)
-    return is_coincident(a).nonzero()[0]
+        x = bisect_left(b, t-dx)
+        y = bisect_right(b, t+dx)
+        if x != y:
+            return True
+        return False
+    out = numpy.zeros(a.size)
+    for i, t in enumerate(a):
+        out[i] = _is_coincident(t)
+    return out.nonzero()[0]
 
 
 def veto(table, segmentlist):
