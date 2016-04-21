@@ -169,11 +169,11 @@ logger.debug("Read list of %d auxiliary channels" % len(auxchannels))
 
 # remove unsafe channels
 nunsafe = 0
-for chan in auxchannels:
-    if chan in unsafe:
+for i in xrange(len(auxchannels) -1, -1, -1):
+    if auxchannels[i] in unsafe:
         logger.warning("Auxiliary channel %r identified as unsafe and has "
-                       "been removed" % chan)
-        auxchannels.pop(auxchannels.index(chan))
+                       "been removed" % auxchannels[i])
+        auxchannels.pop(i)
         nunsafe += 1
 logger.debug("%d auxiliary channels identified as unsafe" % nunsafe)
 
