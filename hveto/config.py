@@ -16,7 +16,137 @@
 # You should have received a copy of the GNU General Public License
 # along with hveto.  If not, see <http://www.gnu.org/licenses/>.
 
-"""The HierarchichalVeto algorithm
+"""
+Configuration files for Hveto
+#############################
+
+How to write a configuration file
+=================================
+
+The `hveto` command-line executable can run without a configuration file, and wi
+ll auto-select the primary channel, and attempt to auto-detect which auxiliary c
+hannels are available. It will also inset a minimal list of 'unsafe' channels so that the analysis isn't totally meaningless.
+
+However, the way that things are auto-detected means that the resulting output i
+sn't exactly reproducable after-the-fact in general. If someone adds or removes data for an auxiliary channel, a rerun will operate over a different channel lis
+ts, and confusion will reign.
+
+So, it is highly recommended that you use a custom configuration file for your a
+nalyses. It could be that the configuration file never changes, but the very fac
+t that it exists should mean that you are in much greater control over what the output will look like.
+
+Each of the below sections lists the valid options and a description of what the value should be, and then an example of what that section might look like in the INI format:
+
+[hveto]
+-------
+
+========================  ======================================================
+``snr-tresholds``         A comma-separated list of signal-to-noise ratio
+                          thresholds over which to test each auxiliary channel
+``time-windows``          A comma-separated list of time windows
+                          (in seconds) over which to test each auxiliary channel
+``minimum-significance``  The significance value below which to stop the
+                          analysis
+========================  ======================================================
+
+.. code-block:: ini
+
+   [hveto]
+   ; comma-separated list of SNR thresholds (pass >=)
+   snr-thresholds = 7.75, 8, 8.5, 9, 10, 11, 12, 15, 20, 40, 100, 300
+   ; comma-separated list of time windows
+   time-windows = .1, .2, .4, .8, 1
+   minimum-significance = 5
+
+[primary]
+---------
+
+=================  =============================================================
+channel            The name of the primary channel
+trigger-generator  The name of the primary trigger generator
+snr-threshold      The minimum threshold on signal-to-noise ratio for event to
+                   be included in the analysis
+frequency-range    The `(low, high`) frequency range of interest for this
+                   analysis
+=================  =============================================================
+
+.. code-block:: ini
+
+   [primary]
+   ; SNR threshold (pass >=)
+   snr-threshold = 6
+   ; flow, fhigh
+   frequency-range = 0, 2048.
+
+[auxiliary]
+-----------
+
+=================  =============================================================
+trigger-generator  The name of the auxiliary trigger generator
+frequency-range    the `(low, high)` frequency range of interest
+channels           a tab-indented, line-delimited list of auxiliary channel
+                   names
+=================  =============================================================
+
+.. code-block:: ini
+
+   [auxiliary]
+   ; flow, fhigh
+   frequency-range = 0, 2048
+   ; give tab-indented, line-separated list of channels
+   channels =
+       %(IFO)s:ASC-AS_B_RF45_I_PIT_OUT_DQ
+       %(IFO)s:ASC-AS_A_RF45_Q_PIT_OUT_DQ
+       %(IFO)s:ASC-X_TR_B_NSUM_OUT_DQ
+       %(IFO)s:ISI-ITMX_ST2_BLND_X_GS13_CUR_IN1_DQ
+       %(IFO)s:ASC-REFL_A_RF9_I_YAW_OUT_DQ
+       %(IFO)s:ASC-AS_A_RF45_Q_YAW_OUT_DQ
+
+.. note::
+
+   In this section the ``%(IFO)s`` interpolation variable has been used. This
+   can be used throughout the configuration so that you only have to write one
+   for all interferometers, with the correct two-character prefix being
+   inserted automatically at run time.
+
+[segments]
+----------
+
+=============  =================================================================
+url            The URL of the segment database
+analysis-flag  The name of the data-quality flag indicating analysable times
+padding        The `(pre, post)` padding to apply to the analysis segments
+               [note both `pre` and `post` operate forward in time, so to
+               pad out at the start of a segment, use a negative number]
+=============  =================================================================
+
+.. code-block:: ini
+
+   [segments]
+   url = https://segments.ligo.org
+   ; require full observation mode
+   analysis-flag = %(IFO)s:DMT-ANALYSIS_READY:1
+   ; no padding by default
+   padding = 0, 0
+
+[safety]
+--------
+
+===============  ==========================================================
+unsafe-channels  The list of unsafe channels (tab-indented, line-delimited)
+===============  ==========================================================
+
+.. code-block:: ini
+
+   [safety]
+   unsafe-channels =
+       %(IFO)s:GDS-CALIB_STRAIN
+       %(IFO)s:CAL-DELTAL_EXTERNAL_DQ
+       %(IFO)s:OAF-CAL_DARM_DQ
+       %(IFO)s:OMC-DCPD_SUM_OUT_DQ
+
+Module API
+==========
 """
 
 try:

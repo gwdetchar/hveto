@@ -6,3 +6,7 @@
 /build/
 /dist/
 /hveto.egg-info
+
+# documentation products
+/docs/_build/
+/docs/api/
