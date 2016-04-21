@@ -40,14 +40,14 @@ Each of the below sections lists the valid options and a description of what the
 [hveto]
 -------
 
-========================  ======================================================
-``snr-tresholds``         A comma-separated list of signal-to-noise ratio
+========================  =====================================================
+``snr-thresholds``        A comma-separated list of signal-to-noise ratio
                           thresholds over which to test each auxiliary channel
-``time-windows``          A comma-separated list of time windows
-                          (in seconds) over which to test each auxiliary channel
+``time-windows``          A comma-separated list of time windows (in
+                          seconds) over which to test each auxiliary channel
 ``minimum-significance``  The significance value below which to stop the
                           analysis
-========================  ======================================================
+========================  =====================================================
 
 .. code-block:: ini
 
@@ -61,36 +61,47 @@ Each of the below sections lists the valid options and a description of what the
 [primary]
 ---------
 
-=================  =============================================================
-channel            The name of the primary channel
-trigger-generator  The name of the primary trigger generator
-snr-threshold      The minimum threshold on signal-to-noise ratio for event to
-                   be included in the analysis
-frequency-range    The `(low, high`) frequency range of interest for this
-                   analysis
-=================  =============================================================
+=====================  ========================================================
+``channel``            The name of the primary channel
+``trigger-generator``  The name of the primary trigger generator
+``snr-threshold``      The minimum threshold on signal-to-noise ratio for
+                       primary channel events to be included in the analysis
+``frequency-range``    The `(low, high`) frequency range of interest for this
+                       analysis
+=====================  ========================================================
 
 .. code-block:: ini
 
    [primary]
+   ; use Omicron calibrated strain as primary
+   channel = %(IFO)s:GDS-CALIB_STRAIN
+   trigger-generator = omicron
    ; SNR threshold (pass >=)
    snr-threshold = 6
    ; flow, fhigh
    frequency-range = 0, 2048.
 
+.. note::
+
+   In this section the ``%(IFO)s`` interpolation variable has been used. This
+   can be used throughout the configuration so that you only have to write one
+   for all interferometers, with the correct two-character prefix being
+   inserted automatically at run time.
+
 [auxiliary]
 -----------
 
-=================  =============================================================
-trigger-generator  The name of the auxiliary trigger generator
-frequency-range    the `(low, high)` frequency range of interest
-channels           a tab-indented, line-delimited list of auxiliary channel
-                   names
-=================  =============================================================
+=====================  ========================================================
+``trigger-generator``  The name of the auxiliary trigger generator
+``frequency-range``    the `(low, high)` frequency range of interest
+``channels``           a tab-indented, line-delimited list of auxiliary channel
+                       names
+=====================  ========================================================
 
 .. code-block:: ini
 
    [auxiliary]
+   trigger-generator = omicron
    ; flow, fhigh
    frequency-range = 0, 2048
    ; give tab-indented, line-separated list of channels
@@ -102,23 +113,17 @@ channels           a tab-indented, line-delimited list of auxiliary channel
        %(IFO)s:ASC-REFL_A_RF9_I_YAW_OUT_DQ
        %(IFO)s:ASC-AS_A_RF45_Q_YAW_OUT_DQ
 
-.. note::
-
-   In this section the ``%(IFO)s`` interpolation variable has been used. This
-   can be used throughout the configuration so that you only have to write one
-   for all interferometers, with the correct two-character prefix being
-   inserted automatically at run time.
-
 [segments]
 ----------
 
-=============  =================================================================
-url            The URL of the segment database
-analysis-flag  The name of the data-quality flag indicating analysable times
-padding        The `(pre, post)` padding to apply to the analysis segments
-               [note both `pre` and `post` operate forward in time, so to
-               pad out at the start of a segment, use a negative number]
-=============  =================================================================
+=================  ============================================================
+``url``            The URL of the segment database
+``analysis-flag``  The name of the data-quality flag indicating analysable
+                   times
+``padding``        The `(pre, post)` padding to apply to the analysis segments
+                   [note both `pre` and `post` operate forward in time, so to
+                   pad out at the start of a segment, use a negative number]
+=================  ============================================================
 
 .. code-block:: ini
 
@@ -132,9 +137,9 @@ padding        The `(pre, post)` padding to apply to the analysis segments
 [safety]
 --------
 
-===============  ==========================================================
-unsafe-channels  The list of unsafe channels (tab-indented, line-delimited)
-===============  ==========================================================
+===================  ==========================================================
+``unsafe-channels``  The list of unsafe channels (tab-indented, line-delimited)
+===================  ==========================================================
 
 .. code-block:: ini
 
