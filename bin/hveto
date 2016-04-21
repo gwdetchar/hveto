@@ -35,6 +35,9 @@ try:
 except ImportError:  # python 2.x
     import ConfigParser as configparser
 
+from matplotlib import use
+use('agg')
+
 from gwpy.time import to_gps
 from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
