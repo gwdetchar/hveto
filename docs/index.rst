@@ -7,7 +7,7 @@ Welcome to Hveto's documentation!
 =================================
 
 The HierarchichalVeto is an algorithm to identify statistically-significant correlations between transient noise events (triggers) in instrumental or environment data channels and those in the main calibrated gravitational-wave strain output for a ground-based laser interferometer gravitational-wave detector.
-It is a key tool in reducing the noise background in searches for transient gravitational-wave signals, and was used during the detection of the binary black hold signal GW150914.
+It is a key tool in reducing the noise background in searches for transient gravitational-wave signals, and was used during the detection of the binary black hole signal `GW150914 <https://www.ligo.caltech.edu/detection>`_.
 
 For full details see `Smith et al. (Classical and Quantum Gravity, 2011) <https://iopscience.iop.org/article/10.1088/0264-9381/28/23/235005>`_
 
