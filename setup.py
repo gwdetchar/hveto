@@ -217,6 +217,9 @@ setup(name=DISTNAME,
           'http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz',
           'http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz',
       ],
+      extras_require={
+          'doc': ['sphinx', 'numpydoc', 'sphinx_rtd_theme'],
+      },
       use_2to3=True,
       classifiers=[
           'Programming Language :: Python',
