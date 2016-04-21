@@ -1,0 +1,8 @@
+# unwanted file-types
+*.pyc
+
+# build products
+/hveto/version.py
+/build/
+/dist/
+/hveto.egg-info
