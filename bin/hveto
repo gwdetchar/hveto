@@ -59,7 +59,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('gpsstart', type=to_gps, help='GPS start time of analysis')
 parser.add_argument('gpsend', type=to_gps, help='GPS end time of analysis')
 parser.add_argument('-f', '--config-file', action='append', default=[],
-                    type=os.path.expanduser,
+                    type=os.path.abspath,
                     help='path to hveto configuration file, can be given '
                          'multiple times (files read in order)')
 parser.add_argument('-i', '--ifo', default=IFO, required=IFO is None,
