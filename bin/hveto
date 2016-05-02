@@ -104,6 +104,11 @@ for d in [segdir, plotdir, trigdir]:
     if not os.path.isdir(d):
         os.makedirs(d)
 
+# prepare html variables
+htmlv = {
+    'title': '%s Hveto | %d-%d' % (ifo, start, end),
+}
+
 # get segments
 aflag = cp.get('segments', 'analysis-flag')
 url = cp.get('segments', 'url')
@@ -516,8 +521,7 @@ plots.append(png)
 logger.debug("Figure written to %s" % png)
 
 # -- write HTML and finish
-index = html.write_hveto_page(rounds, plots, ifo, start, end,
-                              title='%s Hveto | %d-%d' % (ifo, start, end))
+index = html.write_hveto_page(rounds, plots, ifo, start, end, **htmlv)
 logger.debug("HTML written to %s" % index)
 logger.debug("Analysis completed in %d seconds" % (time.time() - jobstart))
 logger.info("-- Hveto complete --")
