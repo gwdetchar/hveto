@@ -239,6 +239,15 @@ def html_link(href, txt, target="_blank", **params):
     return markup.oneliner.a(txt, href=href, **params)
 
 
+def write_null_page(reason, ifo, start, end, context='info',
+                    outdir=os.path.curdir, **kwargs):
+    page = init_page(ifo, start, end, **kwargs)
+    # write alert
+    page.div(class_='alert alert-%s' % context)
+    page.p(reason)
+    page.div.close()  # alert
+    # close
+    return close_page(page, outdir)
 
 
 def init_page(ifo, start, end, css=[], script=[], **kwargs):
