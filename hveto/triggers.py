@@ -73,6 +73,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
 
     # read cache
     trigs = lsctables.New(Table, columns=columns)
+    cache.sort(key=lambda x: x.segment[0])
     for segment in segments:
         if len(cache.sieve(segment=segment)):
             if tablename.endswith('_inspiral'):
@@ -102,6 +103,8 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             recarray, 'time', times, times.dtype)
         recarray = recfunctions.rec_drop_fields(recarray, tcols)
         columns = ['time'] + columns[2:]
+        recarray.sort(order='time')
+
     # filter
     if snr is not None:
         recarray = recarray[recarray['snr'] >= snr]

@@ -114,6 +114,7 @@ def veto_scatter(
             colorargs['vmax'] = clim[1]
             if clog:
                 colorargs['norm'] = LogNorm(vmin=clim[0], vmax=clim[1])
+        a = a.copy()
         a.sort(order=color)
         m = ax.scatter(a[x], a[y], c=a[color], label=label1, **colorargs)
         # add colorbar
