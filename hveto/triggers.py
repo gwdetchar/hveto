@@ -30,7 +30,12 @@ from glue.lal import Cache
 from glue.ligolw.table import StripTableName as strip_table_name
 
 from gwpy.table import lsctables
-from gwpy.table.io import trigfind
+
+try:  # use new trigfind module
+    import trigfind
+except ImportError:
+    from gwpy.table.io import trigfind
+
 
 TABLE = {
     'omicron': lsctables.SnglBurstTable,
@@ -46,9 +51,10 @@ COLUMNS = {
 
 
 def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
-                 columns=None):
+                 columns=None, **kwargs):
     """Get triggers for the given channel
     """
+    # get table from etg
     Table = TABLE[etg.lower()]
     tablename = strip_table_name(Table.tableName)
     # get default columns for this table
@@ -62,7 +68,9 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     if cache is None:
         cache = Cache()
         for start, end in segments:
-            cache.extend(trigfind.find_trigger_urls(channel, etg, start, end))
+            cache.extend(trigfind.find_trigger_urls(channel, etg, start, end,
+                                                    **kwargs))
+
     # read cache
     trigs = lsctables.New(Table, columns=columns)
     for segment in segments:
@@ -72,7 +80,10 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             else:
                 filt = lambda t: float(t.get_peak()) in segment
             trigs.extend(Table.read(cache.sieve(segment=segment), filt=filt))
+
+    # format table as numpy.recarray
     recarray = trigs.to_recarray(columns=columns)
+
     # rename columns for convenience later
     if tablename.endswith('_inspiral'):
         tcols = ['end_time', 'end_time_ns']

@@ -143,8 +143,10 @@ pchannel = cp.get('primary', 'channel')
 petg = cp.get('primary', 'trigger-generator')
 psnr = cp.getfloat('primary', 'snr-threshold')
 pfreq = cp.getfloats('primary', 'frequency-range')
+ptrigfind = dict((key.split('-', 1)[1], val) for (key, val) in
+                 cp.items('primary') if key.startswith('trigfind-'))
 primary = get_triggers(pchannel, petg, analysis.active, snr=psnr, frange=pfreq,
-                       cache=cache)
+                       cache=cache, **ptrigfind)
 if len(primary):
     logger.info("Read %d events for %s" % (len(primary), pchannel))
 else:
