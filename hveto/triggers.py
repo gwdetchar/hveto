@@ -105,7 +105,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     # filter
     if snr is not None:
         recarray = recarray[recarray['snr'] >= snr]
-    if frange is not None:
+    if tablename.endswith('_burst') and frange is not None:
         recarray = recarray[
             (recarray['frequency'] >= frange[0]) &
             (recarray['frequency'] < frange[1])]
