@@ -27,38 +27,9 @@ if sys.version < '2.6':
     raise ImportError("Python versions older than 2.6 are not supported.")
 
 import glob
-import hashlib
 import os.path
-import subprocess
 
-try:
-    import setuptools
-except ImportError:
-    import ez_setup
-    ez_setup.use_setuptools()
-finally:
-    from setuptools import (setup, find_packages)
-    from setuptools.command import (build_py, egg_info)
-
-from distutils import log
-from distutils.dist import Distribution
-from distutils.cmd import Command
-from distutils.command.clean import (clean, log, remove_tree)
-
-# test for OrderedDict
-extra_install_requires = []
-try:
-    from collections import OrderedDict
-except ImportError:
-    extra_install_requires.append('ordereddict>=1.1')
-
-# import sphinx commands
-try:
-    from sphinx.setup_command import BuildDoc
-except ImportError:
-    cmdclass = {}
-else:
-    cmdclass = {'build_sphinx': BuildDoc}
+from setuptools import (setup, find_packages)
 
 # set basic metadata
 PACKAGENAME = 'hveto'
@@ -67,131 +38,54 @@ AUTHOR = 'Joshua Smith'
 AUTHOR_EMAIL = 'joshua.smith@ligo.org'
 LICENSE = 'GPLv3'
 
-VERSION_PY = os.path.join(PACKAGENAME.replace('.', os.path.sep), 'version.py')
+cmdclass = {}
 
+# -- versioning ---------------------------------------------------------------
 
-# -----------------------------------------------------------------------------
-# Clean up, including Sphinx, and setup_requires eggs
+import versioneer
+__version__ = versioneer.get_version()
+cmdclass.update(versioneer.get_cmdclass())
 
-class HvetoClean(clean):
-    def run(self):
-        if self.all:
-            # remove docs
-            sphinx_dir = os.path.join(self.build_base, 'sphinx')
-            if os.path.exists(sphinx_dir):
-                remove_tree(sphinx_dir, dry_run=self.dry_run)
-            else:
-                log.warn("%r does not exist -- can't clean it", sphinx_dir)
-            # remove version.py
-            for vpy in [VERSION_PY, VERSION_PY + 'c']:
-                if os.path.exists(vpy) and not self.dry_run:
-                    log.info('removing %r' % vpy)
-                    os.unlink(vpy)
-                elif not os.path.exists(vpy):
-                    log.warn("%r does not exist -- can't clean it", vpy)
-            # remove setup eggs
-            for egg in glob.glob('*.egg'):
-                if os.path.isdir(egg):
-                    remove_tree(egg, dry_run=self.dry_run)
-                else:
-                    log.info('removing %r' % egg)
-                    os.unlink(egg)
-            # remove Portfile
-            portfile = 'Portfile'
-            if os.path.exists(portfile) and not self.dry_run:
-                log.info('removing %r' % portfile)
-                os.unlink(portfile)
-        clean.run(self)
+# -- documentation ------------------------------------------------------------
 
-cmdclass['clean'] = HvetoClean
-
-
-# -----------------------------------------------------------------------------
-# Custom builders to write version.py
-
-class GitVersionMixin(object):
-    """Mixin class to add methods to generate version information from git.
-    """
-    def write_version_py(self, pyfile):
-        """Generate target file with versioning information from git VCS
-        """
-        log.info("generating %s" % pyfile)
-        from gwpy import _version_helper as vcs
-        gitstatus = vcs.GitStatus()
-        try:
-            with open(pyfile, 'w') as fobj:
-                gitstatus.write(fobj, author=AUTHOR, email=AUTHOR_EMAIL)
-        except:
-            if os.path.exists(pyfile):
-                os.unlink(pyfile)
-            raise
-        return gitstatus
-
-    def update_metadata(self):
-        """Import package base and update distribution metadata
-        """
-        import hveto
-        self.distribution.metadata.version = hveto.__version__
-        desc, longdesc = hveto.__doc__.split('\n', 1)
-        self.distribution.metadata.description = desc
-        self.distribution.metadata.long_description = longdesc.strip('\n')
-
-
-class HvetoBuildPy(build_py.build_py, GitVersionMixin):
-    """Custom build_py command to deal with version generation
-    """
-    def __init__(self, *args, **kwargs):
-        build_py.build_py.__init__(self, *args, **kwargs)
-
-    def run(self):
-        try:
-            self.write_version_py(VERSION_PY)
-        except ImportError:
-            raise
-        except:
-            if not os.path.isfile(VERSION_PY):
-                raise
-        self.update_metadata()
-        build_py.build_py.run(self)
-
-cmdclass['build_py'] = HvetoBuildPy
-
-
-class HvetoEggInfo(egg_info.egg_info, GitVersionMixin):
-    """Custom egg_info command to deal with version generation
-    """
-    def finalize_options(self):
-        try:
-            self.write_version_py(VERSION_PY)
-        except ImportError:
-            raise
-        except:
-            if not os.path.isfile(VERSION_PY):
-                raise
-        if not self.distribution.metadata.version:
-            self.update_metadata()
-        egg_info.egg_info.finalize_options(self)
-
-cmdclass['egg_info'] = HvetoEggInfo
-
-# -----------------------------------------------------------------------------
-# Find files
-
-# Use the find_packages tool to locate all packages and modules
-packagenames = find_packages()
-
-# glob for all scripts
-if os.path.isdir('bin'):
-    scripts = glob.glob(os.path.join('bin', '*'))
+# import sphinx commands
+try:
+    from sphinx.setup_command import BuildDoc
+except ImportError:
+    pass
 else:
-    scripts = []
+    cmdclass['build_sphinx'] = BuildDoc
 
-# -----------------------------------------------------------------------------
-# run setup
+# -- dependencies -------------------------------------------------------------
+
+setup_requires = [
+    'setuptools',
+    'pytest-runner',
+]
+install_requires = []
+requires = [
+    'numpy',
+    'matplotlib',
+    'scipy',
+    'glue',
+    'dqsegdb',
+    'gwpy',
+]
+tests_require = [
+    'pytest'
+]
+extras_require = {
+    'doc': ['sphinx', 'numpydoc', 'sphinx_rtd_theme'],
+}
+
+# -- run setup ----------------------------------------------------------------
+
+packagenames = find_packages()
+scripts = glob.glob(os.path.join('bin', '*'))
 
 setup(name=DISTNAME,
       provides=[PACKAGENAME],
-      version=None,
+      version=__version__,
       description=None,
       long_description=None,
       author=AUTHOR,
@@ -201,25 +95,14 @@ setup(name=DISTNAME,
       include_package_data=True,
       cmdclass=cmdclass,
       scripts=scripts,
-      setup_requires=['gitpython', 'jinja2', 'gwpy'],
-      requires=[
-          'numpy',
-          'matplotlib',
-          'scipy',
-          'glue',
-          'dqsegdb',
-          'gwpy',
-      ],
-      install_requires=[
-          'gwpy',
-      ],
+      setup_requires=setup_requires,
+      install_requires=install_requires,
+      requires=requires,
+      extras_require=extras_require,
       dependency_links=[
           'http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz',
           'http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz',
       ],
-      extras_require={
-          'doc': ['sphinx', 'numpydoc', 'sphinx_rtd_theme'],
-      },
       use_2to3=True,
       classifiers=[
           'Programming Language :: Python',

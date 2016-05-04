@@ -28,9 +28,6 @@ from scipy.special import (gammainc, gammaln)
 
 from gwpy.segments import (SegmentList, Segment)
 
-from . import version
-
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 

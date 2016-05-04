@@ -159,9 +159,6 @@ try:
 except ImportError:  # python 2.x
     import ConfigParser as configparser
 
-from . import version
-
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 

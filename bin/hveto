@@ -41,12 +41,11 @@ use('agg')
 from gwpy.time import to_gps
 from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
-from hveto import (version, log, config, core, plot, html)
+from hveto import (__version__, log, config, core, plot, html)
 from hveto.triggers import (get_triggers, find_auxiliary_channels, write_ascii)
 
 IFO = os.getenv('IFO')
 
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
@@ -56,6 +55,7 @@ logger = log.Logger('hveto')
 
 parser = argparse.ArgumentParser(description=__doc__)
 
+parser.add_argument('-V', '--version', action='version', version=__version__)
 parser.add_argument('gpsstart', type=to_gps, help='GPS start time of analysis')
 parser.add_argument('gpsend', type=to_gps, help='GPS end time of analysis')
 parser.add_argument('-f', '--config-file', action='append', default=[],
