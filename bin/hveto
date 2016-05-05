@@ -29,6 +29,11 @@ import argparse
 import os
 import warnings
 import multiprocessing
+import json
+import datetime
+import sys
+from socket import getfqdn
+from getpass import getuser
 
 try:
     import configparser
@@ -514,6 +519,49 @@ plot.veto_scatter(
     epoch=start, xlim=[start, end])
 plots.append(png)
 logger.debug("Figure written to %s" % png)
+
+# -- write summary states to ASCII table and JSON
+json_ = {
+    'user': getuser(),
+    'host': getfqdn(),
+    'date': str(datetime.datetime.now()),
+    'configuration': inifile,
+    'ifo': ifo,
+    'gpsstart': start,
+    'gpsend': end,
+    'call': ' '.join(sys.argv),
+    'rounds': [],
+}
+with open('summary-stats.txt', 'w') as f:
+    # print header
+    print('#N winner window SNR significance nveto use-percentage efficiency '
+          'deadtime cumulative-efficiency cumulative-deadtime', file=f)
+    for r in rounds:
+        # extract relevant statistics
+        results = [
+            ('round', r.n),
+            ('name', r.winner.name),
+            ('window', r.winner.window),
+            ('snr', r.winner.snr),
+            ('significance', r.winner.significance),
+            ('nveto', r.efficiency[0]),
+            ('use-percentage',
+                r.use_percentage[0] / r.use_percentage[1] * 100.),
+            ('efficiency', r.efficiency[0] / r.efficiency[1] * 100.),
+            ('deadtime', r.deadtime[0] / r.deadtime[1] * 100.),
+            ('cumulative-efficiency',
+                r.cum_efficiency[0] / r.cum_efficiency[1] * 100.),
+            ('cumulative-deadtime',
+                r.cum_deadtime[0] / r.cum_deadtime[1] * 100.),
+        ]
+        # write to ASCII
+        print(' '.join(map(str, zip(*results)[1])), file=f)
+        # write to JSON
+        results.append(('files', r.files))
+        json_['rounds'].append(dict(results))
+
+with open('summary-stats.json', 'w') as f:
+    json.dump(json_, f, sort_keys=True)
 
 # -- write HTML and finish
 index = html.write_hveto_page(rounds, plots, ifo, start, end,
