@@ -200,37 +200,7 @@ def write_hveto_page(rounds, plots, ifo, start, end,
                      outdir=os.path.curdir, **kwargs):
     """Write the Hveto results to HTML
     """
-    page = markup.page()
-
-    # add bootstrap CSS and JS if needed
-    css = kwargs.pop('css', [])
-    for cssf in CSS_FILES[::-1]:
-        b = os.path.basename(cssf)
-        if not any(f.endswith(b) for f in css):
-            css.insert(0, cssf)
-    script = kwargs.pop('script', [])
-    for jsf in JS_FILES[::-1]:
-        b = os.path.basename(jsf)
-        if not any(f.endswith(b) for f in script):
-            script.insert(0, jsf)
-
-    # create page and init
-    kwargs['css'] = css
-    kwargs['script'] = script
-    kwargs.setdefault('bodyattrs', {
-        'style': 'font-family: \"Lato\", \"Helvetica Neue\", '
-                     'Helvetica, Arial, sans-serif; '
-                 '-webkit-font-smoothing: antialiased;',
-    })
-    page.init(**kwargs)
-
-    # write banner
-    page.div(class_='container')
-    page.div(class_='page-header', role='banner')
-    page.h1("%s HierarchicalVeto" % ifo)
-    page.h3("%d-%d" % (start, end))
-    page.div.close()
-    page.div.close()  # container
+    page = init_page(**kwargs)
 
     # write content
     page.div(class_='container')
@@ -257,17 +227,71 @@ def write_hveto_page(rounds, plots, ifo, start, end,
   });""")
 
     # close
-    page.body.close()
-    page.html.close()
-
-    # write index
-    index = os.path.join(outdir, 'index.html')
-    with open(index, 'w') as f:
-        f.write(page())
-    return index
+    return close_page(page, outdir)
 
 
 def html_link(href, txt, target="_blank", **params):
     if target is not None:
         params.setdefault('target', target)
     return markup.oneliner.a(txt, href=href, **params)
+
+
+def write_null_page(reason, ifo, start, end, context='info',
+                    outdir=os.path.curdir, **kwargs):
+    page = init_page(ifo, start, end, **kwargs)
+    # write alert
+    page.div(class_='alert alert-%s' % context)
+    page.p(reason)
+    page.div.close()  # alert
+    # close
+    return close_page(page, outdir)
+
+
+def init_page(ifo, start, end, css=[], script=[], **kwargs):
+    """Initialise a new `markup.page`
+
+    Parameters
+    ----------
+    ifo : `str`
+    """
+    page = markup.page()
+    # add bootstrap CSS and JS if needed
+    for cssf in CSS_FILES[::-1]:
+        b = os.path.basename(cssf)
+        if not any(f.endswith(b) for f in css):
+            css.insert(0, cssf)
+    for jsf in JS_FILES[::-1]:
+        b = os.path.basename(jsf)
+        if not any(f.endswith(b) for f in script):
+            script.insert(0, jsf)
+    # create page and init
+    kwargs['css'] = css
+    kwargs['script'] = script
+    kwargs.setdefault('bodyattrs', {
+        'style': 'font-family: \"Lato\", \"Helvetica Neue\", '
+                     'Helvetica, Arial, sans-serif; '
+                 '-webkit-font-smoothing: antialiased;',
+    })
+    page.init(**kwargs)
+
+    # write banner
+    page.div(class_='container')
+    page.div(class_='page-header', role='banner')
+    page.h1("%s HierarchicalVeto" % ifo)
+    page.h3("%d-%d" % (start, end))
+    page.div.close()
+    page.div.close()  # container
+
+    # open container
+    page.div(class_='container')
+    return page
+
+
+def close_page(page, outdir):
+    page.div.close()  # container
+    page.body.close()
+    page.html.close()
+    index = os.path.join(outdir, 'index.html')
+    with open(index, 'w') as f:
+        f.write(page())
+    return index

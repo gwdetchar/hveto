@@ -66,7 +66,7 @@ parser.add_argument('-V', '--version', action='version', version=__version__)
 parser.add_argument('gpsstart', type=to_gps, help='GPS start time of analysis')
 parser.add_argument('gpsend', type=to_gps, help='GPS end time of analysis')
 parser.add_argument('-f', '--config-file', action='append', default=[],
-                    type=os.path.expanduser,
+                    type=os.path.abspath,
                     help='path to hveto configuration file, can be given '
                          'multiple times (files read in order)')
 parser.add_argument('-i', '--ifo', default=IFO, required=IFO is None,
@@ -114,6 +114,11 @@ for d in [segdir, plotdir, trigdir]:
     if not os.path.isdir(d):
         os.makedirs(d)
 
+# prepare html variables
+htmlv = {
+    'title': '%s Hveto | %d-%d' % (ifo, start, end),
+}
+
 # get segments
 aflag = cp.get('segments', 'analysis-flag')
 url = cp.get('segments', 'url')
@@ -124,8 +129,16 @@ livetime = int(abs(analysis.active))
 livetimepc = livetime / duration * 100.
 logger.info("Retrieved %d segments for %s with %ss (%.2f%%) livetime"
             % (len(analysis.active), aflag, livetime, livetimepc))
+
+# if no segments, print dummy HTML and stop here
 if livetime == 0:
-    logger.warning("No livetime for analysis")
+    message = ("No active segments found for analysis flag %r in interval "
+               "[%d, %d)" % (aflag, start, end))
+    logger.critical(message)
+    index = html.write_null_page(message, ifo, start, end, context='info',
+                                 **htmlv)
+    logger.info("HTML report written to %s" % index)
+    sys.exit(0)
 
 snrs = cp.getfloats('hveto', 'snr-thresholds')
 minsnr = min(snrs)
@@ -155,7 +168,13 @@ primary = get_triggers(pchannel, petg, analysis.active, snr=psnr, frange=pfreq,
 if len(primary):
     logger.info("Read %d events for %s" % (len(primary), pchannel))
 else:
-    logger.warning("No events found for %s" % pchannel)
+    message = "No events found for %r in %d seconds of livetime" % (
+       pchannel, livetime)
+    logger.critical(message)
+    index = html.write_null_page(message, ifo, start, end, context='danger',
+                                 **htmlv)
+    logger.info("HTML report written to %s" % index)
+    sys.exit(0)
 
 # load unsafe channels list
 _unsafe = cp.get('safety', 'unsafe-channels')
@@ -504,6 +523,20 @@ logger.debug("Segment summary written to %s" % segfile)
 
 logger.debug("Making summary figures...")
 
+# -- exit early if no rounds above threshold
+
+if not rounds:
+    message = ("No rounds completed above threshold. Analysis stopped with "
+               "%s achieving significance of %.2f"
+               % (winner.name, winner.significance))
+    logger.critical(message)
+    message += '<br>[T<sub>win</sub>: %ss, SNR: %s]' % (
+        winner.window, winner.snr)
+    index = html.write_null_page(message, ifo, start, end, context='warning',
+                                 **htmlv)
+    logger.info("HTML report written to %s" % index)
+    sys.exit(0)
+
 # -- plot all rounds impact
 pngname = os.path.join(plotdir, '%s-HVETO_%%s_ALL_ROUNDS-%d-%d.png' %
     (ifo, start, duration))
@@ -592,8 +625,7 @@ with open('summary-stats.json', 'w') as f:
     json.dump(json_, f, sort_keys=True)
 
 # -- write HTML and finish
-index = html.write_hveto_page(rounds, plots, ifo, start, end,
-                              title='%s Hveto | %d-%d' % (ifo, start, end))
+index = html.write_hveto_page(rounds, plots, ifo, start, end, **htmlv)
 logger.debug("HTML written to %s" % index)
 logger.debug("Analysis completed in %d seconds" % (time.time() - jobstart))
 logger.info("-- Hveto complete --")
