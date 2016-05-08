@@ -88,6 +88,23 @@ Each of the below sections lists the valid options and a description of what the
    for all interferometers, with the correct two-character prefix being
    inserted automatically at run time.
 
+.. note::
+
+   As well as the above, users can specify arguments to be used when
+   automatically discovering triggers. Any option that begins ``trigfind-``
+   will be passed to the `trigfind.find_trigger_urls` function as a keyword
+   argument.
+
+   Specifically, to specify the specific run associated with the ``daily-cbc``
+   event generator, you can give
+
+   .. code-block::
+
+      [primary]
+      trigger-generator = daily-cbc
+      trigfind-run = bbh_gds
+      trigfind-filetag = 16SEC_CLUSTERED
+
 [auxiliary]
 -----------
 
@@ -112,6 +129,11 @@ Each of the below sections lists the valid options and a description of what the
        %(IFO)s:ISI-ITMX_ST2_BLND_X_GS13_CUR_IN1_DQ
        %(IFO)s:ASC-REFL_A_RF9_I_YAW_OUT_DQ
        %(IFO)s:ASC-AS_A_RF45_Q_YAW_OUT_DQ
+
+.. note::
+
+   As with the ``[primary]`` section, users can specify ``trigfind-``
+   arguments to customise trigger-file discovery.
 
 [segments]
 ----------

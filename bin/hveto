@@ -43,6 +43,8 @@ except ImportError:  # python 2.x
 from matplotlib import use
 use('agg')
 
+from glue.lal import Cache
+
 from gwpy.time import to_gps
 from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
@@ -72,6 +74,9 @@ parser.add_argument('-i', '--ifo', default=IFO, required=IFO is None,
 parser.add_argument('-j', '--nproc', type=int, default=1,
                     help='number of cores to use for multiprocessing, '
                          'default: %(default)s')
+parser.add_argument('-p', '--primary-cache', action='append', default=[],
+                    type=os.path.expanduser,
+                    help='path for cache containing primary channel files')
 
 pout = parser.add_argument_group('Output options')
 pout.add_argument('-o', '--output-directory', default=os.curdir,
@@ -132,12 +137,21 @@ segments[analysis.name] = analysis
 
 # -- load triggers ------------------------------------------------------------
 
+# read primary cache
+if args.primary_cache:
+    cache = Cache.fromfilenames(args.primary_cache)
+else:
+    cache = None
+
 # load primary triggers
 pchannel = cp.get('primary', 'channel')
 petg = cp.get('primary', 'trigger-generator')
 psnr = cp.getfloat('primary', 'snr-threshold')
 pfreq = cp.getfloats('primary', 'frequency-range')
-primary = get_triggers(pchannel, petg, analysis.active, snr=psnr, frange=pfreq)
+ptrigfind = dict((key.split('-', 1)[1], val) for (key, val) in
+                 cp.items('primary') if key.startswith('trigfind-'))
+primary = get_triggers(pchannel, petg, analysis.active, snr=psnr, frange=pfreq,
+                       cache=cache, **ptrigfind)
 if len(primary):
     logger.info("Read %d events for %s" % (len(primary), pchannel))
 else:
@@ -250,7 +264,15 @@ significance = 1e9
 
 pevents = [primary]
 pvetoed = []
+
+# get plot parameters based on table
 statlabel = 'Signal-to-noise ratio (SNR)'
+if petg in ['daily-cbc']:
+    fparam = 'mchirp'
+    flabel = r'Chirp mass [M$_{\odot}$]'
+else:
+    fparam = 'frequency'
+    flabel = r'Frequency [Hz]'
 
 rounds = []
 round = core.HvetoRound(1)
@@ -409,29 +431,35 @@ cum. deadtime :   %s""" % (
     round.plots.append(png)
 
     # snr versus frequency
-    png = pngname % 'SNR_FREQUENCY'
+    png = pngname % 'SNR_%s' % fparam.upper()
     plot.veto_scatter(
-        png, before, vetoed, x='frequency', y='snr', label1=beforel,
-        label2=vetoedl, xlabel='Frequency [Hz]', ylabel=statlabel,
+        png, before, vetoed, x=fparam, y='snr', label1=beforel,
+        label2=vetoedl, xlabel=flabel, ylabel=statlabel,
         title=title, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
     # frequency versus time coloured by SNR
-    png = pngname % 'FREQUENCY_TIME'
+    png = pngname % '%s_TIME' % fparam.upper()
     plot.veto_scatter(
-        png, before, vetoed, x='time', y='frequency', color='snr',
-        label1=None, label2=None, ylabel='Frequency [Hz]',
+        png, before, vetoed, x='time', y=fparam, color='snr',
+        label1=None, label2=None, ylabel=flabel,
         clabel=statlabel, clim=[3, 100], cmap='YlGnBu',
         epoch=start, xlim=[start, end], title=title, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
     # aux used versus frequency
+    if winner.events.dtype == vetoed.dtype:
+        y = fparam
+        ylabel = flabel
+    else:
+        y = 'snr'
+        ylabel = statlabel
     png = pngname % 'USED_FREQUENCY_TIME'
     plot.veto_scatter(
-        png, winner.events, vetoed, x='time', y='frequency', label1=usedl,
-        label2=vetoedl, ylabel='Frequency [Hz]',
+        png, winner.events, vetoed, x='time', y=y, label1=usedl,
+        label2=vetoedl, ylabel=ylabel,
         epoch=start, xlim=[start, end], title=title, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
@@ -499,12 +527,12 @@ plots.append(png)
 logger.debug("Figure written to %s" % png)
 
 # frequency versus time
-png = pngname % 'FREQUENCY_TIME'
+png = pngname % '%s_TIME' % fparam.upper()
 label2 = ['After round %d' % r.n for r in rounds]
 plot.veto_scatter(
     png, pevents[0], pvetoed,
     label1='Before round 1', label2=label2, title=title,
-    subtitle=subtitle, ylabel='Frequency [Hz]', x='time', y='frequency',
+    subtitle=subtitle, ylabel=flabel, x='time', y=fparam,
     epoch=start, xlim=[start, end])
 plots.append(png)
 logger.debug("Figure written to %s" % png)

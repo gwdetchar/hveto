@@ -27,40 +27,68 @@ import numpy
 from numpy.lib import recfunctions
 
 from glue.lal import Cache
+from glue.ligolw.table import StripTableName as strip_table_name
 
 from gwpy.table import lsctables
-from gwpy.table.io import trigfind
+
+try:  # use new trigfind module
+    import trigfind
+except ImportError:
+    from gwpy.table.io import trigfind
+
 
 TABLE = {
     'omicron': lsctables.SnglBurstTable,
+    'daily-cbc': lsctables.SnglInspiralTable,
 }
 
+COLUMNS = {
+    lsctables.SnglInspiralTable: [
+        'end_time', 'end_time_ns', 'mchirp', 'snr'],
+    lsctables.SnglBurstTable: [
+        'peak_time', 'peak_time_ns', 'peak_frequency', 'snr'],
+}
+
+
 def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
-                 columns=None):
+                 columns=None, **kwargs):
     """Get triggers for the given channel
     """
+    # get table from etg
     Table = TABLE[etg.lower()]
-    if columns is None and issubclass(Table, lsctables.SnglInspiralTable):
-        columns = ['end_time', 'end_time_ns', 'mchirp', 'snr']
-    elif columns is None and issubclass(Table, lsctables.SnglBurstTable):
-        columns = ['peak_time', 'peak_time_ns', 'peak_frequency', 'snr']
+    tablename = strip_table_name(Table.tableName)
+    # get default columns for this table
+    if columns is None:
+        for key in COLUMNS:
+            if issubclass(Table, key):
+                columns = COLUMNS[key][:]
+                break
 
     # find triggers
     if cache is None:
         cache = Cache()
         for start, end in segments:
-            cache.extend(trigfind.find_trigger_urls(channel, etg, start, end))
+            cache.extend(trigfind.find_trigger_urls(channel, etg, start, end,
+                                                    **kwargs))
+
     # read cache
     trigs = lsctables.New(Table, columns=columns)
+    cache.sort(key=lambda x: x.segment[0])
     for segment in segments:
         if len(cache.sieve(segment=segment)):
-            filt = lambda t: float(t.get_peak()) in segment
+            if tablename.endswith('_inspiral'):
+                filt = lambda t: float(t.get_end()) in segment
+            else:
+                filt = lambda t: float(t.get_peak()) in segment
             trigs.extend(Table.read(cache.sieve(segment=segment), filt=filt))
+
+    # format table as numpy.recarray
     recarray = trigs.to_recarray(columns=columns)
+
     # rename columns for convenience later
-    if issubclass(Table, lsctables.SnglInspiralTable):
+    if tablename.endswith('_inspiral'):
         tcols = ['end_time', 'end_time_ns']
-    elif issubclass(Table, lsctables.SnglBurstTable):
+    elif tablename.endswith('_burst'):
         tcols = ['peak_time', 'peak_time_ns']
         recarray = recfunctions.rename_fields(
             recarray, {'peak_frequency': 'frequency'})
@@ -75,10 +103,12 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             recarray, 'time', times, times.dtype)
         recarray = recfunctions.rec_drop_fields(recarray, tcols)
         columns = ['time'] + columns[2:]
+        recarray.sort(order='time')
+
     # filter
     if snr is not None:
         recarray = recarray[recarray['snr'] >= snr]
-    if frange is not None:
+    if tablename.endswith('_burst') and frange is not None:
         recarray = recarray[
             (recarray['frequency'] >= frange[0]) &
             (recarray['frequency'] < frange[1])]

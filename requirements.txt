@@ -3,6 +3,7 @@ matplotlib >= 1.5
 scipy
 gitpython
 jinja2
+https://github.com/ligovirgo/trigfind/archive/v0.2.1.tar.gz
 http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz
 http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz
 gwpy
