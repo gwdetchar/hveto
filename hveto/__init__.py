@@ -19,8 +19,10 @@
 """The HierarchichalVeto algorithm
 """
 
-from . import version
+from ._version import get_versions
 
-__version__ = version.version
+__version__ = get_versions()['version']
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
+
+del get_versions

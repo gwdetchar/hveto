@@ -25,11 +25,8 @@ import os.path
 
 from glue import markup
 
-from . import version
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda'
-__version__ = version.version
 
 # -- set up default JS and CSS files
 

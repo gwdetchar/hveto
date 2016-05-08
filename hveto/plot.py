@@ -29,11 +29,8 @@ from gwpy.plotter import (rcParams, HistogramPlot, EventTablePlot,
                           TimeSeriesPlot, Plot)
 from gwpy.plotter.table import get_column_string
 
-from . import version
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda'
-__version__ = version.version
 
 rcParams.update({
     'figure.subplot.bottom': 0.17,

@@ -23,9 +23,6 @@ from functools import wraps
 
 from gwpy.segments import DataQualityFlag, Segment, SegmentList
 
-from . import version
-
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
