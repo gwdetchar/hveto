@@ -58,7 +58,11 @@ __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
 logger = log.Logger('hveto')
 
+
 # -- parse command line -------------------------------------------------------
+
+def abs_path(p):
+    return os.path.abspath(os.path.expanduser(p))
 
 parser = argparse.ArgumentParser(description=__doc__)
 
@@ -66,7 +70,7 @@ parser.add_argument('-V', '--version', action='version', version=__version__)
 parser.add_argument('gpsstart', type=to_gps, help='GPS start time of analysis')
 parser.add_argument('gpsend', type=to_gps, help='GPS end time of analysis')
 parser.add_argument('-f', '--config-file', action='append', default=[],
-                    type=os.path.abspath,
+                    type=abs_path,
                     help='path to hveto configuration file, can be given '
                          'multiple times (files read in order)')
 parser.add_argument('-i', '--ifo', default=IFO, required=IFO is None,
@@ -102,7 +106,7 @@ cp.read(args.config_file)
 logger.info("Parsed configuration file(s)")
 
 # format output directory
-outdir = os.path.abspath(os.path.expanduser(args.output_directory))
+outdir = abs_path(args.output_directory)
 if not os.path.isdir(outdir):
     os.makedirs(outdir)
 os.chdir(outdir)
