@@ -98,7 +98,7 @@ Each of the below sections lists the valid options and a description of what the
    Specifically, to specify the specific run associated with the ``daily-cbc``
    event generator, you can give
 
-   .. code-block::
+   .. code-block:: ini
 
       [primary]
       trigger-generator = daily-cbc
