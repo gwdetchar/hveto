@@ -121,6 +121,7 @@ for d in [segdir, plotdir, trigdir]:
 # prepare html variables
 htmlv = {
     'title': '%s Hveto | %d-%d' % (ifo, start, end),
+    'config': None,
 }
 
 # get segments
@@ -133,16 +134,6 @@ livetime = int(abs(analysis.active))
 livetimepc = livetime / duration * 100.
 logger.info("Retrieved %d segments for %s with %ss (%.2f%%) livetime"
             % (len(analysis.active), aflag, livetime, livetimepc))
-
-# if no segments, print dummy HTML and stop here
-if livetime == 0:
-    message = ("No active segments found for analysis flag %r in interval "
-               "[%d, %d)" % (aflag, start, end))
-    logger.critical(message)
-    index = html.write_null_page(message, ifo, start, end, context='info',
-                                 **htmlv)
-    logger.info("HTML report written to %s" % index)
-    sys.exit(0)
 
 snrs = cp.getfloats('hveto', 'snr-thresholds')
 minsnr = min(snrs)
@@ -175,10 +166,6 @@ else:
     message = "No events found for %r in %d seconds of livetime" % (
        pchannel, livetime)
     logger.critical(message)
-    index = html.write_null_page(message, ifo, start, end, context='danger',
-                                 **htmlv)
-    logger.info("HTML report written to %s" % index)
-    sys.exit(0)
 
 # load unsafe channels list
 _unsafe = cp.get('safety', 'unsafe-channels')
@@ -279,6 +266,29 @@ else:
     with open(inifile, 'w') as f:
         cp.write(f)
     logger.info("Configuration recorded as %s" % inifile)
+htmlv['config'] = inifile
+
+# -- bail out early -----------------------------------------------------------
+# the bail out is done here so that we can at least generate the eventual
+# configuration file, mainly for HTML purposes
+
+# no segments
+if livetime == 0:
+    message = ("No active segments found for analysis flag %r in interval "
+               "[%d, %d)" % (aflag, start, end))
+    logger.critical(message)
+    index = html.write_null_page(ifo, start, end, message, context='info',
+                                 **htmlv)
+    logger.info("HTML report written to %s" % index)
+    sys.exit(0)
+
+# no primary triggers
+if primary.size == 0:
+    index = html.write_null_page(ifo, start, end, message, context='danger',
+                                 **htmlv)
+    logger.info("HTML report written to %s" % index)
+    sys.exit(0)
+
 
 # -- execute hveto analysis ---------------------------------------------------
 
@@ -534,9 +544,11 @@ if not rounds:
                "%s achieving significance of %.2f"
                % (winner.name, winner.significance))
     logger.critical(message)
+    message = message.replace(
+        winner.name, html.cis_link(winner.name, class_='alert-link'))
     message += '<br>[T<sub>win</sub>: %ss, SNR: %s]' % (
         winner.window, winner.snr)
-    index = html.write_null_page(message, ifo, start, end, context='warning',
+    index = html.write_null_page(ifo, start, end, message, context='warning',
                                  **htmlv)
     logger.info("HTML report written to %s" % index)
     sys.exit(0)
@@ -629,7 +641,7 @@ with open('summary-stats.json', 'w') as f:
     json.dump(json_, f, sort_keys=True)
 
 # -- write HTML and finish
-index = html.write_hveto_page(rounds, plots, ifo, start, end, **htmlv)
+index = html.write_hveto_page(ifo, start, end, rounds, plots,  **htmlv)
 logger.debug("HTML written to %s" % index)
 logger.debug("Analysis completed in %d seconds" % (time.time() - jobstart))
 logger.info("-- Hveto complete --")
