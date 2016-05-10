@@ -39,6 +39,8 @@ For a full list of command-line argument and options, run
 
    $ hveto --help
 
+For more details see :ref:`command-line`.
+
 Package documentation
 ---------------------
 
@@ -47,6 +49,7 @@ Please consult these pages for more details on using Hveto:
 .. toctree::
    :maxdepth: 1
 
+   command-line/index
    api/hveto.config
 
 Indices and tables
