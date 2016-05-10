@@ -125,7 +125,10 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
         for e in cache:
             ifo = e.observatory
             name = e.description
-            out.add('%s:%s' % (ifo, name.replace('_', '-', 1)))
+            channel = '%s:%s' % (ifo, name.replace('_', '-', 1))
+            if channel.lower().endswith(etg.lower()):
+                channel = channel[:-len(etg)]
+            out.add(channel.rstrip('_'))
     else:
         channels = glob.glob(os.path.join(
             '/home/detchar/triggers', '*', ifo, '*', str(gps)[:5]))
