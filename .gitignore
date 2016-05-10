@@ -1,5 +1,6 @@
 # unwanted file-types
 *.pyc
+/*.patch
 
 # build products
 /hveto/version.py
