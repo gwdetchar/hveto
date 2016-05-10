@@ -30,7 +30,7 @@ install:
 
 script:
   - pip install coveralls
-  - coverage run --omit="hveto/tests/*,hveto/_version.py" ./setup.py test
+  - coverage run --source=hveto --omit="hveto/tests/*,hveto/_version.py" ./setup.py test
 
 after_success:
   - coveralls
