@@ -119,6 +119,27 @@ re_delim = re.compile('[_-]')
 
 def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
     """Find all auxiliary channels processed by a given ETG
+
+    If `cache=None` is given (default), the channels are parsed from the
+    ETG archive under ``/home/detchar/triggers``. Otherwise, the channel
+    names are parsed from the files in the `cache`, assuming they follow
+    the T050017 file-naming convention.
+
+    Parameters
+    ----------
+    etg : `str`
+        name of the trigger generator
+    gps : `int`, optional
+        GPS reference time at which to find channels
+    ifo : `str`, optional
+        interferometer prefix for which to find channels
+    cache : `~glue.lal.Cache`, optional
+        `Cache` of files from which to parse channels
+
+    Returns
+    -------
+    channels : `list` of `str`
+        the names of all available auxiliary channels
     """
     out = set()
     if cache is not None:
