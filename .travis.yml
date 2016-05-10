@@ -6,7 +6,7 @@ addons:
       - gfortran  # scipy
       - libblas-dev  # scipy
       - liblapack-dev  # scipy
-      - python-m2crypto  # glue
+      - swig  # m2crypto
 
 matrix:
   include:
@@ -31,6 +31,7 @@ install:
 script:
   - pip install coveralls
   - coverage run --source=hveto --omit="hveto/tests/*,hveto/_version.py" ./setup.py test
+  - coverage run --append --source=hveto --omit="hveto/tests/*,hveto/_version.py" `which hveto` --help
 
 after_success:
   - coveralls
