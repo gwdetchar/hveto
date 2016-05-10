@@ -98,11 +98,13 @@ setup(name=DISTNAME,
       setup_requires=setup_requires,
       install_requires=install_requires,
       requires=requires,
+      tests_require=tests_require,
       extras_require=extras_require,
       dependency_links=[
           'http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz',
           'http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz',
       ],
+      test_suite='hveto.tests',
       use_2to3=True,
       classifiers=[
           'Programming Language :: Python',

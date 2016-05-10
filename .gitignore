@@ -11,3 +11,7 @@
 # documentation products
 /docs/_build/
 /docs/api/
+
+# test products
+/.cache/
+/.coverage
