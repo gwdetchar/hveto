@@ -20,7 +20,6 @@
 """
 
 import os.path
-import unittest
 import tempfile
 import shutil
 import time
@@ -28,6 +27,8 @@ import datetime
 from getpass import getuser
 
 from hveto import html
+
+from common import unittest
 
 HTML_INIT = """<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>
 <html lang="en">
