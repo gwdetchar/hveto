@@ -6,7 +6,7 @@ addons:
       - gfortran  # scipy
       - libblas-dev  # scipy
       - liblapack-dev  # scipy
-      - python-m2crypto  # glue
+      - swig  # m2crypto
 
 matrix:
   include:
