@@ -37,6 +37,8 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
     'numpydoc',
+    'sphinxcontrib.programoutput',
+    'sphinxcontrib.epydoc',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -294,6 +296,7 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
+# -- Extensions -----------------------------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
@@ -302,4 +305,9 @@ intersphinx_mapping = {
     'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
     'matplotlib': ('http://matplotlib.sourceforge.net/', None),
     'gwpy': ('http://gwpy.github.io/docs/latest/', None),
+}
+
+# Epydoc extension config for GLUE
+epydoc_mapping = {
+    'http://software.ligo.org/docs/glue/': [r'glue(\.|$)'],
 }
