@@ -79,8 +79,15 @@ parser.add_argument('-j', '--nproc', type=int, default=1,
                     help='number of cores to use for multiprocessing, '
                          'default: %(default)s')
 parser.add_argument('-p', '--primary-cache', action='append', default=[],
-                    type=os.path.expanduser,
+                    type=abs_path,
                     help='path for cache containing primary channel files')
+parser.add_argument('-a', '--auxiliary-cache', action='append', default=[],
+                    type=abs_path,
+                    help='path for cache containing auxiliary channel files, '
+                         'files contained must be T050017-compliant with the '
+                         'channel name as the leading name parts, e.g. '
+                         '\'L1-GDS_CALIB_STRAIN_<tag>-<start>-<duration>.'
+                         '<ext>\' for L1:GDS-CALIB_STRAIN triggers')
 
 pout = parser.add_argument_group('Output options')
 pout.add_argument('-o', '--output-directory', default=os.curdir,
@@ -185,13 +192,19 @@ unsafe.add(pchannel)
 cp.set('safety', 'unsafe-channels', '\n'.join(sorted(unsafe)))
 logger.debug("Read list of %d unsafe channels" % len(unsafe))
 
+if args.auxiliary_cache:
+    cache = Cache.fromfilenames(args.auxiliary_cache)
+else:
+    cache = None
+
 # load auxiliary triggers
 auxetg = cp.get('auxiliary', 'trigger-generator')
 auxfreq = cp.getfloats('auxiliary', 'frequency-range')
 try:
     auxchannels = cp.get('auxiliary', 'channels').strip('\n').split('\n')
 except config.configparser.NoOptionError:
-    auxchannels = find_auxiliary_channels(auxetg, start, ifo=args.ifo)
+    auxchannels = find_auxiliary_channels(auxetg, start, ifo=args.ifo,
+                                          cache=cache)
 # remove duplicates
 auxchannels = sorted(set(auxchannels))
 logger.debug("Read list of %d auxiliary channels" % len(auxchannels))
@@ -213,10 +226,16 @@ logger.info("Reading triggers for aux channels...")
 counter = multiprocessing.Value('i', 0)
 
 def _get_aux_triggers(channel):
+    if cache is None:
+        auxcache = None
+    else:
+        ifo, name = channel.split(':')
+        desc = name.replace('-', '_')
+        auxcache = cache.sieve(ifos=ifo, description='%s*' % desc)
     # get triggers
     try:
         trigs = get_triggers(channel, auxetg, analysis.active, snr=minsnr,
-                             frange=auxfreq)
+                             frange=auxfreq, cache=auxcache)
     # catch error and continue
     except ValueError as e:
         warnings.warn('%s: %s' % (type(e).__name__, str(e)))
