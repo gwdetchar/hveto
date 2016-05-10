@@ -128,7 +128,7 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
             out.add('%s:%s' % (ifo, name.replace('_', '-', 1)))
     else:
         channels = glob.glob(os.path.join(
-            trigfind.TRIGFIND_BASE_PATH, '*', ifo, '*', str(gps)[:5]))
+            '/home/detchar/triggers', '*', ifo, '*', str(gps)[:5]))
         stub = '_%s' % etg.lower()
         for path in channels:
             path = os.path.split(path)[0]
