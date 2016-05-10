@@ -26,9 +26,13 @@ before_install:
 install:
   - pip install `grep "/glue-" requirements.txt`  # install glue first
   - pip install ${PRE} -r requirements.txt
+  - pip install .
 
 script:
-  - pip install .
+  - coverage run --omit="hveto/tests/*,hveto/_version.py" -m setup.py test
+
+after_success:
+  - coveralls
 
 cache:
   apt: true
