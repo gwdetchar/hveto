@@ -22,10 +22,9 @@ matrix:
 
 before_install:
   - pip install -q --upgrade pip
+  - pip install ${PRE} -r requirements.txt
 
 install:
-  - pip install `grep "/glue-" requirements.txt`  # install glue first
-  - pip install ${PRE} -r requirements.txt
   - pip install .
 
 script:
