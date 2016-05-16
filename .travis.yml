@@ -28,7 +28,7 @@ install:
   - pip install .
 
 script:
-  - pip install coveralls
+  - pip install ${PRE} unittest2 coveralls "pytest>=2.8"
   - coverage run --source=hveto --omit="hveto/tests/*,hveto/_version.py" ./setup.py test
   - coverage run --append --source=hveto --omit="hveto/tests/*,hveto/_version.py" `which hveto` --help
 
