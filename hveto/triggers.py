@@ -22,6 +22,7 @@
 import glob
 import os.path
 import re
+import warnings
 
 import numpy
 from numpy.lib import recfunctions
@@ -68,8 +69,14 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     if cache is None:
         cache = Cache()
         for start, end in segments:
-            cache.extend(trigfind.find_trigger_urls(channel, etg, start, end,
-                                                    **kwargs))
+            try:
+                cache.extend(trigfind.find_trigger_urls(channel, etg, start,
+                                                        end, **kwargs))
+            except ValueError as e:
+                if str(e).lower().startswith('no channel-level directory'):
+                    warnings.warn(str(e))
+                else:
+                    raise
 
     # read cache
     trigs = lsctables.New(Table, columns=columns)
