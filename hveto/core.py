@@ -31,6 +31,9 @@ from gwpy.segments import (SegmentList, Segment)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
+LOG_10 = log(10)
+LOG_EXP_1 = log10(exp(1))
+
 
 # -- define round structure --------------------------------------------------
 
@@ -94,7 +97,7 @@ def find_max_significance(primary, auxiliary, channel,
     for snr in snrs:
         b = auxiliary[auxiliary['snr'] >= snr]
         for dt in windows:
-            _, sig = hveto_significance(
+            _, sig = coinc_significance(
                primary, b['time'], dt=dt, livetime=livetime)
             if sig > winner.significance:
                 winner.significance = sig
@@ -122,7 +125,7 @@ class HvetoWinner(object):
                             for t in times])
 
 
-def hveto_significance(a, b, dt, livetime):
+def coinc_significance(a, b, dt, livetime):
     """Calculate the significance of coincidences between two time arrays
 
     Parameters
@@ -155,12 +158,25 @@ def hveto_significance(a, b, dt, livetime):
     except ZeroDivisionError:
         prob = 0
     mu = prob * b.size
+    return coincs, significance(n, mu)
+
+
+def significance(n, mu):
+    """Calculate the significance of `n` coincidences, when `mu` were expected
+
+    Parameters
+    ----------
+    n : `int`
+        the number of coincidences found
+    mu : `float`
+        the number of coincidences expected from a Poisson process
+    """
     g = gammainc(n, mu)
     if g == 0:
-        sig = -n * log10(mu) + log10(exp(1)) + gammaln(n+1) / log(10)
+        sig = -n * log10(mu) + mu * LOG_EXP_1 + gammaln(n+1) / LOG_10
     else:
         sig = -log(g, 10)
-    return coincs, sig
+    return sig
 
 
 def find_coincidences(a, b, dt=1):
