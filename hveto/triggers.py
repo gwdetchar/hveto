@@ -56,7 +56,11 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     """Get triggers for the given channel
     """
     # get table from etg
-    Table = TABLE[etg.lower()]
+    try:
+        Table = TABLE[etg.lower()]
+    except KeyError as e:
+        e.args = ('Unknown ETG %r, cannot map to LIGO_LW Table class' % etg,)
+        raise
     tablename = strip_table_name(Table.tableName)
     # get default columns for this table
     if columns is None:
