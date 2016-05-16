@@ -150,29 +150,25 @@ windows = cp.getfloats('hveto', 'time-windows')
 segments = DataQualityDict()
 segments[analysis.name] = analysis
 
-# -- load triggers ------------------------------------------------------------
+# -- load channels ------------------------------------------------------------
 
-# read primary cache
-if args.primary_cache:
-    cache = Cache.fromfilenames(args.primary_cache)
-else:
-    cache = None
-
-# load primary triggers
+# get primary channel name
 pchannel = cp.get('primary', 'channel')
-petg = cp.get('primary', 'trigger-generator')
-psnr = cp.getfloat('primary', 'snr-threshold')
-pfreq = cp.getfloats('primary', 'frequency-range')
-ptrigfind = dict((key.split('-', 1)[1], val) for (key, val) in
-                 cp.items('primary') if key.startswith('trigfind-'))
-primary = get_triggers(pchannel, petg, analysis.active, snr=psnr, frange=pfreq,
-                       cache=cache, **ptrigfind)
-if len(primary):
-    logger.info("Read %d events for %s" % (len(primary), pchannel))
+
+# read auxiliary cache
+if args.auxiliary_cache:
+    acache = Cache.fromfilenames(args.auxiliary_cache)
 else:
-    message = "No events found for %r in %d seconds of livetime" % (
-       pchannel, livetime)
-    logger.critical(message)
+    acache = None
+
+# load auxiliary channels
+auxetg = cp.get('auxiliary', 'trigger-generator')
+auxfreq = cp.getfloats('auxiliary', 'frequency-range')
+try:
+    auxchannels = cp.get('auxiliary', 'channels').strip('\n').split('\n')
+except config.configparser.NoOptionError:
+    auxchannels = find_auxiliary_channels(auxetg, start, ifo=args.ifo,
+                                          cache=acache)
 
 # load unsafe channels list
 _unsafe = cp.get('safety', 'unsafe-channels')
@@ -192,19 +188,6 @@ unsafe.add(pchannel)
 cp.set('safety', 'unsafe-channels', '\n'.join(sorted(unsafe)))
 logger.debug("Read list of %d unsafe channels" % len(unsafe))
 
-if args.auxiliary_cache:
-    cache = Cache.fromfilenames(args.auxiliary_cache)
-else:
-    cache = None
-
-# load auxiliary triggers
-auxetg = cp.get('auxiliary', 'trigger-generator')
-auxfreq = cp.getfloats('auxiliary', 'frequency-range')
-try:
-    auxchannels = cp.get('auxiliary', 'channels').strip('\n').split('\n')
-except config.configparser.NoOptionError:
-    auxchannels = find_auxiliary_channels(auxetg, start, ifo=args.ifo,
-                                          cache=cache)
 # remove duplicates
 auxchannels = sorted(set(auxchannels))
 logger.debug("Read list of %d auxiliary channels" % len(auxchannels))
@@ -218,20 +201,77 @@ for i in xrange(len(auxchannels) -1, -1, -1):
         auxchannels.pop(i)
         nunsafe += 1
 logger.debug("%d auxiliary channels identified as unsafe" % nunsafe)
-
 naux = len(auxchannels)
 logger.info("Identified %d auxiliary channels to process" % naux)
+
+# record INI file in output HTML directory
+inifile = '%s-HVETO_CONFIGURATION-%d-%d.ini' % (ifo, start, duration)
+if os.path.isfile(inifile) and any(
+        os.path.samefile(inifile, x) for x in args.config_file):
+    logger.debug("Cannot write INI file to %s, file was given as input")
+else:
+    with open(inifile, 'w') as f:
+        cp.write(f)
+    logger.info("Configuration recorded as %s" % inifile)
+htmlv['config'] = inifile
+
+# -- load primary triggers ----------------------------------------------------
+
+# read primary cache
+if args.primary_cache:
+    pcache = Cache.fromfilenames(args.primary_cache)
+else:
+    pcache = None
+
+# load primary triggers
+petg = cp.get('primary', 'trigger-generator')
+psnr = cp.getfloat('primary', 'snr-threshold')
+pfreq = cp.getfloats('primary', 'frequency-range')
+ptrigfind = dict((key.split('-', 1)[1], val) for (key, val) in
+                 cp.items('primary') if key.startswith('trigfind-'))
+primary = get_triggers(pchannel, petg, analysis.active, snr=psnr, frange=pfreq,
+                       cache=pcache, **ptrigfind)
+
+if len(primary):
+    logger.info("Read %d events for %s" % (len(primary), pchannel))
+else:
+    message = "No events found for %r in %d seconds of livetime" % (
+       pchannel, livetime)
+    logger.critical(message)
+
+# -- bail out early -----------------------------------------------------------
+# the bail out is done here so that we can at least generate the eventual
+# configuration file, mainly for HTML purposes
+
+# no segments
+if livetime == 0:
+    message = ("No active segments found for analysis flag %r in interval "
+               "[%d, %d)" % (aflag, start, end))
+    logger.critical(message)
+    index = html.write_null_page(ifo, start, end, message, context='info',
+                                 **htmlv)
+    logger.info("HTML report written to %s" % index)
+    sys.exit(0)
+
+# no primary triggers
+if primary.size == 0:
+    index = html.write_null_page(ifo, start, end, message, context='danger',
+                                 **htmlv)
+    logger.info("HTML report written to %s" % index)
+    sys.exit(0)
+
+# -- load auxiliary triggers --------------------------------------------------
 
 logger.info("Reading triggers for aux channels...")
 counter = multiprocessing.Value('i', 0)
 
 def _get_aux_triggers(channel):
-    if cache is None:
+    if acache is None:
         auxcache = None
     else:
         ifo, name = channel.split(':')
         desc = name.replace('-', '_')
-        auxcache = cache.sieve(ifos=ifo, description='%s*' % desc)
+        auxcache = acache.sieve(ifos=ifo, description='%s*' % desc)
     # get triggers
     try:
         trigs = get_triggers(channel, auxetg, analysis.active, snr=minsnr,
@@ -275,39 +315,6 @@ with open(chanfile, 'w') as f:
     for chan in auxchannels:
         print(chan, file=f)
 logger.info("Recorded list of valid auxiliary channels in %s" % chanfile)
-cp.set('auxiliary', 'channels', '\n\t%s' % '\n\t'.join(auxchannels))
-
-inifile = '%s-HVETO_CONFIGURATION-%d-%d.ini' % (ifo, start, duration)
-if os.path.isfile(inifile) and any(
-        os.path.samefile(inifile, x) for x in args.config_file):
-    logger.debug("Cannot write INI file to %s, file was given as input")
-else:
-    with open(inifile, 'w') as f:
-        cp.write(f)
-    logger.info("Configuration recorded as %s" % inifile)
-htmlv['config'] = inifile
-
-# -- bail out early -----------------------------------------------------------
-# the bail out is done here so that we can at least generate the eventual
-# configuration file, mainly for HTML purposes
-
-# no segments
-if livetime == 0:
-    message = ("No active segments found for analysis flag %r in interval "
-               "[%d, %d)" % (aflag, start, end))
-    logger.critical(message)
-    index = html.write_null_page(ifo, start, end, message, context='info',
-                                 **htmlv)
-    logger.info("HTML report written to %s" % index)
-    sys.exit(0)
-
-# no primary triggers
-if primary.size == 0:
-    index = html.write_null_page(ifo, start, end, message, context='danger',
-                                 **htmlv)
-    logger.info("HTML report written to %s" % index)
-    sys.exit(0)
-
 
 # -- execute hveto analysis ---------------------------------------------------
 

@@ -19,7 +19,13 @@
 """Tests for `hveto.triggers`
 """
 
+import pytest
+
+import numpy
+
 from glue.lal import Cache
+
+from gwpy.segments import (Segment, SegmentList)
 
 from hveto import triggers
 
@@ -39,3 +45,18 @@ class TriggersTestCase(unittest.TestCase):
         channels = triggers.find_auxiliary_channels('omicron', None, None,
                                                     cache=cache)
         self.assertListEqual(channels, sorted(AUX_FILES.keys()))
+
+    def test_get_triggers(self):
+        # test that trigfind raises a warning if the channel-level directory
+        # doesn't exist
+        with pytest.warns(UserWarning):
+            out = triggers.get_triggers('X1:DOES_NOT_EXIST', 'omicron',
+                                        SegmentList([Segment(0, 100)]))
+        # check output type and columns
+        self.assertIsInstance(out, numpy.ndarray)
+        for col in ['time', 'frequency', 'snr']:
+            self.assertIn(col, out.dtype.fields)
+        # test that unknown ETG raises KeyError
+        self.assertRaises(KeyError, triggers.get_triggers,
+                          'X1:DOES_NOT_EXIST', 'fake-etg',
+                          SegmentList([Segment(0, 100)]))

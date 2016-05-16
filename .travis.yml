@@ -22,14 +22,13 @@ matrix:
 
 before_install:
   - pip install -q --upgrade pip
+  - pip install ${PRE} -r requirements.txt
 
 install:
-  - pip install `grep "/glue-" requirements.txt`  # install glue first
-  - pip install ${PRE} -r requirements.txt
   - pip install .
 
 script:
-  - pip install coveralls
+  - pip install ${PRE} unittest2 coveralls "pytest>=2.8"
   - coverage run --source=hveto --omit="hveto/tests/*,hveto/_version.py" ./setup.py test
   - coverage run --append --source=hveto --omit="hveto/tests/*,hveto/_version.py" `which hveto` --help
 
