@@ -34,6 +34,7 @@ import datetime
 import sys
 from socket import getfqdn
 from getpass import getuser
+from math import ceil
 
 try:
     import configparser
@@ -341,26 +342,34 @@ while True:
     logger.info("-- Processing round %d --" % round.n)
 
     # calculate significances for this round
-    def _find_max_significance(channel):
-        return core.find_max_significance(primary['time'], auxiliary[channel],
-                                          channel, snrs, windows,
-                                          round.livetime)
+    def _find_max_significance(channels):
+        aux = dict((c, auxiliary[c]) for c in channels)
+        return core.find_max_significance(primary, aux, pchannel,
+                                          snrs, windows, round.livetime)
     if args.nproc > 1:  # multiprocessing
-        pool = multiprocessing.Pool(processes=args.nproc)
-        results = pool.map(_find_max_significance, auxiliary.keys())
+        # separate channel list into chunks and process each chunk
+        allchans = auxiliary.keys()
+        pool = multiprocessing.Pool(processes=min(args.nproc, len(allchans)))
+        n = int(ceil(len(allchans) / args.nproc))
+        chunks = [allchans[i:i+n] for i in range(0, len(allchans), n)]
+        results = pool.map(_find_max_significance, chunks)
         pool.close()
+        winners, sigsets = zip(*results)
+        # find winner of chunk winners
+        winner = sorted(winners, key=lambda w: w.significance)[-1]
+        # flatten sets of significances into one list
+        newsignificances = sigsets[0]
+        for subdict in sigsets[1:]:
+            newsignificances.update(subdict)
     else:  # single process
-        results = map(_find_max_significance, auxiliary.keys())
+        winner, newsignificances = core.find_max_significance(
+            primary, auxiliary, pchannel, snrs, windows, round.livetime)
 
-    # find winner
-    winner = sorted(results, key=lambda x: x.significance)[-1]
     logger.info("Round %d winner: %s" % (round.n, winner.name))
 
     # plot significance drop here for the last round
     #   only now do we actually have the new data to calculate significance
     #   drop
-    newsignificances = dict([(c, results[i].significance)
-                            for i, c in enumerate(auxiliary)])
     if round.n > 1:
         png = pngname % 'SIG_DROP'
         plot.significance_drop(png, oldsignificances, newsignificances,
