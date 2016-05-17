@@ -214,12 +214,16 @@ def veto(table, segmentlist):
     """Remove events from a table based on a segmentlist
     """
     times = table['time']
-    def _not_vetoed(t):
-        return t not in segmentlist
-    try:
-        keep = numpy.vectorize(_not_vetoed)(table['time'])
-    except IndexError:  # empty table
-        return table, table
+    a = segmentlist[0][0]
+    b = segmentlist[-1][1]
+    keep = numpy.ones(times.shape[0], dtype=bool)
+    for i, t in enumerate(times):
+        if t < a:
+            continue
+        if t > b:
+            break
+        if t in segmentlist:
+            keep[i] = False
     return table[keep], table[~keep]
 
 
