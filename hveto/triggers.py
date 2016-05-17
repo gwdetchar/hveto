@@ -95,25 +95,38 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
 
     # format table as numpy.recarray
     recarray = trigs.to_recarray(columns=columns)
+    addfields = {}
+    dropfields = []
 
-    # rename columns for convenience later
-    if tablename.endswith('_inspiral'):
-        tcols = ['end_time', 'end_time_ns']
-    elif tablename.endswith('_burst'):
-        tcols = ['peak_time', 'peak_time_ns']
+    # rename frequency column
+    if tablename.endswith('_burst'):
         recarray = recfunctions.rename_fields(
             recarray, {'peak_frequency': 'frequency'})
         idx = columns.index('peak_frequency')
         columns.pop(idx)
         columns.insert(idx, 'frequency')
+
+    # map time to its own column
+    if tablename.endswith('_inspiral'):
+        tcols = ['end_time', 'end_time_ns']
+    elif tablename.endswith('_burst'):
+        tcols = ['peak_time', 'peak_time_ns']
     else:
         tcols = None
     if tcols:
         times = recarray[tcols[0]] + recarray[tcols[1]] * 1e-9
-        recarray = recfunctions.rec_append_fields(
-            recarray, 'time', times, times.dtype)
-        recarray = recfunctions.rec_drop_fields(recarray, tcols)
+        addfields['time'] = times
+        dropfields.extend(tcols)
         columns = ['time'] + columns[2:]
+
+    # add and remove fields as required
+    if addfields:
+        names, data = zip(*addfields.items())
+        recarray = recfunctions.rec_append_fields(recarray, names, data)
+        recarray = recfunctions.rec_drop_fields(recarray, dropfields)
+
+    # sort by time
+    if 'time' in recarray.dtype.fields:
         recarray.sort(order='time')
 
     # filter
