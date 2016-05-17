@@ -463,7 +463,11 @@ cum. deadtime :   %s""" % (
             ['WINNER', 'VETOED', 'RAW'],
             [winner.events, vetoed, primary]):
         f = trigfile % tag
-        write_ascii(f, arr)
+        if 'frequency' in arr.dtype.fields:
+            columns = ['time', 'frequency', 'snr']
+        else:
+            columns = ['time', 'mchirp', 'snr']
+        write_ascii(f, arr, columns=columns)
         logger.debug("Round %d %s events written to %s"
                      % (round.n, tag.lower(), f))
         round.files[tag] = f

@@ -193,7 +193,7 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
     return sorted(out)
 
 
-def write_ascii(outfile, recarray, fmt='%s', **kwargs):
+def write_ascii(outfile, recarray, fmt='%s', columns=None, **kwargs):
     """Write a `numpy.recarray` to file as ASCII
 
     Parameters
@@ -210,6 +210,8 @@ def write_ascii(outfile, recarray, fmt='%s', **kwargs):
     numpy.savetxt
         for details on the writer, including the `fmt` keyword argument
     """
+    if columns:
+        recarray = recarray[columns]
     kwargs.setdefault('header', ' '.join(recarray.dtype.names))
     numpy.savetxt(outfile, recarray, fmt=fmt, **kwargs)
     return outfile
