@@ -50,6 +50,7 @@ from gwpy.time import to_gps
 from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
 from hveto import (__version__, log, config, core, plot, html)
+from hveto.segments import write_ascii as write_ascii_segments
 from hveto.triggers import (get_triggers, find_auxiliary_channels, write_ascii)
 
 IFO = os.getenv('IFO')
@@ -341,6 +342,12 @@ round.segments = analysis.active
 while True:
     logger.info("-- Processing round %d --" % round.n)
 
+    # write segments for this round
+    segfile = os.path.join(
+        segdir, '%s-HVETO_ANALYSIS_SEGS_ROUND_%d-%d-%d.txt'
+                % (ifo, round.n, start, duration))
+    write_ascii_segments(segfile, round.segments)
+
     # calculate significances for this round
     def _find_max_significance(channels):
         aux = dict((c, auxiliary[c]) for c in channels)
@@ -449,11 +456,11 @@ cum. deadtime :   %s""" % (
     # write segments
     segfile = os.path.join(segdir, '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.txt' % (
         ifo, round.n, start, duration))
-    round.vetoes.write(segfile, coltype=float)
+    write_ascii_segments(segfile, round.vetoes)
     logger.debug("Round %d vetoes written to %s" % (round.n, segfile))
     segxml = os.path.join(segdir, '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.xml' % (
         ifo, round.n, start, duration))
-    flag.write(segxml, coltype=float)
+    flag.write(segxml)
     logger.debug("Round %d vetoes written to %s" % (round.n, segxml))
     round.files['VETO_SEGS'] = (segfile, segxml)
     # write triggers
