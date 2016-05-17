@@ -231,7 +231,15 @@ def count_used(table, segmentlist):
     """Calculate the number of segments overlapping a set of times
     """
     use = 0
+    times = table['time']
+    segmentlist = sorted(segmentlist, key=lambda x: x[0])
+    i = 0
     for seg in segmentlist:
-        if veto(table, type(segmentlist)([seg]))[1].size:
-            use += 1
+        for j, t in enumerate(times[i:]):
+            if t < seg[0]:
+                continue
+            if t < seg[1]:
+                use += 1
+            i += j
+            break
     return use
