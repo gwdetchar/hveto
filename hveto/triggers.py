@@ -68,6 +68,8 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             if issubclass(Table, key):
                 columns = COLUMNS[key][:]
                 break
+    if 'channel' in columns:
+        columns.pop('channel')
 
     # find triggers
     if cache is None:
@@ -97,6 +99,10 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     recarray = trigs.to_recarray(columns=columns)
     addfields = {}
     dropfields = []
+
+    # append channel to all events
+    columns.append('channel')
+    addfields['channel'] = numpy.repeat(channel, recarray.shape[0])
 
     # rename frequency column
     if tablename.endswith('_burst'):
