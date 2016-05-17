@@ -371,8 +371,8 @@ while True:
 
     # break out of the loop if the significance is below the stopping point
     if winner.significance < minsig:
-        logger.info("    Maximum signifiance below stopping point")
-        logger.debug("        (%.2f < %.2f)" % (winner.significance, minsig))
+        logger.info("Maximum signifiance below stopping point")
+        logger.debug("    (%.2f < %.2f)" % (winner.significance, minsig))
         logger.info("-- Rounds complete! --")
         break
 
@@ -389,6 +389,7 @@ while True:
         description="winner=%s, window=%s, snr=%s" % (
             winner.name, winner.window, winner.snr))
     segments[flag.name] = flag
+    logger.debug("Generated veto segments for round %d" % round.n)
 
     # link events before veto for plotting
     before = primary
@@ -398,7 +399,9 @@ while True:
     primary, vetoed = core.veto(primary, round.vetoes)
     pevents.append(primary)
     pvetoed.append(vetoed)
+    logger.debug("Applied vetoes to primary")
     use = core.count_used(vetoed, round.vetoes)
+    logger.debug("Calculated use percentage")
 
     # record results
     round.winner = winner
@@ -417,9 +420,10 @@ while True:
 
     for channel in auxiliary:
         auxiliary[channel], v = core.veto(auxiliary[channel], round.vetoes)
+    logger.debug("Applied vetoes to auxiliary channels")
 
     # log results
-    logger.info("""    Results for round %d
+    logger.info("""Results for round %d
 winner :          %s
 significance :    %s
 snr :             %s
