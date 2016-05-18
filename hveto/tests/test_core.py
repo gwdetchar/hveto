@@ -32,6 +32,6 @@ class HvetoRoundTestCase(unittest.TestCase):
 
 class CoreTestCase(unittest.TestCase):
     def test_significance(self):
-        self.assertEqual(core.significance(1, 1), 0.19920008462778135)
-        self.assertEqual(core.significance(100, 10), 62.26771967596927)
+        self.assertAlmostEqual(core.significance(1, 1), 0.19920008462778135)
+        self.assertAlmostEqual(core.significance(100, 10), 62.26771967596927)
         self.assertEqual(core.significance(1, 100), 0.0)
