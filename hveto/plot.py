@@ -141,7 +141,7 @@ def veto_scatter(
     _finalize_plot(plot, ax, outfile, **axargs)
 
 
-def _finalize_plot(plot, ax, outfile, bbox_inches=None, **axargs):
+def _finalize_plot(plot, ax, outfile, bbox_inches=None, close=True, **axargs):
     xlim = axargs.pop('xlim', None)
     ylim = axargs.pop('ylim', None)
     # set title and subtitle
@@ -170,7 +170,8 @@ def _finalize_plot(plot, ax, outfile, bbox_inches=None, **axargs):
         plot.add_colorbar(ax=ax, visible=False)
     # save and close
     plot.save(outfile, bbox_inches=bbox_inches)
-    plot.close()
+    if close:
+        plot.close()
 
 
 def significance_drop(outfile, old, new, **kwargs):
