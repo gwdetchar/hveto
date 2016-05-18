@@ -250,7 +250,7 @@ def significance(n, mu):
     if g == 0:
         sig = -n * log10(mu) + mu * LOG_EXP_1 + gammaln(n+1) / LOG_10
     else:
-        sig = -log(g, 10)
+        sig = -log10(g)
     return sig
 
 
