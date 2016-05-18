@@ -452,6 +452,7 @@ while True:
     logger.info("""Results for round %d
 winner :          %s
 significance :    %s
+mu :              %s
 snr :             %s
 dt :              %s
 use_percentage :  %s
@@ -459,9 +460,10 @@ efficiency :      %s
 deadtime :        %s
 cum. efficiency : %s
 cum. deadtime :   %s""" % (
-        round.n, round.winner.name, round.winner.significance, round.winner.snr,
-        round.winner.window, round.use_percentage, round.efficiency,
-        round.deadtime, round.cum_efficiency, round.cum_deadtime))
+        round.n, round.winner.name, round.winner.significance, round.winner.mu,
+        round.winner.snr, round.winner.window, round.use_percentage,
+        round.efficiency, round.deadtime, round.cum_efficiency,
+        round.cum_deadtime))
 
     # write segments
     segfile = os.path.join(segdir, '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.txt' % (

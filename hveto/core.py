@@ -176,15 +176,16 @@ def find_max_significance(primary, auxiliary, channel, snrs, windows, livetime):
                 winner.snr = snr
                 winner.window = dt
                 winner.significance = sig
+                winner.mu = mu
     return winner, sigs
 
 
 class HvetoWinner(object):
     __slots__ = ['name', 'significance', 'snr', 'window', 'segments',
-                 'events', 'ncoinc']
+                 'events', 'ncoinc', 'mu']
 
     def __init__(self, name=None, significance=None, snr=None,
-                 window=None, segments=None, events=None, ncoinc=0):
+                 window=None, segments=None, events=None, ncoinc=0, mu=None):
         super(HvetoWinner, self).__init__()
         self.name = name
         self.significance = significance
@@ -192,6 +193,7 @@ class HvetoWinner(object):
         self.window = window
         self.segments = segments
         self.events = events
+        self.mu = mu
 
     def get_segments(self, times):
         return SegmentList([Segment(t - self.window/2., t + self.window/2.)
