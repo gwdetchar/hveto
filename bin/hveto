@@ -388,7 +388,7 @@ while True:
     #   only now do we actually have the new data to calculate significance
     #   drop
     if round.n > 1:
-        png = pngname % 'SIG_DROP'
+        png = (pngname % 'SIG_DROP').replace('.png', '.svg')
         plot.significance_drop(png, oldsignificances, newsignificances,
                                title=title, subtitle=subtitle)
         logger.debug("Figure written to %s" % png)
