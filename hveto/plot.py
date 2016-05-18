@@ -277,6 +277,8 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
             x = l.get_xdata()[1]
             if x < xthresh:
                 ha = 'left'
+            elif x > (len(channels) - xthresh):
+                ha ='right'
             else:
                 ha = 'center'
             y = l.get_ydata()[0] + yoffset
