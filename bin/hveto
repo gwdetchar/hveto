@@ -263,6 +263,15 @@ if primary.size == 0:
     logger.info("HTML report written to %s" % index)
     sys.exit(0)
 
+# otherwise write all primary triggers to ASCII
+trigfile = os.path.join(
+    trigdir, '%s-HVETO_RAW_TRIGS_ROUND_0-%d-%d.txt' % (ifo, start, duration))
+if 'frequency' in primary.dtype.fields:
+    columns = ['time', 'frequency', 'snr']
+else:
+    columns = ['time', 'mchirp', 'snr']
+write_ascii_triggers(trigfile, primary, columns=columns, fmt='%f')
+
 # -- load auxiliary triggers --------------------------------------------------
 
 logger.info("Reading triggers for aux channels...")
