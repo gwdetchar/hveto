@@ -174,14 +174,19 @@ def _finalize_plot(plot, ax, outfile, bbox_inches=None, close=True, **axargs):
         plot.close()
 
 
-def significance_drop(outfile, old, new, **kwargs):
+def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
     """Plot the signifiance drop for each channel
     """
-    plot = Plot(figsize=(24, 6))
-    ax = plot.gca()
-    plot.subplots_adjust(left=.05, right=.95, bottom=.4)
-
     channels = sorted(old.keys())
+    if show_channel_names is None:
+        show_channel_names = len(channels) <= 50
+
+    plot = Plot(figsize=(18, 6))
+    plot.subplots_adjust(left=.07, right=.93)
+    ax = plot.gca()
+    if show_channel_names:
+        plot.subplots_adjust(bottom=.4)
+
     for i, c in enumerate(channels):
         if old[c] > new[c]:
             color = 'dodgerblue'
@@ -190,16 +195,38 @@ def significance_drop(outfile, old, new, **kwargs):
         ax.plot([i, i], [old[c], new[c]], color=color, linestyle='-',
                 marker='o', markersize=10)
 
-    # set xticks to show channel names
     ax.set_xlim(-1, len(channels))
-    ax.set_xticks(range(len(channels)))
-    ax.set_xticklabels([c.replace('_','\_') for c in channels])
-    for i, t in enumerate(ax.get_xticklabels()):
-        t.set_rotation(270)
-        t.set_verticalalignment('top')
-        t.set_horizontalalignment('center')
-        t.set_fontsize(8)
-        t.set_usetex(False)
+    ax.set_ybound(lower=-1)
+
+    # set xticks to show channel names
+    if show_channel_names:
+        ax.set_xticks(range(len(channels)))
+        ax.set_xticklabels([c.replace('_','\_') for c in channels])
+        for i, t in enumerate(ax.get_xticklabels()):
+            t.set_rotation(270)
+            t.set_verticalalignment('top')
+            t.set_horizontalalignment('center')
+            t.set_fontsize(8)
+    # or just show systems of channels
+    else:
+        plot.canvas.draw()
+        systems = {}
+        for i, c in enumerate(channels):
+            sys = c.split(':', 1)[1].split('-')[0].split('_')[0]
+            try:
+                systems[sys][1] += 1
+            except KeyError:
+                systems[sys] = [i, 1]
+        systems = sorted(systems.items(), key=lambda x: x[1][0])
+        labels, counts = zip(*systems)
+        xticks, xmticks = zip(*[(a, a+b/2.) for (a, b) in counts])
+        # show ticks at the edge of each group
+        ax.set_xticks(xticks, minor=False)
+        ax.set_xticklabels([], minor=False)
+        # show label in the centre of each group
+        ax.set_xticks(xmticks, minor=True)
+        for t in ax.set_xticklabels(labels, minor=True):
+            t.set_rotation(270)
 
     kwargs.setdefault('ylabel', 'Significance')
     _finalize_plot(plot, ax, outfile, **kwargs)
