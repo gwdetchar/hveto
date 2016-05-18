@@ -426,8 +426,6 @@ while True:
     pevents.append(primary)
     pvetoed.append(vetoed)
     logger.debug("Applied vetoes to primary")
-    use = core.count_used(vetoed, round.vetoes)
-    logger.debug("Calculated use percentage")
 
     # record results
     round.winner = winner
@@ -444,6 +442,7 @@ while True:
         round.cum_efficiency = round.efficiency
         round.cum_deadtime = round.deadtime
 
+    # apply vetoes to auxiliary
     for channel in auxiliary:
         auxiliary[channel], v = core.veto(auxiliary[channel], round.vetoes)
     logger.debug("Applied vetoes to auxiliary channels")

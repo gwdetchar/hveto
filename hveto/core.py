@@ -303,21 +303,3 @@ def veto(table, segmentlist):
         if t in segmentlist:
             keep[i] = False
     return table[keep], table[~keep]
-
-
-def count_used(table, segmentlist):
-    """Calculate the number of segments overlapping a set of times
-    """
-    use = 0
-    times = table['time']
-    segmentlist = sorted(segmentlist, key=lambda x: x[0])
-    i = 0
-    for seg in segmentlist:
-        for j, t in enumerate(times[i:]):
-            if t < seg[0]:
-                continue
-            if t < seg[1]:
-                use += 1
-            i += j
-            break
-    return use
