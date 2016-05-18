@@ -187,8 +187,12 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
     if show_channel_names:
         plot.subplots_adjust(bottom=.4)
 
+    winner = sorted(old.items(), key=lambda x: x[1])[-1][0]
+
     for i, c in enumerate(channels):
-        if old[c] > new[c]:
+        if c == winner:
+            color = 'orange'
+        elif old[c] > new[c]:
             color = 'dodgerblue'
         else:
             color = 'red'
