@@ -21,7 +21,11 @@
 
 from __future__ import division
 
+import warnings
 from math import (log10, floor)
+from io import BytesIO
+
+from lxml import etree
 
 from matplotlib.colors import LogNorm
 
@@ -41,6 +45,32 @@ rcParams.update({
     'axes.labelpad': 2,
     'grid.color': 'gray',
 })
+
+SHOW_HIDE_JAVASCRIPT = """
+    <script type="text/ecmascript">
+    <![CDATA[
+
+    function init(evt) {
+        if ( window.svgDocument == null ) {
+            svgDocument = evt.target.ownerDocument;
+            }
+        }
+
+    function ShowTooltip(obj) {
+        var cur = obj.id.substr(obj.id.lastIndexOf('-')+1);
+
+        var tip = svgDocument.getElementById('tooltip-' + cur);
+        tip.setAttribute('visibility',"visible")
+        }
+
+    function HideTooltip(obj) {
+        var cur = obj.id.substr(obj.id.lastIndexOf('-')+1);
+        var tip = svgDocument.getElementById('tooltip-' + cur);
+        tip.setAttribute('visibility',"hidden")
+        }
+
+    ]]>
+    </script>"""
 
 
 def before_after_histogram(
@@ -197,7 +227,7 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
         else:
             color = 'red'
         ax.plot([i, i], [old[c], new[c]], color=color, linestyle='-',
-                marker='o', markersize=10)
+                marker='o', markersize=10, label=c, zorder=old[c])
 
     ax.set_xlim(-1, len(channels))
     ax.set_ybound(lower=-1)
@@ -233,7 +263,49 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
             t.set_rotation(270)
 
     kwargs.setdefault('ylabel', 'Significance')
-    _finalize_plot(plot, ax, outfile, **kwargs)
+
+    # create interactivity
+    if outfile.endswith('.svg'):
+        _finalize_plot(plot, ax, outfile.replace('.svg', '.png'),
+                       close=False, **kwargs)
+        tooltips = []
+        ylim = ax.get_ylim()
+        yoffset = (ylim[1] - ylim[0]) * 0.061
+        bbox = {'fc': 'w', 'ec': '.5', 'alpha': .9, 'boxstyle': 'round'}
+        xthresh = len(channels) / 10.
+        for i, l in enumerate(ax.lines):
+            x = l.get_xdata()[1]
+            if x < xthresh:
+                ha = 'left'
+            else:
+                ha = 'center'
+            y = l.get_ydata()[0] + yoffset
+            c = l.get_label()
+            tooltips.append(ax.annotate(c.replace('_', r'\_'), (x, y),
+                                        ha=ha, zorder=ylim[1], bbox=bbox))
+            l.set_gid('line-%d' % i)
+            tooltips[-1].set_gid('tooltip-%d' % i)
+
+        f = BytesIO()
+        plot.savefig(f, format='svg')
+        tree, xmlid = etree.XMLID(f.getvalue())
+        tree.set('onload', 'init(evt)')
+        for i in range(len(tooltips)):
+            try:
+                e = xmlid['tooltip-%d' % i]
+            except KeyError:
+                warnings.warn("Failed to recover tooltip %d" % i)
+                continue
+            e.set('visibility', 'hidden')
+        for i, l in enumerate(ax.lines):
+            e = xmlid['line-%d' % i]
+            e.set('onmouseover', 'ShowTooltip(this)')
+            e.set('onmouseout', 'HideTooltip(this)')
+        tree.insert(0, etree.XML(SHOW_HIDE_JAVASCRIPT))
+        etree.ElementTree(tree).write(outfile)
+        plot.close()
+    else:
+        _finalize_plot(plot, ax, outfile, **kwargs)
 
 
 def hveto_roc(outfile, rounds, figsize=[9, 6], **kwargs):
