@@ -407,7 +407,7 @@ while True:
         auxiliary[winner.name]['snr'] >= winner.snr]
     coincs = core.find_coincidences(allaux['time'], primary['time'],
                                     dt=winner.window)
-    winner.events = allaux[coincs]
+    winner.events = allaux
     round.vetoes = winner.get_segments(allaux['time'])
     flag = DataQualityFlag(
         '%s:HVT-ROUND_%d:1' % (ifo, round.n), active=round.vetoes,
@@ -432,7 +432,7 @@ while True:
     # record results
     round.winner = winner
     round.efficiency = (vetoed.size, primary.size + vetoed.size)
-    round.use_percentage = (winner.events.size, allaux.size)
+    round.use_percentage = (coincs.size, winner.events.size)
     if round.n > 1:
         round.cum_efficiency = (
             vetoed.size + rounds[-1].cum_efficiency[0],
