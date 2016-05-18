@@ -165,6 +165,8 @@ def find_max_significance(primary, auxiliary, channel, snrs, windows, livetime):
         for chan in cdict:
             mu = (primary.shape[0] * (auxiliary[chan]['snr'] >= snr).sum() *
                   dt / livetime)
+            # NOTE: coincs[p][chan] counts the number of primary channel
+            # triggers coincident with a 'chan' trigger
             try:
                 sig = significance(coincs[p][chan], mu)
             except KeyError:
