@@ -19,6 +19,8 @@
 """Segment utilities for hveto
 """
 
+from __future__ import print_function
+
 from functools import wraps
 
 from gwpy.segments import DataQualityFlag, Segment, SegmentList
@@ -40,3 +42,14 @@ def query(flag, start, end, url='https://segments.ligo.org'):
     """Query a segment database for active segments associated with a flag
     """
     return DataQualityFlag.query(flag, start, end, url=url)
+
+
+def write_ascii(outfile, segmentlist, ncol=4):
+    if ncol not in [2, 4]:
+        raise ValueError("Invalid number of columns: %r" % ncol)
+    with open(outfile, 'w') as f:
+        for i, seg in enumerate(segmentlist):
+            if ncol == 2:
+                print("%f %f" % seg, file=f)
+            else:
+                print("%d\t%f\t%f\t%f" % (i, seg[0], seg[1], abs(seg)), file=f)

@@ -34,6 +34,7 @@ import datetime
 import sys
 from socket import getfqdn
 from getpass import getuser
+from math import ceil
 
 try:
     import configparser
@@ -49,7 +50,9 @@ from gwpy.time import to_gps
 from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
 from hveto import (__version__, log, config, core, plot, html)
-from hveto.triggers import (get_triggers, find_auxiliary_channels, write_ascii)
+from hveto.segments import write_ascii as write_ascii_segments
+from hveto.triggers import (get_triggers, find_auxiliary_channels,
+                            write_ascii as write_ascii_triggers)
 
 IFO = os.getenv('IFO')
 
@@ -260,6 +263,15 @@ if primary.size == 0:
     logger.info("HTML report written to %s" % index)
     sys.exit(0)
 
+# otherwise write all primary triggers to ASCII
+trigfile = os.path.join(
+    trigdir, '%s-HVETO_RAW_TRIGS_ROUND_0-%d-%d.txt' % (ifo, start, duration))
+if 'frequency' in primary.dtype.fields:
+    columns = ['time', 'frequency', 'snr']
+else:
+    columns = ['time', 'mchirp', 'snr']
+write_ascii_triggers(trigfile, primary, columns=columns, fmt='%f')
+
 # -- load auxiliary triggers --------------------------------------------------
 
 logger.info("Reading triggers for aux channels...")
@@ -340,27 +352,41 @@ round.segments = analysis.active
 while True:
     logger.info("-- Processing round %d --" % round.n)
 
-    # calculate significances for this round
-    def _find_max_significance(channel):
-        return core.find_max_significance(primary['time'], auxiliary[channel],
-                                          channel, snrs, windows,
-                                          round.livetime)
-    if args.nproc > 1:  # multiprocessing
-        pool = multiprocessing.Pool(processes=args.nproc)
-        results = pool.map(_find_max_significance, auxiliary.keys())
-        pool.close()
-    else:  # single process
-        results = map(_find_max_significance, auxiliary.keys())
+    # write segments for this round
+    segfile = os.path.join(
+        segdir, '%s-HVETO_ANALYSIS_SEGS_ROUND_%d-%d-%d.txt'
+                % (ifo, round.n, start, duration))
+    write_ascii_segments(segfile, round.segments)
 
-    # find winner
-    winner = sorted(results, key=lambda x: x.significance)[-1]
+    # calculate significances for this round
+    def _find_max_significance(channels):
+        aux = dict((c, auxiliary[c]) for c in channels)
+        return core.find_max_significance(primary, aux, pchannel,
+                                          snrs, windows, round.livetime)
+    if args.nproc > 1:  # multiprocessing
+        # separate channel list into chunks and process each chunk
+        allchans = auxiliary.keys()
+        pool = multiprocessing.Pool(processes=min(args.nproc, len(allchans)))
+        n = int(ceil(len(allchans) / args.nproc))
+        chunks = [allchans[i:i+n] for i in range(0, len(allchans), n)]
+        results = pool.map(_find_max_significance, chunks)
+        pool.close()
+        winners, sigsets = zip(*results)
+        # find winner of chunk winners
+        winner = sorted(winners, key=lambda w: w.significance)[-1]
+        # flatten sets of significances into one list
+        newsignificances = sigsets[0]
+        for subdict in sigsets[1:]:
+            newsignificances.update(subdict)
+    else:  # single process
+        winner, newsignificances = core.find_max_significance(
+            primary, auxiliary, pchannel, snrs, windows, round.livetime)
+
     logger.info("Round %d winner: %s" % (round.n, winner.name))
 
     # plot significance drop here for the last round
     #   only now do we actually have the new data to calculate significance
     #   drop
-    newsignificances = dict([(c, results[i].significance)
-                            for i, c in enumerate(auxiliary)])
     if round.n > 1:
         png = pngname % 'SIG_DROP'
         plot.significance_drop(png, oldsignificances, newsignificances,
@@ -371,8 +397,8 @@ while True:
 
     # break out of the loop if the significance is below the stopping point
     if winner.significance < minsig:
-        logger.info("    Maximum signifiance below stopping point")
-        logger.debug("        (%.2f < %.2f)" % (winner.significance, minsig))
+        logger.info("Maximum signifiance below stopping point")
+        logger.debug("    (%.2f < %.2f)" % (winner.significance, minsig))
         logger.info("-- Rounds complete! --")
         break
 
@@ -381,7 +407,7 @@ while True:
         auxiliary[winner.name]['snr'] >= winner.snr]
     coincs = core.find_coincidences(allaux['time'], primary['time'],
                                     dt=winner.window)
-    winner.events = allaux[coincs]
+    winner.events = allaux
     round.vetoes = winner.get_segments(allaux['time'])
     flag = DataQualityFlag(
         '%s:HVT-ROUND_%d:1' % (ifo, round.n), active=round.vetoes,
@@ -389,6 +415,7 @@ while True:
         description="winner=%s, window=%s, snr=%s" % (
             winner.name, winner.window, winner.snr))
     segments[flag.name] = flag
+    logger.debug("Generated veto segments for round %d" % round.n)
 
     # link events before veto for plotting
     before = primary
@@ -398,12 +425,12 @@ while True:
     primary, vetoed = core.veto(primary, round.vetoes)
     pevents.append(primary)
     pvetoed.append(vetoed)
-    use = core.count_used(vetoed, round.vetoes)
+    logger.debug("Applied vetoes to primary")
 
     # record results
     round.winner = winner
     round.efficiency = (vetoed.size, primary.size + vetoed.size)
-    round.use_percentage = (winner.events.size, allaux.size)
+    round.use_percentage = (coincs.size, winner.events.size)
     if round.n > 1:
         round.cum_efficiency = (
             vetoed.size + rounds[-1].cum_efficiency[0],
@@ -415,13 +442,16 @@ while True:
         round.cum_efficiency = round.efficiency
         round.cum_deadtime = round.deadtime
 
+    # apply vetoes to auxiliary
     for channel in auxiliary:
         auxiliary[channel], v = core.veto(auxiliary[channel], round.vetoes)
+    logger.debug("Applied vetoes to auxiliary channels")
 
     # log results
-    logger.info("""    Results for round %d
+    logger.info("""Results for round %d
 winner :          %s
 significance :    %s
+mu :              %s
 snr :             %s
 dt :              %s
 use_percentage :  %s
@@ -429,18 +459,19 @@ efficiency :      %s
 deadtime :        %s
 cum. efficiency : %s
 cum. deadtime :   %s""" % (
-        round.n, round.winner.name, round.winner.significance, round.winner.snr,
-        round.winner.window, round.use_percentage, round.efficiency,
-        round.deadtime, round.cum_efficiency, round.cum_deadtime))
+        round.n, round.winner.name, round.winner.significance, round.winner.mu,
+        round.winner.snr, round.winner.window, round.use_percentage,
+        round.efficiency, round.deadtime, round.cum_efficiency,
+        round.cum_deadtime))
 
     # write segments
     segfile = os.path.join(segdir, '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.txt' % (
         ifo, round.n, start, duration))
-    round.vetoes.write(segfile, coltype=float)
+    write_ascii_segments(segfile, round.vetoes)
     logger.debug("Round %d vetoes written to %s" % (round.n, segfile))
     segxml = os.path.join(segdir, '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.xml' % (
         ifo, round.n, start, duration))
-    flag.write(segxml, coltype=float)
+    flag.write(segxml)
     logger.debug("Round %d vetoes written to %s" % (round.n, segxml))
     round.files['VETO_SEGS'] = (segfile, segxml)
     # write triggers
@@ -450,7 +481,11 @@ cum. deadtime :   %s""" % (
             ['WINNER', 'VETOED', 'RAW'],
             [winner.events, vetoed, primary]):
         f = trigfile % tag
-        write_ascii(f, arr)
+        if 'frequency' in arr.dtype.fields:
+            columns = ['time', 'frequency', 'snr']
+        else:
+            columns = ['time', 'mchirp', 'snr']
+        write_ascii_triggers(f, arr, columns=columns, fmt='%f')
         logger.debug("Round %d %s events written to %s"
                      % (round.n, tag.lower(), f))
         round.files[tag] = f

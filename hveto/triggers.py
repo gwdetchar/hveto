@@ -68,6 +68,8 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             if issubclass(Table, key):
                 columns = COLUMNS[key][:]
                 break
+    if 'channel' in columns:
+        columns.pop('channel')
 
     # find triggers
     if cache is None:
@@ -81,6 +83,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
                     warnings.warn(str(e))
                 else:
                     raise
+    cache = cache.unique()
 
     # read cache
     trigs = lsctables.New(Table, columns=columns)
@@ -95,25 +98,42 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
 
     # format table as numpy.recarray
     recarray = trigs.to_recarray(columns=columns)
+    addfields = {}
+    dropfields = []
 
-    # rename columns for convenience later
-    if tablename.endswith('_inspiral'):
-        tcols = ['end_time', 'end_time_ns']
-    elif tablename.endswith('_burst'):
-        tcols = ['peak_time', 'peak_time_ns']
+    # append channel to all events
+    columns.append('channel')
+    addfields['channel'] = numpy.repeat(channel, recarray.shape[0])
+
+    # rename frequency column
+    if tablename.endswith('_burst'):
         recarray = recfunctions.rename_fields(
             recarray, {'peak_frequency': 'frequency'})
         idx = columns.index('peak_frequency')
         columns.pop(idx)
         columns.insert(idx, 'frequency')
+
+    # map time to its own column
+    if tablename.endswith('_inspiral'):
+        tcols = ['end_time', 'end_time_ns']
+    elif tablename.endswith('_burst'):
+        tcols = ['peak_time', 'peak_time_ns']
     else:
         tcols = None
     if tcols:
         times = recarray[tcols[0]] + recarray[tcols[1]] * 1e-9
-        recarray = recfunctions.rec_append_fields(
-            recarray, 'time', times, times.dtype)
-        recarray = recfunctions.rec_drop_fields(recarray, tcols)
+        addfields['time'] = times
+        dropfields.extend(tcols)
         columns = ['time'] + columns[2:]
+
+    # add and remove fields as required
+    if addfields:
+        names, data = zip(*addfields.items())
+        recarray = recfunctions.rec_append_fields(recarray, names, data)
+        recarray = recfunctions.rec_drop_fields(recarray, dropfields)
+
+    # sort by time
+    if 'time' in recarray.dtype.fields:
         recarray.sort(order='time')
 
     # filter
@@ -174,7 +194,7 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
     return sorted(out)
 
 
-def write_ascii(outfile, recarray, fmt='%s', **kwargs):
+def write_ascii(outfile, recarray, fmt='%s', columns=None, **kwargs):
     """Write a `numpy.recarray` to file as ASCII
 
     Parameters
@@ -191,6 +211,8 @@ def write_ascii(outfile, recarray, fmt='%s', **kwargs):
     numpy.savetxt
         for details on the writer, including the `fmt` keyword argument
     """
+    if columns:
+        recarray = recarray[columns]
     kwargs.setdefault('header', ' '.join(recarray.dtype.names))
     numpy.savetxt(outfile, recarray, fmt=fmt, **kwargs)
     return outfile
