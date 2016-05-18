@@ -83,6 +83,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
                     warnings.warn(str(e))
                 else:
                     raise
+    cache = cache.unique()
 
     # read cache
     trigs = lsctables.New(Table, columns=columns)
