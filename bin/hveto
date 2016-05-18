@@ -51,7 +51,8 @@ from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
 from hveto import (__version__, log, config, core, plot, html)
 from hveto.segments import write_ascii as write_ascii_segments
-from hveto.triggers import (get_triggers, find_auxiliary_channels, write_ascii)
+from hveto.triggers import (get_triggers, find_auxiliary_channels,
+                            write_ascii as write_ascii_triggers)
 
 IFO = os.getenv('IFO')
 
@@ -474,7 +475,7 @@ cum. deadtime :   %s""" % (
             columns = ['time', 'frequency', 'snr']
         else:
             columns = ['time', 'mchirp', 'snr']
-        write_ascii(f, arr, columns=columns)
+        write_ascii_triggers(f, arr, columns=columns, fmt='%f')
         logger.debug("Round %d %s events written to %s"
                      % (round.n, tag.lower(), f))
         round.files[tag] = f
