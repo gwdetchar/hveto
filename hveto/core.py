@@ -291,6 +291,7 @@ def veto(table, segmentlist):
     """Remove events from a table based on a segmentlist
     """
     times = table['time']
+    segmentlist = type(segmentlist)(segmentlist).coalesce()
     a = segmentlist[0][0]
     b = segmentlist[-1][1]
     keep = numpy.ones(times.shape[0], dtype=bool)
