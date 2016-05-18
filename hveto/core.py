@@ -103,7 +103,7 @@ def find_all_coincidences(triggers, channel, snrs, windows):
         def add_if_coinc(event):
             if event['channel'] == channel:
                 return
-            in_seg = filter(lambda s: event['time'] in s, segs)
+            in_seg = filter(lambda s: s[0] <= event['time'] <= s[1], segs)
             if not in_seg:  # no triggers in window
                 return
             for k, w in enumerate(in_seg):
@@ -276,8 +276,8 @@ def find_coincidences(a, b, dt=1):
     """
     dx = dt/2.
     def _is_coincident(t):
-        x = bisect_left(b, t-dx)
-        y = bisect_right(b, t+dx)
+        x = bisect_left(b, t-dx)  # find b >= t-dx
+        y = bisect_right(b, t+dx)  # find b <= t+dx
         if x != y:
             return True
         return False
@@ -300,6 +300,8 @@ def veto(table, segmentlist):
             continue
         if t > b:
             break
-        if t in segmentlist:
-            keep[i] = False
+        for seg in segmentlist:
+            if seg[0] <= t <= seg[1]:
+                keep[i] = False
+                break
     return table[keep], table[~keep]
