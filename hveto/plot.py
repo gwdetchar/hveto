@@ -21,7 +21,11 @@
 
 from __future__ import division
 
+import warnings
 from math import (log10, floor)
+from io import BytesIO
+
+from lxml import etree
 
 from matplotlib.colors import LogNorm
 
@@ -41,6 +45,32 @@ rcParams.update({
     'axes.labelpad': 2,
     'grid.color': 'gray',
 })
+
+SHOW_HIDE_JAVASCRIPT = """
+    <script type="text/ecmascript">
+    <![CDATA[
+
+    function init(evt) {
+        if ( window.svgDocument == null ) {
+            svgDocument = evt.target.ownerDocument;
+            }
+        }
+
+    function ShowTooltip(obj) {
+        var cur = obj.id.substr(obj.id.lastIndexOf('-')+1);
+
+        var tip = svgDocument.getElementById('tooltip-' + cur);
+        tip.setAttribute('visibility',"visible")
+        }
+
+    function HideTooltip(obj) {
+        var cur = obj.id.substr(obj.id.lastIndexOf('-')+1);
+        var tip = svgDocument.getElementById('tooltip-' + cur);
+        tip.setAttribute('visibility',"hidden")
+        }
+
+    ]]>
+    </script>"""
 
 
 def before_after_histogram(
@@ -141,7 +171,7 @@ def veto_scatter(
     _finalize_plot(plot, ax, outfile, **axargs)
 
 
-def _finalize_plot(plot, ax, outfile, bbox_inches=None, **axargs):
+def _finalize_plot(plot, ax, outfile, bbox_inches=None, close=True, **axargs):
     xlim = axargs.pop('xlim', None)
     ylim = axargs.pop('ylim', None)
     # set title and subtitle
@@ -170,38 +200,114 @@ def _finalize_plot(plot, ax, outfile, bbox_inches=None, **axargs):
         plot.add_colorbar(ax=ax, visible=False)
     # save and close
     plot.save(outfile, bbox_inches=bbox_inches)
-    plot.close()
+    if close:
+        plot.close()
 
 
-def significance_drop(outfile, old, new, **kwargs):
+def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
     """Plot the signifiance drop for each channel
     """
-    plot = Plot(figsize=(24, 6))
-    ax = plot.gca()
-    plot.subplots_adjust(left=.05, right=.95, bottom=.4)
-
     channels = sorted(old.keys())
+    if show_channel_names is None:
+        show_channel_names = len(channels) <= 50
+
+    plot = Plot(figsize=(18, 6))
+    plot.subplots_adjust(left=.07, right=.93)
+    ax = plot.gca()
+    if show_channel_names:
+        plot.subplots_adjust(bottom=.4)
+
+    winner = sorted(old.items(), key=lambda x: x[1])[-1][0]
+
     for i, c in enumerate(channels):
-        if old[c] > new[c]:
+        if c == winner:
+            color = 'orange'
+        elif old[c] > new[c]:
             color = 'dodgerblue'
         else:
             color = 'red'
         ax.plot([i, i], [old[c], new[c]], color=color, linestyle='-',
-                marker='o', markersize=10)
+                marker='o', markersize=10, label=c, zorder=old[c])
+
+    ax.set_xlim(-1, len(channels))
+    ax.set_ybound(lower=-1)
 
     # set xticks to show channel names
-    ax.set_xlim(-1, len(channels))
-    ax.set_xticks(range(len(channels)))
-    ax.set_xticklabels([c.replace('_','\_') for c in channels])
-    for i, t in enumerate(ax.get_xticklabels()):
-        t.set_rotation(270)
-        t.set_verticalalignment('top')
-        t.set_horizontalalignment('center')
-        t.set_fontsize(8)
-        t.set_usetex(False)
+    if show_channel_names:
+        ax.set_xticks(range(len(channels)))
+        ax.set_xticklabels([c.replace('_','\_') for c in channels])
+        for i, t in enumerate(ax.get_xticklabels()):
+            t.set_rotation(270)
+            t.set_verticalalignment('top')
+            t.set_horizontalalignment('center')
+            t.set_fontsize(8)
+    # or just show systems of channels
+    else:
+        plot.canvas.draw()
+        systems = {}
+        for i, c in enumerate(channels):
+            sys = c.split(':', 1)[1].split('-')[0].split('_')[0]
+            try:
+                systems[sys][1] += 1
+            except KeyError:
+                systems[sys] = [i, 1]
+        systems = sorted(systems.items(), key=lambda x: x[1][0])
+        labels, counts = zip(*systems)
+        xticks, xmticks = zip(*[(a, a+b/2.) for (a, b) in counts])
+        # show ticks at the edge of each group
+        ax.set_xticks(xticks, minor=False)
+        ax.set_xticklabels([], minor=False)
+        # show label in the centre of each group
+        ax.set_xticks(xmticks, minor=True)
+        for t in ax.set_xticklabels(labels, minor=True):
+            t.set_rotation(270)
 
     kwargs.setdefault('ylabel', 'Significance')
-    _finalize_plot(plot, ax, outfile, **kwargs)
+
+    # create interactivity
+    if outfile.endswith('.svg'):
+        _finalize_plot(plot, ax, outfile.replace('.svg', '.png'),
+                       close=False, **kwargs)
+        tooltips = []
+        ylim = ax.get_ylim()
+        yoffset = (ylim[1] - ylim[0]) * 0.061
+        bbox = {'fc': 'w', 'ec': '.5', 'alpha': .9, 'boxstyle': 'round'}
+        xthresh = len(channels) / 10.
+        for i, l in enumerate(ax.lines):
+            x = l.get_xdata()[1]
+            if x < xthresh:
+                ha = 'left'
+            elif x > (len(channels) - xthresh):
+                ha ='right'
+            else:
+                ha = 'center'
+            y = l.get_ydata()[0] + yoffset
+            c = l.get_label()
+            tooltips.append(ax.annotate(c.replace('_', r'\_'), (x, y),
+                                        ha=ha, zorder=ylim[1], bbox=bbox))
+            l.set_gid('line-%d' % i)
+            tooltips[-1].set_gid('tooltip-%d' % i)
+
+        f = BytesIO()
+        plot.savefig(f, format='svg')
+        tree, xmlid = etree.XMLID(f.getvalue())
+        tree.set('onload', 'init(evt)')
+        for i in range(len(tooltips)):
+            try:
+                e = xmlid['tooltip-%d' % i]
+            except KeyError:
+                warnings.warn("Failed to recover tooltip %d" % i)
+                continue
+            e.set('visibility', 'hidden')
+        for i, l in enumerate(ax.lines):
+            e = xmlid['line-%d' % i]
+            e.set('onmouseover', 'ShowTooltip(this)')
+            e.set('onmouseout', 'HideTooltip(this)')
+        tree.insert(0, etree.XML(SHOW_HIDE_JAVASCRIPT))
+        etree.ElementTree(tree).write(outfile)
+        plot.close()
+    else:
+        _finalize_plot(plot, ax, outfile, **kwargs)
 
 
 def hveto_roc(outfile, rounds, figsize=[9, 6], **kwargs):

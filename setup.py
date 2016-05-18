@@ -70,6 +70,7 @@ requires = [
     'glue',
     'dqsegdb',
     'gwpy',
+    'lxml',
 ]
 tests_require = [
     'pytest'
