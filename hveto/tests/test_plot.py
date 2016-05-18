@@ -22,6 +22,9 @@
 import os
 import tempfile
 
+from matplotlib import use
+use('agg')
+
 from numpy import random
 
 from hveto import plot
