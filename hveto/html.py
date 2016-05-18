@@ -551,7 +551,10 @@ def write_summary(
                 pc = a/b * 100.
             except ZeroDivisionError:
                 pc = 0.
-            page.td('%.2f<br><small>[%d/%d]</small>' % (pc, a, b))
+            if attr.endswith('deadtime'):
+                page.td('%.2f<br><small>[%.2f/%.2f]</small>' % (pc, a, b))
+            else:
+                page.td('%.2f<br><small>[%d/%d]</small>' % (pc, a, b))
         page.tr.close()
     page.tbody.close()
 
