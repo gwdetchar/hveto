@@ -230,7 +230,7 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
                 marker='o', markersize=10, label=c, zorder=old[c])
 
     ax.set_xlim(-1, len(channels))
-    ax.set_ybound(lower=-1)
+    ax.set_ybound(lower=0)
 
     # set xticks to show channel names
     if show_channel_names:

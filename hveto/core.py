@@ -159,7 +159,7 @@ def find_max_significance(primary, auxiliary, channel, snrs, windows, livetime):
     rec.sort(order='time')
     coincs = find_all_coincidences(rec, channel, snrs, windows)
     winner = HvetoWinner(name='unknown', significance=-1)
-    sigs = dict((c, -1) for c in auxiliary)
+    sigs = dict((c, 0) for c in auxiliary)
     for p, cdict in coincs.items():
         dt, snr = p
         for chan in cdict:
