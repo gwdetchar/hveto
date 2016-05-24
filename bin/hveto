@@ -359,11 +359,11 @@ while True:
     write_ascii_segments(segfile, round.segments)
 
     # calculate significances for this round
-    def _find_max_significance(channels):
-        aux = dict((c, auxiliary[c]) for c in channels)
-        return core.find_max_significance(primary, aux, pchannel,
-                                          snrs, windows, round.livetime)
     if args.nproc > 1:  # multiprocessing
+        def _find_max_significance(channels):
+            aux = dict((c, auxiliary[c]) for c in channels)
+            return core.find_max_significance(primary, aux, pchannel,
+                                              snrs, windows, round.livetime)
         # separate channel list into chunks and process each chunk
         pool = multiprocessing.Pool(
             processes=min(args.nproc, len(auxiliary.keys())))
