@@ -160,7 +160,18 @@ def veto_scatter(
                    label=label2[i], s=40, **colors[i % len(colors)])
     # add legend
     if ax.get_legend_handles_labels()[0]:
-        ax.legend(loc='upper right')
+        legargs = {
+            'loc': 'upper left',
+            'bbox_to_anchor': (1.01, 1),
+            'borderaxespad': 0,
+            'numpoints': 1,
+            'scatterpoints': 1,
+            'handlelength': 1,
+            'handletextpad': .5
+        }
+        legargs.update(dict((x[7:], axargs.pop(x)) for x in axargs.keys()
+                            if x.startswith('legend_')))
+        ax.legend(**legargs)
     # finalize
     for axis in ['x', 'y']:
         lim = list(getattr(ax, '%saxis' % axis).get_data_interval())
