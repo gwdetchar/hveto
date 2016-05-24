@@ -146,8 +146,6 @@ def veto_scatter(
         m = ax.scatter(a[x], a[y], c=a[color], label=label1, **colorargs)
         # add colorbar
         plot.add_colorbar(mappable=m, ax=ax, cmap=cmap, label=clabel)
-        # unsort them
-        a.sort(order='time')
     if isinstance(b, list):
         colors = list(rcParams['axes.prop_cycle'])
     else:
