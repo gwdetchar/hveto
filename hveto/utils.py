@@ -19,6 +19,8 @@
 """General utilities for hveto
 """
 
+from __future__ import division
+
 from math import ceil
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
