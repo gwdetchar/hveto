@@ -498,12 +498,14 @@ cum. deadtime :   %s""" % (
         wname = round.winner.name.replace('_', r'\_')
     else:
         wname = round.winner.name
-    beforel = 'Before round %d [%d events]' % (round.n, before.size)
-    afterl = 'After round %d [%d events]' % (round.n, primary.size)
-    vetoedl = 'Vetoed by round %d [%d events]' % (round.n, vetoed.size)
-    beforeauxl = 'Aux. before round %d [%d events]' % (round.n, beforeaux.size)
-    usedl = 'Used by round %d [%d events]' % (round.n, winner.events.size)
+    beforel = 'Before\n[%d]' % before.size
+    afterl = 'After\n[%d]' % primary.size
+    vetoedl = 'Vetoed\n[%d]' % vetoed.size
+    beforeauxl = 'Before\n[%d]' % beforeaux.size
+    usedl = 'Used\n[%d]' % winner.events.size
     title = '%s Hveto round %d' % (ifo, round.n)
+    ptitle = '%s: primary impact' % title
+    atitle = '%s: auxiliary use' % title
     subtitle = '[%d-%d] | winner: %s' % (start, end, wname)
 
     # before/after histogram
@@ -511,7 +513,7 @@ cum. deadtime :   %s""" % (
     plot.before_after_histogram(
         png, before['snr'], primary['snr'],
         label1=beforel, label2=afterl, xlabel=statlabel,
-        title=title, subtitle=subtitle)
+        title=ptitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
@@ -520,7 +522,7 @@ cum. deadtime :   %s""" % (
     plot.veto_scatter(
         png, before, vetoed, x='time', y='snr', label1=beforel, label2=vetoedl,
         epoch=start, xlim=[start, end], ylabel=statlabel,
-        title=title, subtitle=subtitle)
+        title=ptitle, subtitle=subtitle, legend_title="Primary:")
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
@@ -529,7 +531,7 @@ cum. deadtime :   %s""" % (
     plot.veto_scatter(
         png, before, vetoed, x=fparam, y='snr', label1=beforel,
         label2=vetoedl, xlabel=flabel, ylabel=statlabel,
-        title=title, subtitle=subtitle)
+        title=ptitle, subtitle=subtitle, legend_title="Primary:")
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
@@ -539,7 +541,7 @@ cum. deadtime :   %s""" % (
         png, before, vetoed, x='time', y=fparam, color='snr',
         label1=None, label2=None, ylabel=flabel,
         clabel=statlabel, clim=[3, 100], cmap='YlGnBu',
-        epoch=start, xlim=[start, end], title=title, subtitle=subtitle)
+        epoch=start, xlim=[start, end], title=ptitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
@@ -553,8 +555,8 @@ cum. deadtime :   %s""" % (
     png = pngname % 'USED_FREQUENCY_TIME'
     plot.veto_scatter(
         png, winner.events, vetoed, x='time', y=y, label1=usedl,
-        label2=vetoedl, ylabel=ylabel,
-        epoch=start, xlim=[start, end], title=title, subtitle=subtitle)
+        label2=vetoedl, ylabel=ylabel, epoch=start, xlim=[start, end],
+        title=atitle, subtitle=subtitle, legend_title="Aux:")
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
@@ -563,7 +565,7 @@ cum. deadtime :   %s""" % (
     plot.veto_scatter(
         png, beforeaux, winner.events, x='time', y='snr', label1=beforeauxl,
         label2=usedl, epoch=start, xlim=[start, end], ylabel=statlabel,
-        title=title, subtitle=subtitle)
+        title=atitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
@@ -572,7 +574,7 @@ cum. deadtime :   %s""" % (
     plot.veto_scatter(
         png, beforeaux, winner.events, x='frequency', y='snr',
         label1=beforeauxl, label2=usedl, xlabel='Frequency [Hz]',
-        ylabel=statlabel, title=title, subtitle=subtitle)
+        ylabel=statlabel, title=atitle, subtitle=subtitle, legend_title="Aux:")
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
@@ -582,7 +584,7 @@ cum. deadtime :   %s""" % (
         png, beforeaux, winner.events, x='time', y='frequency', color='snr',
         label1=None, label2=None, ylabel='Frequency [Hz]',
         clabel=statlabel, clim=[3, 100], cmap='YlGnBu',
-        epoch=start, xlim=[start, end], title=title, subtitle=subtitle)
+        epoch=start, xlim=[start, end], title=atitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
@@ -623,9 +625,11 @@ subtitle = '%d rounds | %d-%d' % (len(rounds), start, end)
 
 # before/after histogram
 png = pngname % 'HISTOGRAM'
+beforel = 'Before analysis [%d events]' % pevents[0].size
+afterl = 'After %d rounds [%d]' % (len(pevents), pevents[-1].size)
 plot.before_after_histogram(
     png, pevents[0]['snr'], pevents[-1]['snr'],
-    label1='Before round 1', label2=afterl, xlabel=statlabel,
+    label1=beforel, label2=afterl, xlabel=statlabel,
     title=title, subtitle=subtitle)
 plots.append(png)
 logger.debug("Figure written to %s" % png)
@@ -636,25 +640,25 @@ plot.hveto_roc(png, rounds, title=title, subtitle=subtitle)
 plots.append(png)
 logger.debug("Figure written to %s" % png)
 
+
 # frequency versus time
 png = pngname % '%s_TIME' % fparam.upper()
-label2 = ['After round %d' % r.n for r in rounds]
+labels = [str(r.n) for r in rounds]
+legtitle = 'Vetoed at\nround'
 plot.veto_scatter(
     png, pevents[0], pvetoed,
-    label1='Before round 1', label2=label2, title=title,
+    label1='', label2=labels, title=title,
     subtitle=subtitle, ylabel=flabel, x='time', y=fparam,
-    epoch=start, xlim=[start, end])
+    epoch=start, xlim=[start, end], legend_title=legtitle)
 plots.append(png)
 logger.debug("Figure written to %s" % png)
 
 # snr versus time
 png = pngname % 'SNR_TIME'
-label2 = ['After round %d' % r.n for r in rounds]
 plot.veto_scatter(
-    png, pevents[0], pvetoed,
-    label1='Before round 1', label2=label2, title=title,
+    png, pevents[0], pvetoed, label1='', label2=labels, title=title,
     subtitle=subtitle, ylabel=statlabel, x='time', y='snr',
-    epoch=start, xlim=[start, end])
+    epoch=start, xlim=[start, end], legend_title=legtitle)
 plots.append(png)
 logger.debug("Figure written to %s" % png)
 
