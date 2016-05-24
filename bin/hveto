@@ -701,9 +701,11 @@ with open('summary-stats.txt', 'w') as f:
         # write to JSON
         results.append(('files', r.files))
         json_['rounds'].append(dict(results))
+logger.debug("Summary table written to %s" % f.name)
 
 with open('summary-stats.json', 'w') as f:
     json.dump(json_, f, sort_keys=True)
+logger.debug("Summary JSON written to %s" % f.name)
 
 # -- write HTML and finish
 index = html.write_hveto_page(ifo, start, end, rounds, plots,  **htmlv)
