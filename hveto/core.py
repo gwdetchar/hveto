@@ -253,7 +253,7 @@ def significance(n, mu):
         sig = -n * log10(mu) + mu * LOG_EXP_1 + gammaln(n+1) / LOG_10
     else:
         sig = -log10(g)
-    return sig
+    return float(sig)
 
 
 def find_coincidences(a, b, dt=1):
