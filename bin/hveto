@@ -49,7 +49,7 @@ from glue.lal import Cache
 from gwpy.time import to_gps
 from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
-from hveto import (__version__, log, config, core, plot, html)
+from hveto import (__version__, log, config, core, plot, html, utils)
 from hveto.segments import write_ascii as write_ascii_segments
 from hveto.triggers import (get_triggers, find_auxiliary_channels,
                             write_ascii as write_ascii_triggers)
@@ -365,10 +365,9 @@ while True:
                                           snrs, windows, round.livetime)
     if args.nproc > 1:  # multiprocessing
         # separate channel list into chunks and process each chunk
-        allchans = auxiliary.keys()
-        pool = multiprocessing.Pool(processes=min(args.nproc, len(allchans)))
-        n = int(ceil(len(allchans) / args.nproc))
-        chunks = [allchans[i:i+n] for i in range(0, len(allchans), n)]
+        pool = multiprocessing.Pool(
+            processes=min(args.nproc, len(auxiliary.keys())))
+        chunks = utils.channel_groups(auxiliary.keys(), args.nproc)
         results = pool.map(_find_max_significance, chunks)
         pool.close()
         winners, sigsets = zip(*results)
@@ -443,8 +442,21 @@ while True:
         round.cum_deadtime = round.deadtime
 
     # apply vetoes to auxiliary
-    for channel in auxiliary:
-        auxiliary[channel], v = core.veto(auxiliary[channel], round.vetoes)
+    if args.nproc > 1:  # multiprocess
+        def _veto(channels):
+            return core.veto_all(dict((c, auxiliary[c]) for c in channels),
+                                 round.vetoes)
+        # separate channel list into chunks and process each chunk
+        pool = multiprocessing.Pool(
+            processes=min(args.nproc, len(auxiliary.keys())))
+        chunks = utils.channel_groups(auxiliary.keys(), args.nproc)
+        results = pool.map(_veto, chunks)
+        pool.close()
+        auxiliary = results[0]
+        for subdict in results[1:]:
+            auxiliary.update(subdict)
+    else:  # single process
+        auxiliary = core.veto_all(auxiliary, round.vetoes)
     logger.debug("Applied vetoes to auxiliary channels")
 
     # log results
