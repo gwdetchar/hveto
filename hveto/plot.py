@@ -319,7 +319,8 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
         _finalize_plot(plot, ax, outfile, **kwargs)
 
 
-def hveto_roc(outfile, rounds, figsize=[9, 6], **kwargs):
+def hveto_roc(outfile, rounds, figsize=[9, 6], constants=[1, 5, 10, 20],
+              **kwargs):
     efficiency = []
     deadtime = []
     for r in rounds:
@@ -352,4 +353,14 @@ def hveto_roc(outfile, rounds, figsize=[9, 6], **kwargs):
         'ylim': (bound, 1.),
     }
     axargs.update(kwargs)
+    # draw some eff/dt contours
+    if len(constants):
+        for i, c in enumerate(constants):
+            g = 1 - ((i+1)/len(constants) * .5)
+            x = axargs['xlim']
+            y = [a * c for a in x]
+            ax.plot(x, y, linestyle='--', color=(g, g, g), label=str(c))
+        ax.legend(title='Eff/dt:', borderaxespad=0, bbox_to_anchor=(1.01, 1),
+                  handlelength=1, handletextpad=.5, loc='upper left')
+    # save and close
     _finalize_plot(plot, ax, outfile, **axargs)
