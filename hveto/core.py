@@ -87,6 +87,7 @@ def find_all_coincidences(triggers, channel, snrs, windows):
     window : `list` of `float`
         the time windows to use
     """
+    triggers.sort(order='time')
     windows = sorted(windows, reverse=True)
     snrs = sorted(snrs)
     coincs = dict((p, {}) for p in itertools.product(windows, snrs))
@@ -156,7 +157,6 @@ def find_max_significance(primary, auxiliary, channel, snrs, windows, livetime):
     """
     rec = stack_arrays([primary] + auxiliary.values(), usemask=False,
                        asrecarray=True, autoconvert=True)
-    rec.sort(order='time')
     coincs = find_all_coincidences(rec, channel, snrs, windows)
     winner = HvetoWinner(name='unknown', significance=-1)
     sigs = dict((c, 0) for c in auxiliary)
