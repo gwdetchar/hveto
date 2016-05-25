@@ -146,8 +146,6 @@ def veto_scatter(
         m = ax.scatter(a[x], a[y], c=a[color], label=label1, **colorargs)
         # add colorbar
         plot.add_colorbar(mappable=m, ax=ax, cmap=cmap, label=clabel)
-        # unsort them
-        a.sort(order='time')
     if isinstance(b, list):
         colors = list(rcParams['axes.prop_cycle'])
     else:
@@ -162,7 +160,18 @@ def veto_scatter(
                    label=label2[i], s=40, **colors[i % len(colors)])
     # add legend
     if ax.get_legend_handles_labels()[0]:
-        ax.legend(loc='upper right')
+        legargs = {
+            'loc': 'upper left',
+            'bbox_to_anchor': (1.01, 1),
+            'borderaxespad': 0,
+            'numpoints': 1,
+            'scatterpoints': 1,
+            'handlelength': 1,
+            'handletextpad': .5
+        }
+        legargs.update(dict((x[7:], axargs.pop(x)) for x in axargs.keys()
+                            if x.startswith('legend_')))
+        ax.legend(**legargs)
     # finalize
     for axis in ['x', 'y']:
         lim = list(getattr(ax, '%saxis' % axis).get_data_interval())
@@ -310,7 +319,8 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
         _finalize_plot(plot, ax, outfile, **kwargs)
 
 
-def hveto_roc(outfile, rounds, figsize=[9, 6], **kwargs):
+def hveto_roc(outfile, rounds, figsize=[9, 6], constants=[1, 5, 10, 20],
+              **kwargs):
     efficiency = []
     deadtime = []
     for r in rounds:
@@ -343,4 +353,14 @@ def hveto_roc(outfile, rounds, figsize=[9, 6], **kwargs):
         'ylim': (bound, 1.),
     }
     axargs.update(kwargs)
+    # draw some eff/dt contours
+    if len(constants):
+        for i, c in enumerate(constants):
+            g = 1 - ((i+1)/len(constants) * .5)
+            x = axargs['xlim']
+            y = [a * c for a in x]
+            ax.plot(x, y, linestyle='--', color=(g, g, g), label=str(c))
+        ax.legend(title='Eff/dt:', borderaxespad=0, bbox_to_anchor=(1.01, 1),
+                  handlelength=1, handletextpad=.5, loc='upper left')
+    # save and close
     _finalize_plot(plot, ax, outfile, **axargs)
