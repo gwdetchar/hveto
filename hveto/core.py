@@ -87,6 +87,7 @@ def find_all_coincidences(triggers, channel, snrs, windows):
     window : `list` of `float`
         the time windows to use
     """
+    triggers.sort(order='time')
     windows = sorted(windows, reverse=True)
     snrs = sorted(snrs)
     coincs = dict((p, {}) for p in itertools.product(windows, snrs))
@@ -156,7 +157,6 @@ def find_max_significance(primary, auxiliary, channel, snrs, windows, livetime):
     """
     rec = stack_arrays([primary] + auxiliary.values(), usemask=False,
                        asrecarray=True, autoconvert=True)
-    rec.sort(order='time')
     coincs = find_all_coincidences(rec, channel, snrs, windows)
     winner = HvetoWinner(name='unknown', significance=-1)
     sigs = dict((c, 0) for c in auxiliary)
@@ -253,7 +253,7 @@ def significance(n, mu):
         sig = -n * log10(mu) + mu * LOG_EXP_1 + gammaln(n+1) / LOG_10
     else:
         sig = -log10(g)
-    return sig
+    return float(sig)
 
 
 def find_coincidences(a, b, dt=1):
@@ -289,19 +289,72 @@ def find_coincidences(a, b, dt=1):
 
 def veto(table, segmentlist):
     """Remove events from a table based on a segmentlist
+
+    A time ``t`` will be vetoed if ``start <= t <= end`` for any veto
+    segment in the list.
+
+    Parameters
+    ----------
+    table : `numpy.recarray`
+        the table of event triggers to veto
+    segmentlist : `~glue.segments.segmentlist`
+        the list of veto segments to use
+
+    Returns
+    -------
+    keep : `numpy.recarray`
+        the reduced table of events that were not coincident with any
+        segments
     """
+    table.sort(order='time')
     times = table['time']
     segmentlist = type(segmentlist)(segmentlist).coalesce()
-    a = segmentlist[0][0]
-    b = segmentlist[-1][1]
     keep = numpy.ones(times.shape[0], dtype=bool)
-    for i, t in enumerate(times):
+    j = 0
+    a, b = segmentlist[j]
+    i = 0
+    while i < times.size:
+        t = times[i]
+        # if before start, move to next trigger now
         if t < a:
+            i += 1
             continue
+        # if after end, find the next segment and check this trigger again
         if t > b:
-            break
-        for seg in segmentlist:
-            if seg[0] <= t <= seg[1]:
-                keep[i] = False
+            j += 1
+            try:
+                a, b = segmentlist[j]
+                continue
+            except IndexError:
                 break
+        # otherwise it must be in this segment, record and move to next
+        keep[i] = False
+        i += 1
     return table[keep], table[~keep]
+
+
+def veto_all(auxiliary, segmentlist):
+    """Remove events from all auxiliary channel tables based on a segmentlist
+
+    Parameters
+    ----------
+    auxiliary : `dict` of `numpy.recarray`
+        a `dict` of event arrays to veto
+    segmentlist : `~glue.segments.segmentlist`
+        the list of veto segments to use
+
+    Returns
+    -------
+    survivors : `dict` of `numpy.recarray`
+        a dict of the reduced arrays of events for each input channel
+
+    See Also
+    --------
+    core.veto
+        for details on the veto algorithm itself
+    """
+    channels = auxiliary.keys()
+    rec = stack_arrays(auxiliary.values(), usemask=False,
+                       asrecarray=True, autoconvert=True)
+    keep, _ = veto(rec, segmentlist)
+    return dict((c, keep[keep['channel'] == c]) for c in channels)
