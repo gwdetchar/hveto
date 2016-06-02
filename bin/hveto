@@ -96,7 +96,7 @@ parser.add_argument('-S', '--analysis-segments', action='append', default=[],
                     type=abs_path,
                     help='path to LIGO_LW XML file containing segments for '
                          'the analysis flag (name in segment_definer table '
-                         'must match analysis-flag in config file')
+                         'must match analysis-flag in config file)')
 
 pout = parser.add_argument_group('Output options')
 pout.add_argument('-o', '--output-directory', default=os.curdir,
