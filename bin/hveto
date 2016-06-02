@@ -47,7 +47,8 @@ use('agg')
 from glue.lal import Cache
 
 from gwpy.time import to_gps
-from gwpy.segments import (DataQualityFlag, DataQualityDict)
+from gwpy.segments import (Segment, SegmentList,
+                           DataQualityFlag, DataQualityDict)
 
 from hveto import (__version__, log, config, core, plot, html, utils)
 from hveto.segments import write_ascii as write_ascii_segments
@@ -91,6 +92,11 @@ parser.add_argument('-a', '--auxiliary-cache', action='append', default=[],
                          'channel name as the leading name parts, e.g. '
                          '\'L1-GDS_CALIB_STRAIN_<tag>-<start>-<duration>.'
                          '<ext>\' for L1:GDS-CALIB_STRAIN triggers')
+parser.add_argument('-S', '--analysis-segments', action='append', default=[],
+                    type=abs_path,
+                    help='path to LIGO_LW XML file containing segments for '
+                         'the analysis flag (name in segment_definer table '
+                         'must match analysis-flag in config file')
 
 pout = parser.add_argument_group('Output options')
 pout.add_argument('-o', '--output-directory', default=os.curdir,
@@ -138,7 +144,17 @@ htmlv = {
 aflag = cp.get('segments', 'analysis-flag')
 url = cp.get('segments', 'url')
 padding = cp.getfloats('segments', 'padding')
-analysis = DataQualityFlag.query(aflag, start, end, url=url)
+if args.analysis_segments:
+    segs_ = DataQualityDict.read(args.analysis_segments, gpstype=float)
+    analysis = segs_[aflag]
+    span = SegmentList([Segment(start, end)])
+    analysis.active &= span
+    analysis.known &= span
+    analysis.coalesce()
+    logger.debug("Segments read from disk")
+else:
+    analysis = DataQualityFlag.query(aflag, start, end, url=url)
+    logger.debug("Segments recovered from %s" % url)
 analysis.pad(*padding)
 livetime = int(abs(analysis.active))
 livetimepc = livetime / duration * 100.
