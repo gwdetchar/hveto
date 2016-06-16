@@ -45,14 +45,10 @@ pout = parser.add_argument_group('Output options')
 args = parser.parse_args()
 
 logger = log.Logger('hveto-trace', level=args.loglevel)
-trigger_time = args.trigger_time
+trigger_time = float(args.trigger_time)
 directory = args.directory
 logger.debug('Running in verbose mode')
-logger.debug('Directory to search is %s' % directory)
-if float(trigger_time) != round(float(trigger_time)):
-    logger.warning("""Be careful using floats. If the input time lies
-between vetoed segment start and end times, it will not be calculated as vetoed.""")
-
+logger.debug('Search directory: %s' % directory)
 if directory[-1] != '/':
     directory += '/'
 
@@ -64,47 +60,25 @@ except IOError:
     
 round_list = segment_stats[u'rounds']
 veto_seg_file_list = []
-vetoed = False
-for ind_round in round_list:
-    round_veto_seg_file = filter(
-        lambda f_name: '.txt' in f_name,
-        ind_round[u'files'][u'VETO_SEGS']
-    )[0]
-    veto_seg_file_list.append(round_veto_seg_file)
+get_segments = lambda line: [float(line.split('\t')[1]), float(line.split('\t')[2])]
+for i, cround in enumerate(segment_stats['rounds']):
+    seg_files = filter(
+        lambda f_name: '.txt' in f_name, cround[u'files'][u'VETO_SEGS'])
+    for f in seg_files:
+        lines = map(
+            lambda line: line.split('\t'),
+            open(os.path.join(directory, f)).read().split('\n'))[0:-1]
+        segment_list = map(
+            lambda line: [float(line[1]), float(line[2])],
+            lines)
+        for segment in segment_list:
+            if segment[0] <= trigger_time <= segment[1]:
+                logger.info('Signal was vetoed in round %d by segment %s'
+                    % ((i + 1), segment))
+                logger.debug('Winner: %s' % cround['name'])
+                logger.debug('Significance: %s' % cround['significance'])
+                logger.debug('SNR: %s' % cround['snr'])
+                logger.debug('Window: %s' % cround['window'])
+                sys.exit(0)
 
-x = 0
-while x < len(veto_seg_file_list):
-    veto_seg_file = veto_seg_file_list[x]
-    lines = open('%s%s' % (directory, veto_seg_file)).readlines()
-    j = 0
-    while j < len(lines):
-        line = lines[j]
-        rows = line.split('\t')
-        if trigger_time in line:
-            vetoed = True
-            l_bound = float(rows[1])
-            u_bound = float(rows[2])
-            seg_duration = float(rows[3])
-            veto_channel = round_list[x]['name']
-            round_significance = round_list[x]['significance']
-            round_snr = round_list[x]['snr']
-            break
-        j += 1
-    if vetoed:
-        break
-
-    x += 1
-
-if vetoed:
-    logger.info('Signal was vetoed in round %s on line %s of %s' % (
-        x + 1, j, veto_seg_file_list[x]))
-    logger.info('This round\'s winner was: %s' % veto_channel)
-    logger.debug('This was during segment %s - %s with time window %s seconds' % (
-                l_bound, u_bound, seg_duration))
-    logger.debug('The significance of this round was %s with SNR %s' % (
-                round_significance, round_snr))
-    logger.debug('See %sindex.html' % directory)
-
-else:
-    logger.info('Signal was not vetoed.')
-    
+logger.info('Signal was not vetoed.')    
