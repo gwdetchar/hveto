@@ -21,6 +21,7 @@
 
 import sys, json, argparse, os, logging
 from hveto import log
+from gwpy.segments import SegmentList
 
 # -- parse command line -------------------------------------------------------
 
@@ -62,13 +63,8 @@ for i, cround in enumerate(segment_stats['rounds']):
     seg_files = filter(
         lambda f_name: '.txt' in f_name, cround[u'files'][u'VETO_SEGS'])
     for f in seg_files:
-        lines = map(
-            lambda line: line.split('\t'),
-            open(os.path.join(directory, f)).read().split('\n'))[0:-1]
-        segment_list = map(
-            lambda line: [float(line[1]), float(line[2])],
-            lines)
-        for segment in segment_list:
+        segments = SegmentList.read(os.path.join(directory, f))
+        for segment in segments:
             if segment[0] <= trigger_time <= segment[1]:
                 logger.info('Signal was vetoed in round %d by segment %s'
                     % ((i + 1), segment))
