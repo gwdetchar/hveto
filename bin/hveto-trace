@@ -40,13 +40,13 @@ parser.add_argument('-v', '--verbose', help='Print more information',
 
 pout = parser.add_argument_group('Output options')
 
+directory = args.directory
 args = parser.parse_args()
 logger = log.Logger('hveto-trace', level=args.loglevel)
 logger.debug('Running in verbose mode')
 logger.debug('Search directory: %s' % directory)
 
 trigger_time = float(args.trigger_time)
-directory = args.directory
 if directory[-1] != '/':
     directory += '/'
 
