@@ -36,18 +36,21 @@ except ImportError:  # python 2.x
     import ConfigParser as configparser
 
 from glue.lal import (Cache, CacheEntry)
-from glue.ligolw.ligolw import (Document, LIGO_LW)
-from glue.ligolw.utils import write_filename as write_ligolw
+from glue.ligolw.ligolw import (Document, LIGO_LW, LIGOLWContentHandler)
+from glue.ligolw.utils import (write_filename as write_ligolw,
+                               load_filename as load_ligolw)
 from glue.ligolw.utils.process import (register_to_xmldoc as
                                        append_process_table)
 
-from gwpy.table.lsctables import (SnglBurstTable, SnglInspiralTable)
+from gwpy.table.lsctables import (SnglBurstTable, SnglInspiralTable,
+                                  New as new_table)
 from gwpy.time import to_gps
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
 from hveto import (__version__, log, config)
-from hveto.triggers import (get_triggers, find_auxiliary_channels)
+from hveto.triggers import (get_triggers, find_auxiliary_channels,
+                            find_trigger_files)
 
 IFO = os.getenv('IFO')
 
@@ -90,6 +93,9 @@ parser.add_argument('-S', '--analysis-segments', action='append', default=[],
                     help='path to LIGO_LW XML file containing segments for '
                          'the analysis flag (name in segment_definer table '
                          'must match analysis-flag in config file)')
+parser.add_argument('--append', action='store_true', default=False,
+                    help='append to existing cached event files, otherwise, '
+                         'start from scratch (default)')
 
 pout = parser.add_argument_group('Output options')
 pout.add_argument('-o', '--output-directory', default=os.curdir,
@@ -151,37 +157,90 @@ logger.info("Retrieved %d segments for %s with %ss (%.2f%%) livetime"
 snrs = cp.getfloats('hveto', 'snr-thresholds')
 minsnr = min(snrs)
 
-# -- define writer ------------------------------------------------------------
+# -- utility methods ----------------------------------------------------------
+
+contenthandler = LIGOLWContentHandler
 
 
-def write_events(channel, tab):
-    """Write events to file with a given filename
-    """
-    # if empty, skip
-    if tab.shape[0] == 0:
-        return
-    # create filename
+def create_filename(channel):
     ifo, name = channel.split(':', 1)
     name = name.replace('-', '_')
-    filename = '%s-%s-%d-%d.xml.gz' % (ifo, name, start, duration)
+    return os.path.join(trigdir,
+                        '%s-%s-%d-%d.xml.gz' % (ifo, name, start, duration))
+
+
+def read_and_cache_events(channel, etg, cache=None, trigfindkwargs={},
+                          **getkwargs):
+    cfile = create_filename(channel)
+    # read existing cached triggers and work out new segments to query
+    if args.append and os.path.isfile(cfile):
+        previous = DataQualityFlag.read(cfile, format='ligolw').coalesce()
+        new = analysis - previous
+    else:
+        new = analysis.copy()
+    # get cache of files
+    if cache is None:
+        cache = find_trigger_files(channel, etg, new.active, **trigfindkwargs)
+    else:
+        cache = cache.sieve(segments=new.active)
+    # restrict 'active' segments to when we have data
+    try:
+        new.active &= cache.to_segmentlistdict().values()[0]
+    except IndexError:
+        new.active = type(new.active)()
+    # find new triggers
+    try:
+        trigs = get_triggers(channel, auxetg, new.active, cache=cache,
+                             raw=True, **getkwargs)
+    # catch error and continue
+    except ValueError as e:
+        warnings.warn('%s: %s' % (type(e).__name__, str(e)))
+    else:
+        a = write_events(channel, trigs, new)
+        try:
+            return CacheEntry.from_T050017(a), trigs.size
+        except TypeError:  # None
+            return
+
+
+def write_events(channel, tab, segments):
+    """Write events to file with a given filename
+    """
+    # get filename
+    filename = create_filename(channel)
+    # if empty, skip
+    if tab.shape[0] == 0 and args.append and os.path.isfile(filename):
+        return filename
+    elif tab.shape[0] == 0:
+        return
     # get table class and convert back to LIGO_LW table object
     if 'peak_time' in tab.dtype.fields:
         Table = SnglBurstTable
     else:
         Table = SnglInspiralTable
     llwtable = Table.from_recarray(tab)
-    # create document
-    xmldoc = Document()
-    xmldoc.appendChild(LIGO_LW())
+    # read existing document
+    if args.append and os.path.isfile(filename):
+        xmldoc = load_ligolw(filename, gz=True,
+                             contenthandler=LIGOLWContentHandler)
+    # or, create document
+    else:
+        xmldoc = Document()
+        xmldoc.appendChild(LIGO_LW())
     # append process table
     append_process_table(xmldoc, os.path.basename(__file__), {})
     # append segment tables
-    analysis.write(xmldoc, format='ligolw')
+    segments.write(xmldoc, format='ligolw')
     # append event table
-    xmldoc.childNodes[-1].appendChild(llwtable)
+    try:
+        etable = Table.get_table(xmldoc)
+    except ValueError:
+        etable = new_table(Table, columns=tab.dtype.fields)
+        xmldoc.childNodes[-1].appendChild(etable)
+    etable.extend(llwtable)
     # write file to disk
     write_ligolw(xmldoc, filename, gz=True)
-    return os.path.join(trigdir, filename)
+    return filename
 
 
 # -- load channels ------------------------------------------------------------
@@ -240,31 +299,40 @@ logger.info("Identified %d auxiliary channels to process" % naux)
 
 # -- load primary triggers ----------------------------------------------------
 
+logger.info("Reading events for primary channel...")
+
 # read primary cache
 if args.primary_cache:
     pcache = Cache.fromfilenames(args.primary_cache)
 else:
     pcache = None
 
-# load primary triggers
+# get primary params
 petg = cp.get('primary', 'trigger-generator')
 psnr = cp.getfloat('primary', 'snr-threshold')
 pfreq = cp.getfloats('primary', 'frequency-range')
 ptrigfind = dict((key.split('-', 1)[1], val) for (key, val) in
                  cp.items('primary') if key.startswith('trigfind-'))
-primary = get_triggers(pchannel, petg, analysis.active, snr=psnr, frange=pfreq,
-                       cache=pcache, raw=True, **ptrigfind)
-pfile = write_events(pchannel, primary)
 
-if len(primary):
-    logger.info("Cached %d events for %s" % (len(primary), pchannel))
+# load primary triggers
+out = read_and_cache_events(pchannel, petg, snr=psnr, frange=pfreq,
+                            cache=pcache, trigfindkwargs=ptrigfind)
+try:
+    e, n = out
+except TypeError:
+    e = None
+    n = 0
+if n:
+    logger.info("Cached %d new events for %s" % (n, pchannel))
+elif args.append and os.path.isfile(e.path):
+    logger.info("Cached 0 new events for %s" % pchannel)
 else:
     message = "No events found for %r in %d seconds of livetime" % (
        pchannel, livetime)
     logger.critical(message)
 
 # write primary to local cache
-pcache = Cache([CacheEntry.from_T050017(pfile)])
+pcache = Cache([e])
 with open('%s-HVETO_PRIMARY_CACHE-%d-%d.lcf'
           % (ifo, start, duration), 'w') as f:
     pcache.tofile(f)
@@ -283,36 +351,25 @@ def read_and_write_aux_triggers(channel):
         ifo, name = channel.split(':')
         desc = name.replace('-', '_')
         auxcache = acache.sieve(ifos=ifo, description='%s*' % desc)
-    # get triggers
+    out = read_and_cache_events(channel, auxetg, cache=auxcache, snr=minsnr,
+                                frange=auxfreq)
     try:
-        trigs = get_triggers(channel, auxetg, analysis.active, snr=minsnr,
-                             frange=auxfreq, cache=auxcache, raw=True)
-    # catch error and continue
-    except ValueError as e:
-        warnings.warn('%s: %s' % (type(e).__name__, str(e)))
-        out = None
-    else:
-        a = write_events(channel, trigs)
-        try:
-            out = CacheEntry.from_T050017(a)
-        except TypeError:  # none
-            out = None
-
+        e, n = out
+    except TypeError:
+        e = None
+        n = 0
     # log result of load
     with counter.get_lock():
         counter.value += 1
         tag = '[%d/%d]' % (counter.value, naux)
-        if out is None:  # something went wrong
+        if e is None:  # something went wrong
             logger.critical("    %s Failed to read events for %s"
                             % (tag, channel))
-        elif trigs.size:  # no triggers
-            logger.debug("    %s Cached %d events for %s"
-                         % (tag, trigs.size, channel))
-        else:  # everything is fine
-            logger.warning("    %s No events found for %s"
-                           % (tag, channel))
+        else:  # either read events or nothing new
+            logger.debug("    %s Cached %d new events for %s"
+                         % (tag, n, channel))
+    return e
 
-    return out
 
 # map with multiprocessing
 if args.nproc > 1:
