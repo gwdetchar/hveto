@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 
 parser.add_argument('-t', '--trigger-time', required=True,
                     help='The time of the trigger in GPS time')
-parser.add_argument('-d', '--directory', default='.', type=abs_path,
+parser.add_argument('-d', '--directory', required=True, type=abs_path,
                     help='path to hveto-generated folder containing '
                     'a summary-stats.json file')
 parser.add_argument('-v', '--verbose', help='Print more information',
