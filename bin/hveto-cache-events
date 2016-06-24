@@ -23,14 +23,12 @@ This method will apply the minimal SNR thresholds and any frequency cuts
 as given in the configuration files
 """
 
-from __future__ import (division, print_function)
+from __future__ import division
 
 import argparse
 import os
 import warnings
 import multiprocessing
-import json
-import datetime
 
 try:
     import configparser
@@ -54,7 +52,6 @@ from hveto.triggers import (get_triggers, find_auxiliary_channels)
 IFO = os.getenv('IFO')
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
 logger = log.Logger('hveto-cache-events')
 
