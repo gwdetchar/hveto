@@ -52,7 +52,7 @@ COLUMNS = {
 
 
 def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
-                 columns=None, **kwargs):
+                 columns=None, raw=False, **kwargs):
     """Get triggers for the given channel
     """
     # get table from etg
@@ -98,6 +98,21 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
 
     # format table as numpy.recarray
     recarray = trigs.to_recarray(columns=columns)
+
+    # filter
+    if snr is not None:
+        recarray = recarray[recarray['snr'] >= snr]
+    if tablename.endswith('_burst') and frange is not None:
+        recarray = recarray[
+            (recarray['peak_frequency'] >= frange[0]) &
+            (recarray['peak_frequency'] < frange[1])]
+
+    # return basic table if 'raw'
+    if raw:
+        return recarray
+
+    # otherwise spend the rest of this function converting functions to
+    # something useful for the hveto core analysis
     addfields = {}
     dropfields = []
 
@@ -132,13 +147,6 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         recarray = recfunctions.rec_append_fields(recarray, names, data)
         recarray = recfunctions.rec_drop_fields(recarray, dropfields)
 
-    # filter
-    if snr is not None:
-        recarray = recarray[recarray['snr'] >= snr]
-    if tablename.endswith('_burst') and frange is not None:
-        recarray = recarray[
-            (recarray['frequency'] >= frange[0]) &
-            (recarray['frequency'] < frange[1])]
     return recarray[columns]
 
 
