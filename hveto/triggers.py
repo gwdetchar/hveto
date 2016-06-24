@@ -51,6 +51,47 @@ COLUMNS = {
 }
 
 
+def find_trigger_files(channel, etg, segments, **kwargs):
+    """Find trigger files for a given channel and ETG
+
+    Parameters
+    ----------
+    channel : `str`
+        name of channel to find
+
+    etg : `str`
+        name of event trigger generator to find
+
+    segments : :class:`~glue.segments.segmentlist`
+        list of segments to find
+
+    **kwargs
+        all other keyword arguments are passed to
+        `trigfind.find_trigger_urls`
+
+    Returns
+    -------
+    cache : :class:`~glue.lal.Cache`
+        cache of trigger file paths
+
+    See Also
+    --------
+    trigfind.find_trigger_urls
+        for details on file discovery
+    """
+    cache = Cache()
+    for start, end in segments:
+        try:
+            cache.extend(trigfind.find_trigger_urls(channel, etg, start,
+                                                    end, **kwargs))
+        except ValueError as e:
+            if str(e).lower().startswith('no channel-level directory'):
+                warnings.warn(str(e))
+            else:
+                raise
+    return cache.unique()
+
+
 def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
                  columns=None, raw=False, **kwargs):
     """Get triggers for the given channel
@@ -73,20 +114,11 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
 
     # find triggers
     if cache is None:
-        cache = Cache()
-        for start, end in segments:
-            try:
-                cache.extend(trigfind.find_trigger_urls(channel, etg, start,
-                                                        end, **kwargs))
-            except ValueError as e:
-                if str(e).lower().startswith('no channel-level directory'):
-                    warnings.warn(str(e))
-                else:
-                    raise
-    cache = cache.unique()
+        cache = find_trigger_files(channel, etg, segments, **kwargs)
 
     # read cache
     trigs = lsctables.New(Table, columns=columns)
+    cache = cache.unique()
     cache.sort(key=lambda x: x.segment[0])
     for segment in segments:
         if len(cache.sieve(segment=segment)):
