@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (C) Joshua Smith (2016-)
+#
+# This file is part of the hveto python package.
+#
+# hveto is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# hveto is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with hveto.  If not, see <http://www.gnu.org/licenses/>.
+# """Check if a trigger was vetoed by a specified hveto run.
+# """
+
+import sys, json, argparse, os, logging
+from hveto import log
+from gwpy.segments import SegmentList
+
+# -- parse command line -------------------------------------------------------
+
+def abs_path(p):
+    return os.path.abspath(os.path.expanduser(p))
+
+parser = argparse.ArgumentParser(description=__doc__)
+
+parser.add_argument('-t', '--trigger-time', required=True,
+                    help='The time of the trigger in GPS time')
+parser.add_argument('-d', '--directory', required=True, type=abs_path,
+                    help='path to hveto-generated folder containing '
+                    'a summary-stats.json file')
+parser.add_argument('-v', '--verbose', help='Print more information',
+                    action='store_const', dest='loglevel', const=logging.DEBUG,
+                    default=logging.INFO)
+
+pout = parser.add_argument_group('Output options')
+
+args = parser.parse_args()
+directory = args.directory
+logger = log.Logger('hveto-trace', level=args.loglevel)
+logger.debug('Running in verbose mode')
+logger.debug('Search directory: %s' % directory)
+
+trigger_time = float(args.trigger_time)
+if directory[-1] != '/':
+    directory += '/'
+
+try:
+    segment_stats = json.load(open('%ssummary-stats.json' % directory))
+except IOError:
+    logger.error("'summary-stats.json' was not found in the input directory")
+    sys.exit(0)
+
+format_segment = lambda index: float(line.split('\t')[index])
+get_segments = lambda line: [format_segment(1),format_segment(2)]
+for i, cround in enumerate(segment_stats['rounds']):
+    seg_files = filter(
+        lambda f_name: '.txt' in f_name, cround[u'files'][u'VETO_SEGS'])
+    for f in seg_files:
+        segments = SegmentList.read(os.path.join(directory, f))
+        for segment in segments:
+            if segment[0] <= trigger_time <= segment[1]:
+                logger.info('Signal was vetoed in round %d by segment %s'
+                    % ((i + 1), segment))
+                logger.debug('Winner: %s' % cround['name'])
+                logger.debug('Significance: %s' % cround['significance'])
+                logger.debug('SNR: %s' % cround['snr'])
+                logger.debug('Window: %s' % cround['window'])
+                sys.exit(0)
+
+logger.info('Signal was not vetoed.')    
