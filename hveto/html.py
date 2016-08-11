@@ -129,7 +129,8 @@ def write_static_files(static):
     return hvetocss, hvetojs
 
 
-def init_page(ifo, start, end, css=[], script=[], **kwargs):
+def init_page(ifo, start, end, css=[], script=[], base=os.path.curdir,
+              **kwargs):
     """Initialise a new `markup.page`
 
     This method constructs an HTML page with the following structure
@@ -157,36 +158,50 @@ def init_page(ifo, start, end, css=[], script=[], **kwargs):
         the GPS start time of the analysis
     end : `int`
         the GPS end time of the analysis
-    **kwargs
-        other keyword arguments are passed to `markup.page.init`
+    css : `list`, optional
+        the list of stylesheets to link in the `<head>`
+    script : `list`, optional
+        the list of javascript files to link in the `<head>`
+    base : `str`, optional, default '.'
+        the path for the `<base>` tag to link in the `<head>`
 
     Returns
     -------
     page : `markup.page`
         the structured markup to open an HTML document
     """
-    base = kwargs.pop('base', os.path.curdir)
     # write CSS to static dir
-    staticdir = os.path.join(base, 'static')
+    staticdir = os.path.join(os.path.curdir, 'static')
     write_static_files(staticdir)
     # create page
     page = markup.page()
-    # add bootstrap CSS and JS if needed
+    page.header.append('<!DOCTYPE HTML>')
+    page.html(lang='en')
+    page.head()
+    page.base(href=base)
+    page._full = True
+    # link stylesheets (appending bootstrap if needed)
     css = css[:]
     for cssf in CSS_FILES[::-1]:
         b = os.path.basename(cssf)
         if not any(f.endswith(b) for f in css):
             css.insert(0, cssf)
+    for f in css:
+        page.link(href=f, rel='stylesheet', type='text/css', media='all')
+    # link javascript
     script = script[:]
     for jsf in JS_FILES[::-1]:
         b = os.path.basename(jsf)
         if not any(f.endswith(b) for f in script):
             script.insert(0, jsf)
-    # create page and init
-    kwargs['css'] = css
-    kwargs['script'] = script
-    page.init(base=base, **kwargs)
-
+    for f in script:
+        page.script('', src=f, type='text/javascript')
+    # add other attributes
+    for key in kwargs:
+        getattr(page, key)(kwargs[key])
+    # finalize header
+    page.head.close()
+    page.body()
     # write banner
     page.div(class_='container')
     page.div(class_='page-header', role='banner')
@@ -229,8 +244,9 @@ def close_page(page, target, about=None, date=None):
     """
     page.div.close()  # container
     page.add(str(write_footer(about=about, date=date)))
-    page.body.close()
-    page.html.close()
+    if not page._full:
+        page.body.close()
+        page.html.close()
     with open(target, 'w') as f:
         f.write(page())
     return page
@@ -441,7 +457,7 @@ def write_footer(about=None, date=None):
     """
     page = markup.page()
     page.twotags.append('footer')
-    markup.element('footer', parent=page)(class_='footer')
+    markup.element('footer', case=page.case, parent=page)(class_='footer')
     page.div(class_='container')
     # write user/time for analysis
     if date is None:
@@ -456,7 +472,8 @@ def write_footer(about=None, date=None):
     # link to 'about'
     if about is not None:
         page.a('How was this page generated?', href=about)
-    markup.element('footer', parent=page).close()
+    page.div.close()  # container
+    markup.element('footer', case=page.case, parent=page).close()
     return page
 
 

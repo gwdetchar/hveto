@@ -19,7 +19,7 @@
 """Tests for `hveto.html`
 """
 
-import os.path
+import os
 import tempfile
 import shutil
 import time
@@ -34,9 +34,10 @@ from common import unittest
 VERSION = get_versions()['version']
 COMMIT = get_versions()['full-revisionid']
 
-HTML_INIT = """<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>
+HTML_INIT = """<!DOCTYPE HTML>
 <html lang="en">
 <head>
+<base href="{base}" />
 <link media="all" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
 <link media="all" href="//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" type="text/css" rel="stylesheet" />
 <link media="all" href="//fonts.googleapis.com/css?family=Lato:300,700" type="text/css" rel="stylesheet" />
@@ -45,7 +46,6 @@ HTML_INIT = """<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js" type="text/javascript"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.js" type="text/javascript"></script>
 <script src="{js}" type="text/javascript"></script>
-<base href="{base}" />
 </head>
 <body>
 <div class="container">
@@ -61,6 +61,7 @@ HTML_INIT = """<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>
 HTML_FOOTER = """<footer class="footer">
 <div class="container">
 <p>Page generated using <a href="https://github.com/hveto/hveto/tree/%s" target="_blank">Hveto version %s</a> by {user} at {date}</p>
+</div>
 </footer>""" % (COMMIT, VERSION)
 
 HTML_CLOSE = """</div>
@@ -68,19 +69,28 @@ HTML_CLOSE = """</div>
 </body>
 </html>""" % HTML_FOOTER
 
-class HtmlTestCase(unittest.TestCase):
-    def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
 
-    def tearDown(self):
-        if os.path.isdir(self.tempdir):
-            shutil.rmtree(self.tempdir)
+class HtmlTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tempdir = tempfile.mkdtemp()
+        cls._startdir = os.getcwd()
+        os.chdir(cls.tempdir)
+
+    @classmethod
+    def tearDownClass(cls):
+        os.chdir(cls._startdir)
+        if os.path.isdir(cls.tempdir):
+            shutil.rmtree(cls.tempdir)
+        del cls._startdir
+        del cls.tempdir
 
     def test_init_page(self):
         # test simple content
         out = html.init_page('L1', 0, 100, base=self.tempdir)
-        css = os.path.join(self.tempdir, 'static', 'hveto.css')
-        js = os.path.join(self.tempdir, 'static', 'hveto.js')
+        css = os.path.join(os.path.curdir, 'static', 'hveto.css')
+        js = os.path.join(os.path.curdir, 'static', 'hveto.js')
         self.assertEqual(str(out),
                          HTML_INIT.format(base=self.tempdir, css=css, js=js))
 
