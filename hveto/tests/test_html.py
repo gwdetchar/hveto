@@ -34,9 +34,10 @@ from common import unittest
 VERSION = get_versions()['version']
 COMMIT = get_versions()['full-revisionid']
 
-HTML_INIT = """<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>
+HTML_INIT = """<!DOCTYPE HTML>
 <html lang="en">
 <head>
+<base href="{base}" />
 <link media="all" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
 <link media="all" href="//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" type="text/css" rel="stylesheet" />
 <link media="all" href="//fonts.googleapis.com/css?family=Lato:300,700" type="text/css" rel="stylesheet" />
@@ -45,7 +46,6 @@ HTML_INIT = """<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js" type="text/javascript"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.js" type="text/javascript"></script>
 <script src="{js}" type="text/javascript"></script>
-<base href="{base}" />
 </head>
 <body>
 <div class="container">
@@ -79,8 +79,8 @@ class HtmlTestCase(unittest.TestCase):
     def test_init_page(self):
         # test simple content
         out = html.init_page('L1', 0, 100, base=self.tempdir)
-        css = os.path.join(self.tempdir, 'static', 'hveto.css')
-        js = os.path.join(self.tempdir, 'static', 'hveto.js')
+        css = os.path.join(os.path.curdir, 'static', 'hveto.css')
+        js = os.path.join(os.path.curdir, 'static', 'hveto.js')
         self.assertEqual(str(out),
                          HTML_INIT.format(base=self.tempdir, css=css, js=js))
 
