@@ -75,12 +75,15 @@ class HtmlTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tempdir = tempfile.mkdtemp()
+        cls._startdir = os.getcwd()
         os.chdir(cls.tempdir)
 
     @classmethod
     def tearDownClass(cls):
+        os.chdir(cls._startdir)
         if os.path.isdir(cls.tempdir):
             shutil.rmtree(cls.tempdir)
+        del cls._startdir
         del cls.tempdir
 
     def test_init_page(self):
