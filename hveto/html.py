@@ -129,7 +129,8 @@ def write_static_files(static):
     return hvetocss, hvetojs
 
 
-def init_page(ifo, start, end, css=[], script=[], base=os.path.curdir):
+def init_page(ifo, start, end, css=[], script=[], base=os.path.curdir,
+              **kwargs):
     """Initialise a new `markup.page`
 
     This method constructs an HTML page with the following structure
@@ -195,6 +196,9 @@ def init_page(ifo, start, end, css=[], script=[], base=os.path.curdir):
             script.insert(0, jsf)
     for f in script:
         page.script('', src=f, type='text/javascript')
+    # add other attributes
+    for key in kwargs:
+        getattr(page, key)(kwargs[key])
     # finalize header
     page.head.close()
     page.body()
