@@ -175,8 +175,10 @@ def init_page(ifo, start, end, css=[], script=[], base=os.path.curdir):
     # create page
     page = markup.page()
     page.header.append('<!DOCTYPE HTML>')
-    page.head(lang='en')
+    page.html(lang='en')
+    page.head()
     page.base(href=base)
+    page._full = True
     # link stylesheets (appending bootstrap if needed)
     css = css[:]
     for cssf in CSS_FILES[::-1]:
@@ -193,6 +195,9 @@ def init_page(ifo, start, end, css=[], script=[], base=os.path.curdir):
             script.insert(0, jsf)
     for f in script:
         page.script('', src=f, type='text/javascript')
+    # finalize header
+    page.head.close()
+    page.body()
     # write banner
     page.div(class_='container')
     page.div(class_='page-header', role='banner')
@@ -235,8 +240,9 @@ def close_page(page, target, about=None, date=None):
     """
     page.div.close()  # container
     page.add(str(write_footer(about=about, date=date)))
-    page.body.close()
-    page.html.close()
+    if not page._full:
+        page.body.close()
+        page.html.close()
     with open(target, 'w') as f:
         f.write(page())
     return page
