@@ -61,6 +61,7 @@ HTML_INIT = """<!DOCTYPE HTML>
 HTML_FOOTER = """<footer class="footer">
 <div class="container">
 <p>Page generated using <a href="https://github.com/hveto/hveto/tree/%s" target="_blank">Hveto version %s</a> by {user} at {date}</p>
+</div>
 </footer>""" % (COMMIT, VERSION)
 
 HTML_CLOSE = """</div>

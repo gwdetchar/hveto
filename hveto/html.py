@@ -453,7 +453,7 @@ def write_footer(about=None, date=None):
     """
     page = markup.page()
     page.twotags.append('footer')
-    markup.element('footer', parent=page)(class_='footer')
+    markup.element('footer', case=page.case, parent=page)(class_='footer')
     page.div(class_='container')
     # write user/time for analysis
     if date is None:
@@ -468,7 +468,8 @@ def write_footer(about=None, date=None):
     # link to 'about'
     if about is not None:
         page.a('How was this page generated?', href=about)
-    markup.element('footer', parent=page).close()
+    page.div.close()  # container
+    markup.element('footer', case=page.case, parent=page).close()
     return page
 
 
