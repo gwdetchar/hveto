@@ -19,7 +19,7 @@
 """Tests for `hveto.html`
 """
 
-import os.path
+import os
 import tempfile
 import shutil
 import time
@@ -68,13 +68,19 @@ HTML_CLOSE = """</div>
 </body>
 </html>""" % HTML_FOOTER
 
-class HtmlTestCase(unittest.TestCase):
-    def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
 
-    def tearDown(self):
-        if os.path.isdir(self.tempdir):
-            shutil.rmtree(self.tempdir)
+class HtmlTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tempdir = tempfile.mkdtemp()
+        os.chdir(cls.tempdir)
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.isdir(cls.tempdir):
+            shutil.rmtree(cls.tempdir)
+        del cls.tempdir
 
     def test_init_page(self):
         # test simple content
