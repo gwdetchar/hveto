@@ -31,6 +31,7 @@ import warnings
 import multiprocessing
 import json
 import datetime
+import subprocess
 import sys
 from socket import getfqdn
 from getpass import getuser
@@ -40,6 +41,8 @@ try:
     import configparser
 except ImportError:  # python 2.x
     import ConfigParser as configparser
+
+from numpy import unique
 
 from matplotlib import use
 use('agg')
@@ -97,6 +100,9 @@ parser.add_argument('-S', '--analysis-segments', action='append', default=[],
                     help='path to LIGO_LW XML file containing segments for '
                          'the analysis flag (name in segment_definer table '
                          'must match analysis-flag in config file)')
+parser.add_argument('-w', '--omega-scans', type=int, metavar='NSCAN',
+                    help='generate a workflow of omega scans for each round, '
+                         'requires the gwdetchar package')
 
 pout = parser.add_argument_group('Output options')
 pout.add_argument('-o', '--output-directory', default=os.curdir,
@@ -130,7 +136,8 @@ logger.info("Working directory: %s" % outdir)
 segdir = 'segments'
 plotdir = 'plots'
 trigdir = 'triggers'
-for d in [segdir, plotdir, trigdir]:
+omegadir = 'scans'
+for d in [segdir, plotdir, trigdir, omegadir]:
     if not os.path.isdir(d):
         os.makedirs(d)
 
@@ -518,6 +525,13 @@ cum. deadtime :   %s""" % (
                      % (round.n, tag.lower(), f))
         round.files[tag] = f
 
+    # record times for omega scans
+    if args.omega_scans:
+        vetoed.sort(order='snr')
+        round.scans = vetoed[-args.omega_scans:][::-1]
+        logger.debug("Identified %d events for omega scan\n%s"
+                     % (args.omega_scans, round.scans))
+
     # -- make some plots --
 
     pngname = os.path.join(plotdir, '%s-HVETO_%%s_ROUND_%d-%d-%d.png' %
@@ -735,7 +749,21 @@ with open('summary-stats.json', 'w') as f:
     json.dump(json_, f, sort_keys=True)
 logger.debug("Summary JSON written to %s" % f.name)
 
+# -- generate workflow for omega scans
+
+if args.omega_scans:
+    logger.info('Creating workflow for omega scans...')
+    omegatimes = list(map(str, sorted(unique(
+        [t['time'] for r in rounds for t in r.scans]))))
+    batch = ['wdq-batch'] + omegatimes + ['--output-dir', omegadir]
+    proc = subprocess.Popen(batch)
+    out, err = proc.communicate()
+    if proc.returncode:
+        raise subprocess.CalledProcessError(proc.returncode, ' '.join(batch))
+    dagfile = os.path.join(omegadir, 'condor', 'wdq-batch.dag')
+
 # -- write HTML and finish
+
 index = html.write_hveto_page(ifo, start, end, rounds, plots,  **htmlv)
 logger.debug("HTML written to %s" % index)
 logger.debug("Analysis completed in %d seconds" % (time.time() - jobstart))

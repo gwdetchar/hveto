@@ -634,6 +634,18 @@ def write_round(round):
         link = ' '.join([html_link(
             f, '[%s]' % os.path.splitext(f)[1].strip('.')) for f in files])
         page.add(bold_param(desc, link))
+    # link omega scans if generated
+    if round.scans is not None:
+        page.p('<b>Omega scans:</b>')
+        for t in round.scans:
+            page.p()
+            page.a('%s [SNR %.1f]' % (t['time'], t['snr']),
+                href='./scans/%s/' % t['time'], **{
+                'class_': 'fancybox',
+                'rel': 'hveto-image',
+                'target': '_blank',
+            })
+            page.p.close()
     page.div.close()  # col
     # plots
     page.div(class_='col-md-9', id_='hveto-round-%d-plots' % round.n)
