@@ -71,6 +71,7 @@ requires = [
     'dqsegdb',
     'gwpy',
     'lxml',
+    'gwdetchar',  # for omega scans only
 ]
 tests_require = [
     'pytest'
