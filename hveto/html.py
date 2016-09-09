@@ -645,6 +645,13 @@ def write_round(round):
                 'rel': 'hveto-image',
                 'target': '_blank',
             })
+            for c, tag in zip([round.primary, round.winner.name],
+                              ['Primary', 'Auxiliary']):
+                caption = 'Omega scan of %s at %s' % (c, t['time'])
+                png = ('./scans/%s/%s_%s_1.00_spectrogram_whitened.png'
+                       % (t['time'], t['time'], c))
+                page.a('[%s]' % tag[0].lower(), class_='fancybox', href=png,
+                       rel='omega-preview', title=caption)
             page.p.close()
     page.div.close()  # col
     # plots
