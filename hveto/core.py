@@ -43,6 +43,7 @@ LOG_EXP_1 = log10(exp(1))
 class HvetoRound(object):
     __slots__ = (
         'n',
+        'primary',
         'winner',
         'segments',
         'vetoes',
@@ -55,8 +56,10 @@ class HvetoRound(object):
         'scans',
     )
 
-    def __init__(self, round, segments=None, vetoes=None, plots=[], files={}):
+    def __init__(self, round, primary, segments=None, vetoes=None,
+                 plots=[], files={}):
         self.n = round
+        self.primary = primary
         self.segments = segments
         self.vetoes = vetoes
         self.plots = []

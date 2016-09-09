@@ -369,7 +369,7 @@ else:
     flabel = r'Frequency [Hz]'
 
 rounds = []
-round = core.HvetoRound(1)
+round = core.HvetoRound(1, pchannel)
 round.segments = analysis.active
 
 while True:
@@ -632,7 +632,8 @@ cum. deadtime :   %s""" % (
 
     # move to the next round
     rounds.append(round)
-    round = core.HvetoRound(round.n + 1, segments=round.segments-round.vetoes)
+    round = core.HvetoRound(round.n + 1, pchannel,
+                            segments=round.segments-round.vetoes)
 
 # write file with all segments
 segfile = os.path.join(
