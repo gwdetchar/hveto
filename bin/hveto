@@ -756,7 +756,10 @@ if args.omega_scans:
     logger.info('Creating workflow for omega scans...')
     omegatimes = list(map(str, sorted(unique(
         [t['time'] for r in rounds for t in r.scans]))))
-    batch = ['wdq-batch'] + omegatimes + ['--output-dir', omegadir]
+    batch = ['wdq-batch'] + omegatimes + [
+        '--output-dir', omegadir,
+        '--ifo', ifo,
+    ]
     proc = subprocess.Popen(batch)
     out, err = proc.communicate()
     if proc.returncode:
