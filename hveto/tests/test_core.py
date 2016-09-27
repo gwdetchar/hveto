@@ -26,8 +26,9 @@ from common import unittest
 
 class HvetoRoundTestCase(unittest.TestCase):
     def test_init(self):
-        r = core.HvetoRound(1)
+        r = core.HvetoRound(1, 'X1:PRIMARY')
         self.assertEqual(r.n, 1)
+        self.assertEqual(r.primary, 'X1:PRIMARY')
 
 
 class CoreTestCase(unittest.TestCase):
