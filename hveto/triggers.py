@@ -227,6 +227,7 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
                 continue
             ifo, name = path[:-len(stub)].rsplit(os.path.sep)[-2:]
             out.add('%s:%s' % (ifo, name))
+    out = [unicode(x, 'utf-8') for x in out if not isinstance(x, unicode)]
     return sorted(out)
 
 
