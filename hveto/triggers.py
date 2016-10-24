@@ -216,7 +216,7 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
             channel = '%s:%s' % (ifo, name.replace('_', '-', 1))
             if channel.lower().endswith(etg.lower()):
                 channel = channel[:-len(etg)]
-            out.add(channel.rstrip('_'))
+            out.add(u'%s' % channel.rstrip('_'))
     else:
         channels = glob.glob(os.path.join(
             '/home/detchar/triggers', '*', ifo, '*', str(gps)[:5]))
@@ -226,7 +226,7 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
             if not path.lower().endswith('_%s' % etg.lower()):
                 continue
             ifo, name = path[:-len(stub)].rsplit(os.path.sep)[-2:]
-            out.add('%s:%s' % (ifo, name))
+            out.add(u'%s:%s' % (ifo, name))
     return sorted(out)
 
 
