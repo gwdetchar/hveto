@@ -177,7 +177,7 @@ def read_and_cache_events(channel, etg, cache=None, trigfindkwargs={},
     if cache is None:
         cache = find_trigger_files(channel, etg, new.active, **trigfindkwargs)
     else:
-        cache = cache.sieve(segments=new.active)
+        cache = cache.sieve(segmentlist=new.active)
     # restrict 'active' segments to when we have data
     try:
         new.active &= cache.to_segmentlistdict().values()[0]
