@@ -30,11 +30,6 @@ import os
 import warnings
 import multiprocessing
 
-try:
-    import configparser
-except ImportError:  # python 2.x
-    import ConfigParser as configparser
-
 from glue.lal import (Cache, CacheEntry)
 from glue.ligolw.ligolw import (Document, LIGO_LW, LIGOLWContentHandler)
 from glue.ligolw.utils import (write_filename as write_ligolw,
