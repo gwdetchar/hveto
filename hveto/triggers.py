@@ -179,6 +179,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         recarray = recfunctions.rec_append_fields(recarray, names, data)
         recarray = recfunctions.rec_drop_fields(recarray, dropfields)
 
+    recarray.sort(order='time')
     return recarray[columns]
 
 
