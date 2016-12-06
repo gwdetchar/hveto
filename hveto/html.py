@@ -389,8 +389,8 @@ def fancybox_img(img, linkparams=dict(), **params):
     aparams = {
         'title': os.path.basename(img),
         'class_': 'fancybox',
-        'rel': 'hveto-image',
         'target': '_blank',
+        'data-fancybox-group': 'hveto-image',
     }
     aparams.update(linkparams)
     page.a(href=img, **aparams)
@@ -642,7 +642,7 @@ def write_round(round):
             page.a('%s [SNR %.1f]' % (t['time'], t['snr']),
                 href='./scans/%s/' % t['time'], **{
                 'class_': 'fancybox',
-                'rel': 'hveto-image',
+                'data-fancybox-group': 'hveto-image',
                 'target': '_blank',
             })
             for c, tag in zip([round.primary, round.winner.name],
@@ -650,8 +650,9 @@ def write_round(round):
                 caption = 'Omega scan of %s at %s' % (c, t['time'])
                 png = ('./scans/%s/%s_%s_1.00_spectrogram_whitened.png'
                        % (t['time'], t['time'], c))
-                page.a('[%s]' % tag[0].lower(), class_='fancybox', href=png,
-                       rel='omega-preview', title=caption)
+                page.a('[%s]' % tag[0].lower(), class_='fancybox',
+                       href=png, title=caption,
+                       **{'data-fancybox-group': 'omega-preview'})
             page.p.close()
     page.div.close()  # col
     # plots
