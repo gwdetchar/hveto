@@ -138,14 +138,19 @@ Each of the below sections lists the valid options and a description of what the
 [segments]
 ----------
 
-=================  ============================================================
-``url``            The URL of the segment database
-``analysis-flag``  The name of the data-quality flag indicating analysable
-                   times
-``padding``        The `(pre, post)` padding to apply to the analysis segments
-                   [note both `pre` and `post` operate forward in time, so to
-                   pad out at the start of a segment, use a negative number]
-=================  ============================================================
+===========================  ==================================================
+``url``                      The URL of the segment database
+``analysis-flag``            The name of the data-quality flag indicating
+                             analysable times
+``padding``                  The `(pre, post)` padding to apply to the analysis
+                             segments [note both `pre` and `post` operate
+                             forward in time, so to pad out at the start of a
+                             segment (or in at the end), use a negative number]
+``veto-definer-file``        The path of a veto-definer file to apply before
+                             analysis (can be a remote URL)
+``veto-definer-categories``  Comma-separated list of category integers to
+                             apply, defaults to all flags in veto-definer file
+===========================  ==================================================
 
 .. code-block:: ini
 

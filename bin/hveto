@@ -54,7 +54,8 @@ from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
 from hveto import (__version__, log, config, core, plot, html, utils)
-from hveto.segments import write_ascii as write_ascii_segments
+from hveto.segments import (write_ascii as write_ascii_segments,
+                            read_veto_definer_file)
 from hveto.triggers import (get_triggers, find_auxiliary_channels,
                             write_ascii as write_ascii_triggers)
 
@@ -172,6 +173,42 @@ livetime = int(abs(analysis.active))
 livetimepc = livetime / duration * 100.
 logger.info("Retrieved %d segments for %s with %ss (%.2f%%) livetime"
             % (len(analysis.active), aflag, livetime, livetimepc))
+
+# apply vetoes from veto-definer file
+try:
+    vetofile = cp.get('segments', 'veto-definer-file')
+except configparser.NoOptionError:
+    vetofile = None
+else:
+    try:
+        categories = cp.getfloats('segments', 'veto-definer-categories')
+    except configparser.NoOptionError:
+        categories = None
+    # read file
+    vdf = read_veto_definer_file(vetofile, start=start, end=end, ifo=ifo)
+    logger.debug("Read veto-definer file from %s" % vetofile)
+    # get vetoes from segdb
+    vdf.populate(source=url, segments=analysis.active, on_error='warn')
+    # coalesce flags from chosen categories
+    vetoes = DataQualityFlag('%s:VDF-VETOES:1' % ifo)
+    nflags = 0
+    for flag in vdf:
+        if not categories or vdf[flag].category in categories:
+            vetoes += vdf[flag]
+            nflags += 1
+    try:
+        deadtime = int(abs(vetoes.active)) / int(abs(vetoes.known)) * 100
+    except ZeroDivisionError:
+        deadtime = 0
+    logger.debug("Coalesced %ss (%.2f%%) of deadtime from %d veto flags"
+                 % (abs(vetoes.active), deadtime, nflags))
+    # apply to analysis segments
+    analysis -= vetoes
+    logger.debug("Applied vetoes from veto-definer file")
+    livetime = int(abs(analysis.active))
+    livetimepc = livetime / duration * 100.
+    logger.info("%ss (%.2f%%) livetime remaining after vetoes"
+                % (livetime, livetimepc))
 
 snrs = cp.getfloats('hveto', 'snr-thresholds')
 minsnr = min(snrs)
