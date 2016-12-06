@@ -150,7 +150,7 @@ htmlv = {
 # get segments
 aflag = cp.get('segments', 'analysis-flag')
 url = cp.get('segments', 'url')
-padding = cp.getfloats('segments', 'padding')
+padding = tuple(cp.getfloats('segments', 'padding'))
 if args.analysis_segments:
     segs_ = DataQualityDict.read(args.analysis_segments, gpstype=float)
     analysis = segs_[aflag]
@@ -162,7 +162,12 @@ if args.analysis_segments:
 else:
     analysis = DataQualityFlag.query(aflag, start, end, url=url)
     logger.debug("Segments recovered from %s" % url)
-analysis.pad(*padding)
+if padding != (0, 0):
+    mindur = padding[0] - padding[1]
+    analysis.active = type(analysis.active)([s for s in analysis.active if
+                                             abs(s) >= mindur])
+    analysis.pad(*padding, inplace=True)
+    logger.debug("Padding %s applied" % str(padding))
 livetime = int(abs(analysis.active))
 livetimepc = livetime / duration * 100.
 logger.info("Retrieved %d segments for %s with %ss (%.2f%%) livetime"
