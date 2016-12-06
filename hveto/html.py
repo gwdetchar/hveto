@@ -541,13 +541,14 @@ def write_summary(
     page = markup.page()
     page.h2(header)
     page.table(class_=tableclass)
+    page.caption("Summary of this HierarchichalVeto analysis.")
     # make header
     page.thead()
     page.tr()
     for header in ['Round', 'Winner', 'Twin [s]', 'SNR Thresh', 'Significance',
                    'Use [%]', 'Efficiency [%]', 'Deadtime [%]',
                    'Cum. efficiency [%]', 'Cum. deadtime [%]']:
-        page.th(header)
+        page.th(header, scope='row')
     page.tr.close()
     page.thead.close()
     # make body
