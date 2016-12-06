@@ -21,9 +21,12 @@
 
 from __future__ import print_function
 
+import os.path
 from functools import wraps
+from urlparse import urlparse
+from urllib2 import urlopen
 
-from gwpy.segments import DataQualityFlag, Segment, SegmentList
+from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
@@ -53,3 +56,15 @@ def write_ascii(outfile, segmentlist, ncol=4):
                 print("%f %f" % seg, file=f)
             else:
                 print("%d\t%f\t%f\t%f" % (i, seg[0], seg[1], abs(seg)), file=f)
+
+
+def read_veto_definer_file(vetofile, start=None, end=None, ifo=None):
+    """Read a veto definer file, downloading it if necessary
+    """
+    if urlparse(vetofile).netloc:
+        tmp = urlopen(vetofile)
+        vetofile = os.path.abspath(os.path.basename(vetofile))
+        with open(vetofile, 'w') as f:
+            f.write(tmp.read())
+    return DataQualityDict.from_veto_definer_file(
+        vetofile, format='ligolw', start=start, end=end, ifo=ifo)
