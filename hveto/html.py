@@ -389,8 +389,8 @@ def fancybox_img(img, linkparams=dict(), **params):
     aparams = {
         'title': os.path.basename(img),
         'class_': 'fancybox',
-        'rel': 'hveto-image',
         'target': '_blank',
+        'data-fancybox-group': 'hveto-image',
     }
     aparams.update(linkparams)
     page.a(href=img, **aparams)
@@ -541,13 +541,14 @@ def write_summary(
     page = markup.page()
     page.h2(header)
     page.table(class_=tableclass)
+    page.caption("Summary of this HierarchichalVeto analysis.")
     # make header
     page.thead()
     page.tr()
     for header in ['Round', 'Winner', 'Twin [s]', 'SNR Thresh', 'Significance',
                    'Use [%]', 'Efficiency [%]', 'Deadtime [%]',
                    'Cum. efficiency [%]', 'Cum. deadtime [%]']:
-        page.th(header)
+        page.th(header, scope='row')
     page.tr.close()
     page.thead.close()
     # make body
@@ -642,7 +643,7 @@ def write_round(round):
             page.a('%s [SNR %.1f]' % (t['time'], t['snr']),
                 href='./scans/%s/' % t['time'], **{
                 'class_': 'fancybox',
-                'rel': 'hveto-image',
+                'data-fancybox-group': 'hveto-image',
                 'target': '_blank',
             })
             for c, tag in zip([round.primary, round.winner.name],
@@ -650,8 +651,9 @@ def write_round(round):
                 caption = 'Omega scan of %s at %s' % (c, t['time'])
                 png = ('./scans/%s/%s_%s_1.00_spectrogram_whitened.png'
                        % (t['time'], t['time'], c))
-                page.a('[%s]' % tag[0].lower(), class_='fancybox', href=png,
-                       rel='omega-preview', title=caption)
+                page.a('[%s]' % tag[0].lower(), class_='fancybox',
+                       href=png, title=caption,
+                       **{'data-fancybox-group': 'omega-preview'})
             page.p.close()
     page.div.close()  # col
     # plots

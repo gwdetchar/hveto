@@ -152,7 +152,7 @@ class HtmlTestCase(unittest.TestCase):
         out = html.fancybox_img('test.png')
         self.assertEqual(
             out, '<a class="fancybox" href="test.png" target="_blank" '
-                 'rel="hveto-image" title="test.png">\n'
+                 'data-fancybox-group="hveto-image" title="test.png">\n'
                  '<img class="img-responsive" alt="test.png" src="test.png" />'
                  '\n</a>')
 
@@ -162,14 +162,14 @@ class HtmlTestCase(unittest.TestCase):
             out, '<div class="row">\n'
                  '<div class="col-sm-6">\n'
                  '<a class="fancybox" href="plot1.png" target="_blank" '
-                     'rel="hveto-image" title="plot1.png">\n'
+                     'data-fancybox-group="hveto-image" title="plot1.png">\n'
                  '<img class="img-responsive" alt="plot1.png" '
                      'src="plot1.png" />\n'
                  '</a>\n'
                  '</div>\n'
                  '<div class="col-sm-6">\n'
                  '<a class="fancybox" href="plot2.png" target="_blank" '
-                 'rel="hveto-image" title="plot2.png">\n'
+                 'data-fancybox-group="hveto-image" title="plot2.png">\n'
                  '<img class="img-responsive" alt="plot2.png" '
                      'src="plot2.png" />\n'
                  '</a>\n'
