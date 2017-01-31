@@ -220,14 +220,23 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
             out.add(u'%s' % channel.rstrip('_'))
     else:
         channels = glob.glob(os.path.join(
-            '/home/detchar/triggers', '*', ifo, '*', str(gps)[:5]))
+            '/home/detchar/triggers', ifo, '*', str(gps)[:5]))
+        if len(channels) == 0:  # try old convention
+            channels = glob.glob(os.path.join(
+                '/home/detchar/triggers', '*', ifo, '*', str(gps)[:5]))
+            use_o2 = False
+        else:
+            use_o2 = True
         stub = '_%s' % etg.lower()
         for path in channels:
             path = os.path.split(path)[0]
             if not path.lower().endswith('_%s' % etg.lower()):
                 continue
             ifo, name = path[:-len(stub)].rsplit(os.path.sep)[-2:]
-            out.add(u'%s:%s' % (ifo, name))
+            if use_o2:
+                out.add(u'%s:%s' % (ifo, name.replace('_', '-', 1)))
+            else:
+                out.add(u'%s:%s' % (ifo, name))
     return sorted(out)
 
 
