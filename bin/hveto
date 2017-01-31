@@ -237,6 +237,11 @@ try:
 except config.configparser.NoOptionError:
     auxchannels = find_auxiliary_channels(auxetg, start, ifo=args.ifo,
                                           cache=acache)
+    logger.debug("Auto-discovered %d auxiliary channels" % len(auxchannels))
+else:
+    auxchannels = sorted(set(auxchannels))
+    logger.debug("Read list of %d auxiliary channels" % len(auxchannels))
+
 
 # load unsafe channels list
 _unsafe = cp.get('safety', 'unsafe-channels')
@@ -255,10 +260,6 @@ else:  # or from line-seprated list
 unsafe.add(pchannel)
 cp.set('safety', 'unsafe-channels', '\n'.join(sorted(unsafe)))
 logger.debug("Read list of %d unsafe channels" % len(unsafe))
-
-# remove duplicates
-auxchannels = sorted(set(auxchannels))
-logger.debug("Read list of %d auxiliary channels" % len(auxchannels))
 
 # remove unsafe channels
 nunsafe = 0
