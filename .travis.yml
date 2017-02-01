@@ -27,12 +27,15 @@ before_install:
   - pip install ${PRE} -r requirements.txt
 
 install:
-  - pip install .
+  # note: need --editable for coverage with `which ...` to work
+  - pip install --editable .
 
 script:
   - pip install ${PRE} unittest2 coveralls "pytest>=2.8"
-  - coverage run --source=hveto --omit="hveto/tests/*,hveto/_version.py" ./setup.py test
-  - coverage run --append --source=hveto --omit="hveto/tests/*,hveto/_version.py" `which hveto` --help
+  - coverage run ./setup.py test
+  - coverage run --append `which hveto` --help
+  - coverage run --append `which hveto-cache-events` --help
+  - coverage run --append `which hveto-trace` --help
 
 after_success:
   - coveralls
