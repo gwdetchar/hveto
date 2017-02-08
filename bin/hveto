@@ -237,6 +237,7 @@ try:
 except config.configparser.NoOptionError:
     auxchannels = find_auxiliary_channels(auxetg, start, ifo=args.ifo,
                                           cache=acache)
+    cp.set('auxiliary', 'channels', '\n'.join(auxchannels))
     logger.debug("Auto-discovered %d auxiliary channels" % len(auxchannels))
 else:
     auxchannels = sorted(set(auxchannels))
