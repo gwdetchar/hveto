@@ -28,7 +28,6 @@ import numpy
 from numpy.lib import recfunctions
 
 from glue.lal import Cache
-from glue.ligolw.table import StripTableName as strip_table_name
 
 from gwpy.table import lsctables
 
@@ -102,7 +101,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     except KeyError as e:
         e.args = ('Unknown ETG %r, cannot map to LIGO_LW Table class' % etg,)
         raise
-    tablename = strip_table_name(Table.tableName)
+    tablename = Table.TableName(Table.tableName)
     # get default columns for this table
     if columns is None:
         for key in COLUMNS:
