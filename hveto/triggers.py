@@ -196,8 +196,9 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
     ----------
     etg : `str`
         name of the trigger generator
-    gps : `int`, optional
-        GPS reference time at which to find channels
+    gps : `int`, `tuple`, optional
+        GPS reference time, or pair of times indicating [start, end),
+        at which to find channels
     ifo : `str`, optional
         interferometer prefix for which to find channels
     cache : `~glue.lal.Cache`, optional
@@ -218,24 +219,30 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
                 channel = channel[:-len(etg)]
             out.add(u'%s' % channel.rstrip('_'))
     else:
-        channels = glob.glob(os.path.join(
-            '/home/detchar/triggers', ifo, '*', str(gps)[:5]))
-        if len(channels) == 0:  # try old convention
+        if not isinstance(gps, (list, tuple)):
+            gps = (gps, gps)
+        gps5 = int(str(gps[0])[:5])
+        gpse = int(str(gps[-1])[:5])
+        while gps5 <= gpse and gps5 * 1e5 < gps[-1]:
             channels = glob.glob(os.path.join(
-                '/home/detchar/triggers', '*', ifo, '*', str(gps)[:5]))
-            use_o2 = False
-        else:
-            use_o2 = True
-        stub = '_%s' % etg.lower()
-        for path in channels:
-            path = os.path.split(path)[0]
-            if not path.lower().endswith('_%s' % etg.lower()):
-                continue
-            ifo, name = path[:-len(stub)].rsplit(os.path.sep)[-2:]
-            if use_o2:
-                out.add(u'%s:%s' % (ifo, name.replace('_', '-', 1)))
+                '/home/detchar/triggers', ifo, '*', str(gps5)))
+            if len(channels) == 0:  # try old convention
+                channels = glob.glob(os.path.join(
+                    '/home/detchar/triggers', '*', ifo, '*', str(gps5)))
+                use_o2 = False
             else:
-                out.add(u'%s:%s' % (ifo, name))
+                use_o2 = True
+            stub = '_%s' % etg.lower()
+            for path in channels:
+                path = os.path.split(path)[0]
+                if not path.lower().endswith('_%s' % etg.lower()):
+                    continue
+                ifo, name = path[:-len(stub)].rsplit(os.path.sep)[-2:]
+                if use_o2:
+                    out.add(u'%s:%s' % (ifo, name.replace('_', '-', 1)))
+                else:
+                    out.add(u'%s:%s' % (ifo, name))
+            gps5 += 1
     return sorted(out)
 
 
