@@ -2,16 +2,29 @@ language: python
 
 addons:
   apt:
+    sources:
+      - sourceline: deb http://software.ligo.org/lscsoft/debian wheezy contrib
+        key_url: http://software.ligo.org/keys/deb/lscsoft.key
+      - sourceline: deb-src http://software.ligo.org/lscsoft/debian wheezy contrib
+        key_url: http://software.ligo.org/keys/deb/lscsoft.key
     packages:
       - gfortran  # scipy
       - libblas-dev  # scipy
       - liblapack-dev  # scipy
       - swig  # m2crypto
+      - pkg-config  # lal
+      - zlib1g-dev  # lal
+      - libgsl0-dev  # lal
+      - swig  # lal
+      - bc  # lal
+      - libfftw3-dev
+
+env:
+  global:
+    - LAL_VERSION="6.18.0"
 
 matrix:
   include:
-    - python: 2.6
-      env: PRE=""
     - python: 2.7
       env: PRE=""
     - python: 2.7
@@ -25,6 +38,7 @@ before_install:
   # install specific packages for python2.6
   - if [[ ${TRAVIS_PYTHON_VERSION} == '2.6' ]]; then pip install "scipy<0.18" "astropy<1.2" "matplotlib<2.0"; fi
   - pip install ${PRE} -r requirements.txt
+  - .travis/build-lal.sh
 
 install:
   # note: need --editable for coverage with `which ...` to work
@@ -43,3 +57,5 @@ after_success:
 cache:
   apt: true
   pip: true
+  directories:
+    - lal-${LAL_VERSION}

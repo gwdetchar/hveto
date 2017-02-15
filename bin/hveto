@@ -235,7 +235,7 @@ auxfreq = cp.getfloats('auxiliary', 'frequency-range')
 try:
     auxchannels = cp.get('auxiliary', 'channels').strip('\n').split('\n')
 except config.configparser.NoOptionError:
-    auxchannels = find_auxiliary_channels(auxetg, start, ifo=args.ifo,
+    auxchannels = find_auxiliary_channels(auxetg, (start, end), ifo=args.ifo,
                                           cache=acache)
     cp.set('auxiliary', 'channels', '\n'.join(auxchannels))
     logger.debug("Auto-discovered %d auxiliary channels" % len(auxchannels))
