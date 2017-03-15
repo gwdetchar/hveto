@@ -17,21 +17,28 @@ addons:
       - libgsl0-dev  # lal
       - swig  # lal
       - bc  # lal
-      - libfftw3-dev
+      - libfftw3-dev  # lal
+
+python:
+  - '2.6'
+  - '2.7'
+  - '3.5'
 
 env:
   global:
     - LAL_VERSION="6.18.0"
+  matrix:
+    - PIP_FLAGS="--quiet"
+    - PIP_FLAGS="--quiet --pre"
 
 matrix:
-  include:
-    - python: 2.7
-      env: PRE=""
-    - python: 2.7
-      env: PRE="--pre" GWPY="git+https://github.com/gwpy/gwpy.git"
+  exclude:
+    - python: '2.6'
+      env: PIP_FLAGS="--quiet --pre"
   allow_failures:
-    - python: 2.7
-      env: PRE="--pre" GWPY="git+https://github.com/gwpy/gwpy.git"
+    - python: '2.6'
+    - python: '3.5'
+  fast_finish: true
 
 before_install:
   - pip install -q --upgrade pip
