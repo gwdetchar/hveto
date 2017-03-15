@@ -112,8 +112,8 @@ pout.add_argument('-o', '--output-directory', default=os.curdir,
 args = parser.parse_args()
 
 ifo = args.ifo
-start = args.gpsstart.seconds
-end = args.gpsend.seconds
+start = int(args.gpsstart)
+end = int(args.gpsend)
 duration = end - start
 
 logger.info("-- Welcome to Hveto --")
