@@ -29,26 +29,52 @@ from numpy.lib import recfunctions
 
 from glue.lal import Cache
 
-from gwpy.table import lsctables
+from astropy.table import vstack as vstack_tables
+
+from gwpy.table import EventTable
+from gwpy.plotter.table import get_column_string
+from gwpy.segments import SegmentList
 
 try:  # use new trigfind module
     import trigfind
 except ImportError:
     from gwpy.table.io import trigfind
 
-
-TABLE = {
-    'omicron': lsctables.SnglBurstTable,
-    'daily-cbc': lsctables.SnglInspiralTable,
+ETG_PARAMS = {
+    'pycbc_live': (
+        ['end_time', 'template_duration', 'snr'],  # columns list
+        {'format': 'hdf5.pycbc_live', 'loudest': True},  # read() kwargs
+    ),
+    'omicron': (
+        ['time', 'peak_frequency', 'snr'],
+        {'format': 'ligolw.sngl_burst'},
+    ),
 }
 
-COLUMNS = {
-    lsctables.SnglInspiralTable: [
-        'end_time', 'end_time_ns', 'mchirp', 'snr'],
-    lsctables.SnglBurstTable: [
-        'peak_time', 'peak_time_ns', 'peak_frequency', 'snr'],
+
+# -- utilities ----------------------------------------------------------------
+
+COLUMN_LABEL = {
+    'peal_frequency': r"Frequency [Hz]",
+    'central_freq': r"Frequency [Hz]",
+    'frequency': r"Frequency [Hz]",
+    'mchirp': r"Chirp mass [M$_\odot$]",
+    'new_snr': r"$\chi^2$-weighted signal-to-noise ratio (New SNR)",
+    'peak_frequency': r"Frequency [Hz]",
+    'rho': r"$\rho$",
+    'snr': r"Signal-to-noise ratio (SNR)",
+    'template_duration': r"Template duration [s]",
 }
 
+
+def get_column_label(column):
+    try:
+        return COLUMN_LABEL[column]
+    except KeyError:
+        return get_column_string(column)
+
+
+# -- find files/channels ------------------------------------------------------
 
 def find_trigger_files(channel, etg, segments, **kwargs):
     """Find trigger files for a given channel and ETG
@@ -89,97 +115,6 @@ def find_trigger_files(channel, etg, segments, **kwargs):
             else:
                 raise
     return cache.unique()
-
-
-def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
-                 columns=None, raw=False, **kwargs):
-    """Get triggers for the given channel
-    """
-    # get table from etg
-    try:
-        Table = TABLE[etg.lower()]
-    except KeyError as e:
-        e.args = ('Unknown ETG %r, cannot map to LIGO_LW Table class' % etg,)
-        raise
-    tablename = Table.TableName(Table.tableName)
-    # get default columns for this table
-    if columns is None:
-        for key in COLUMNS:
-            if issubclass(Table, key):
-                columns = COLUMNS[key][:]
-                break
-    if 'channel' in columns:
-        columns.pop('channel')
-
-    # find triggers
-    if cache is None:
-        cache = find_trigger_files(channel, etg, segments, **kwargs)
-
-    # read cache
-    trigs = lsctables.New(Table, columns=columns)
-    cache = cache.unique()
-    cache.sort(key=lambda x: x.segment[0])
-    for segment in segments:
-        if len(cache.sieve(segment=segment)):
-            if tablename.endswith('_inspiral'):
-                filt = lambda t: float(t.get_end()) in segment
-            else:
-                filt = lambda t: float(t.get_peak()) in segment
-            trigs.extend(Table.read(cache.sieve(segment=segment), filt=filt))
-
-    # format table as numpy.recarray
-    recarray = trigs.to_recarray(columns=columns)
-
-    # filter
-    if snr is not None:
-        recarray = recarray[recarray['snr'] >= snr]
-    if tablename.endswith('_burst') and frange is not None:
-        recarray = recarray[
-            (recarray['peak_frequency'] >= frange[0]) &
-            (recarray['peak_frequency'] < frange[1])]
-
-    # return basic table if 'raw'
-    if raw:
-        return recarray
-
-    # otherwise spend the rest of this function converting functions to
-    # something useful for the hveto core analysis
-    addfields = {}
-    dropfields = []
-
-    # append channel to all events
-    columns.append('channel')
-    addfields['channel'] = numpy.repeat(channel, recarray.shape[0])
-
-    # rename frequency column
-    if tablename.endswith('_burst'):
-        recarray = recfunctions.rename_fields(
-            recarray, {'peak_frequency': 'frequency'})
-        idx = columns.index('peak_frequency')
-        columns.pop(idx)
-        columns.insert(idx, 'frequency')
-
-    # map time to its own column
-    if tablename.endswith('_inspiral'):
-        tcols = ['end_time', 'end_time_ns']
-    elif tablename.endswith('_burst'):
-        tcols = ['peak_time', 'peak_time_ns']
-    else:
-        tcols = None
-    if tcols:
-        times = recarray[tcols[0]] + recarray[tcols[1]] * 1e-9
-        addfields['time'] = times
-        dropfields.extend(tcols)
-        columns = ['time'] + columns[2:]
-
-    # add and remove fields as required
-    if addfields:
-        names, data = zip(*addfields.items())
-        recarray = recfunctions.rec_append_fields(recarray, names, data)
-        recarray = recfunctions.rec_drop_fields(recarray, dropfields)
-
-    recarray.sort(order='time')
-    return recarray[columns]
 
 
 re_delim = re.compile('[_-]')
@@ -246,7 +181,90 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
     return sorted(out)
 
 
-def write_ascii(outfile, recarray, fmt='%s', columns=None, **kwargs):
+# -- read ---------------------------------------------------------------------
+
+def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
+                 columns=None, raw=False, nproc=1, **kwargs):
+    """Get triggers for the given channel
+    """
+    # get default format name and list of columns
+    try:
+        _columns, readkw = ETG_PARAMS[etg.lower()]
+    except KeyError:
+        readkw = {}
+    else:
+        if columns is None:
+            columns = _columns
+
+    # format keyword arguments for read()
+    readkw.update({
+        'columns': columns,
+        'nproc': nproc,
+    })
+    if etg in ['pycbc_live']:
+        readkw['ifo'] = channel[:2]
+
+    # find triggers
+    if cache is None:
+        cache = find_trigger_files(channel, etg, segments, **kwargs)
+
+    # read files
+    tables = []
+    for segment in segments:
+        segaslist = SegmentList([segment])
+        segcache = cache.sieve(segment=segment)
+        # try and work out if cache overextends segment (so we need to crop)
+        try:
+            cachesegs = segcache.to_segmentlistdict()[channel[:2]]
+        except KeyError:
+            outofbounds = False
+        else:
+            outofbounds = abs(cachesegs - segaslist)
+        if segcache:
+            new = EventTable.read(segcache, **readkw)
+            new.meta = {}  # we never need the metadata
+            if outofbounds:
+                new = new[new[new.dtype.names[0]].in_segmentlist(segaslist)]
+            tables.append(new)
+    if len(tables):
+        table = vstack_tables(tables)
+    else:
+        table = EventTable(names=columns)
+
+    # parse time, frequency-like and snr-like column names
+    if columns is None:
+        columns = table.dtype.names
+    tcolumn = columns[0]
+    fcolumn = columns[1]
+    scolumn = columns[2]
+
+    # filter
+    keep = numpy.ones(len(table), dtype=bool)
+    if snr is not None:
+        keep &= table[scolumn] >= snr
+    if frange is not None:
+        keep &= table[fcolumn] >= frange[0]
+        keep &= table[fcolumn] < frange[1]
+    table = table[keep]
+
+    # return basic table if 'raw'
+    if raw:
+        return table
+
+    # rename time column so that all tables match in at least that
+    table.rename_column(tcolumn, 'time')
+
+    # add channel column to identify all triggers
+    table.add_column(table.Column(data=numpy.repeat(channel, len(table)),
+                                  name='channel'))
+
+    table.sort('time')
+    return table
+
+
+# -- write --------------------------------------------------------------------
+
+def write_ascii(outfile, table, fmt='%s', columns=None, **kwargs):
     """Write a `numpy.recarray` to file as ASCII
 
     Parameters
