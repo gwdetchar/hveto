@@ -260,29 +260,3 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
 
     table.sort('time')
     return table
-
-
-# -- write --------------------------------------------------------------------
-
-def write_ascii(outfile, table, fmt='%s', columns=None, **kwargs):
-    """Write a `numpy.recarray` to file as ASCII
-
-    Parameters
-    ----------
-    outfile : `str`
-        path of output file
-    recarray : `numpy.recarray`
-        array to write
-    fmt : `str`
-        format string, or list of format strings
-
-    See Also
-    --------
-    numpy.savetxt
-        for details on the writer, including the `fmt` keyword argument
-    """
-    if columns:
-        recarray = recarray[columns]
-    kwargs.setdefault('header', ' '.join(recarray.dtype.names))
-    numpy.savetxt(outfile, recarray, fmt=fmt, **kwargs)
-    return outfile
