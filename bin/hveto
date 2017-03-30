@@ -621,11 +621,11 @@ cum. deadtime :   %s""" % (
     round.plots.append(png)
 
     # aux used versus frequency
-    png = pngname % 'USED_FREQUENCY_TIME'
+    png = pngname % 'USER_SNR_TIME'
     plot.veto_scatter(
-        png, winner.events, vetoed, x='time', y=auxfcol, label1=usedl,
-        label2=vetoedl, ylabel=flabel, epoch=start, xlim=[start, end],
-        title=atitle, subtitle=subtitle, legend_title="Aux:")
+        png, winner.events, vetoed, x='time', y=[auxscol, scol], label1=usedl,
+        label2=vetoedl, ylabel=slabel, epoch=start, xlim=[start, end],
+        title=atitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
