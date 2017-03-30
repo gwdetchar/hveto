@@ -24,6 +24,8 @@ import os.path
 import re
 import warnings
 
+from six import string_types
+
 import numpy
 
 from glue.lal import Cache
@@ -38,22 +40,6 @@ try:  # use new trigfind module
     import trigfind
 except ImportError:
     from gwpy.table.io import trigfind
-
-ETG_PARAMS = {
-    'pycbc_live': (
-        ['end_time', 'template_duration', 'snr'],  # columns list
-        {'format': 'hdf5.pycbc_live', 'loudest': True},  # read() kwargs
-    ),
-    'omicron': (
-        ['time', 'peak_frequency', 'snr'],
-        {'format': 'ligolw.sngl_burst'},
-    ),
-    'dmt_omega': (
-        ['time', 'central_freq', 'snr'],
-        {'format': 'ligolw.sngl_burst'},
-    ),
-}
-
 
 # -- utilities ----------------------------------------------------------------
 
@@ -187,29 +173,17 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
 # -- read ---------------------------------------------------------------------
 
 def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
-                 columns=None, raw=False, nproc=1, **kwargs):
+                 raw=False, trigfind_kwargs={}, **read_kwargs):
     """Get triggers for the given channel
     """
-    # get default format name and list of columns
-    try:
-        _columns, readkw = ETG_PARAMS[etg.lower()]
-    except KeyError:
-        readkw = {}
-    else:
-        if columns is None:
-            columns = _columns
-
-    # format keyword arguments for read()
-    readkw.update({
-        'columns': columns,
-        'nproc': nproc,
-    })
-    if etg in ['pycbc_live']:
-        readkw['ifo'] = channel[:2]
+    # format params
+    if isinstance(read_kwargs.get('columns', None), string_types):
+        read_kwargs['columns'] = [x.strip(' ') for x in
+                                  read_kwargs['columns'].split(',')]
 
     # find triggers
     if cache is None:
-        cache = find_trigger_files(channel, etg, segments, **kwargs)
+        cache = find_trigger_files(channel, etg, segments, **trigfind_kwargs)
 
     # read files
     tables = []
@@ -224,7 +198,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         else:
             outofbounds = abs(cachesegs - segaslist)
         if segcache:
-            new = EventTable.read(segcache, **readkw)
+            new = EventTable.read(segcache, **read_kwargs)
             new.meta = {}  # we never need the metadata
             if outofbounds:
                 new = new[new[new.dtype.names[0]].in_segmentlist(segaslist)]
@@ -232,11 +206,10 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     if len(tables):
         table = vstack_tables(tables)
     else:
-        table = EventTable(names=columns)
+        table = EventTable(names=read_kwargs['columns'])
 
     # parse time, frequency-like and snr-like column names
-    if columns is None:
-        columns = table.dtype.names
+    columns = table.dtype.names
     tcolumn = columns[0]
     fcolumn = columns[1]
     scolumn = columns[2]

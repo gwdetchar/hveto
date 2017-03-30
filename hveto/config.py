@@ -68,6 +68,11 @@ Each of the below sections lists the valid options and a description of what the
                        primary channel events to be included in the analysis
 ``frequency-range``    The `(low, high`) frequency range of interest for this
                        analysis
+``read-format``        The ``format`` name to use when reading files for this
+                       trigger generator
+``read-columns``       The list of three column names equivalent to
+                       `time-like,frequency-like,snr-like` for this trigger
+                       generator
 =====================  ========================================================
 
 .. code-block:: ini
@@ -80,6 +85,10 @@ Each of the below sections lists the valid options and a description of what the
    snr-threshold = 6
    ; flow, fhigh
    frequency-range = 0, 2048.
+   ; format
+   read-format = ligolw.sngl_burst
+   ; read-columns to read
+   read-columns = time, peak_frequency, snr
 
 .. note::
 
@@ -104,13 +113,20 @@ Each of the below sections lists the valid options and a description of what the
       trigger-generator = daily-cbc
       trigfind-run = bbh_gds
       trigfind-filetag = 16SEC_CLUSTERED
+      read-format = ligolw.sngl_inspiral
+      read-columns = end,template_duration,snr
 
 [auxiliary]
 -----------
 
 =====================  ========================================================
 ``trigger-generator``  The name of the auxiliary trigger generator
-``frequency-range``    the `(low, high)` frequency range of interest
+``frequency-range``    The `(low, high)` frequency range of interest
+``read-format``        The ``format`` name to use when reading files for this
+                       trigger generator
+``read-columns``       The list of three column names equivalent to
+                       `time-like,frequency-like,snr-like` for this trigger
+                       generator
 ``channels``           a tab-indented, line-delimited list of auxiliary channel
                        names
 =====================  ========================================================
@@ -121,6 +137,10 @@ Each of the below sections lists the valid options and a description of what the
    trigger-generator = omicron
    ; flow, fhigh
    frequency-range = 0, 2048
+   ; file format
+   read-format = ligolw.sngl_burst
+   ; read-columns to read
+   read-columns = time, peak_frequency, snr
    ; give tab-indented, line-separated list of channels
    channels =
        %(IFO)s:ASC-AS_B_RF45_I_PIT_OUT_DQ
@@ -207,10 +227,14 @@ class HvetoConfigParser(configparser.ConfigParser):
             'trigger-generator': 'Omicron',
             'snr-threshold': 8,
             'frequency-range': (30, 2048),
+            'read-format': 'ligolw.sngl_burst',
+            'read-columns': 'time, peak_frequency, snr',
         },
         'auxiliary': {
             'trigger-generator': 'Omicron',
             'frequency-range': (30, 2048),
+            'read-format': 'ligolw.sngl_burst',
+            'read-columns': 'time, peak_frequency, snr',
         },
         'safety': {
             'unsafe-channels': ['%(IFO)s:GDS-CALIB_STRAIN',
@@ -249,6 +273,21 @@ class HvetoConfigParser(configparser.ConfigParser):
 
     def getfloats(self, section, option):
         return self._get(section, comma_separated_floats, option)
+
+    def getparams(self, section, prefix):
+        nchar = len(prefix)
+        params = dict((key[nchar:], val) for (key, val) in
+                      self.items(section) if key.startswith(prefix))
+        # try simple typecasting
+        for key in params:
+            if params[key].lower() in ('true', 'false'):
+                params[key] = bool(params[key])
+            else:
+                try:
+                    params[key] = float(params[key])
+                except ValueError:
+                    pass
+        return params
 
 
 def comma_separated_floats(string):

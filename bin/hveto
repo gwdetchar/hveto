@@ -296,10 +296,11 @@ else:
 petg = cp.get('primary', 'trigger-generator')
 psnr = cp.getfloat('primary', 'snr-threshold')
 pfreq = cp.getfloats('primary', 'frequency-range')
-ptrigfind = dict((key.split('-', 1)[1], val) for (key, val) in
-                 cp.items('primary') if key.startswith('trigfind-'))
+preadkw = cp.getparams('primary', 'read-')
+ptrigfindkw = cp.getparams('primary', 'trigfind-')
 primary = get_triggers(pchannel, petg, analysis.active, snr=psnr, frange=pfreq,
-                       cache=pcache, nproc=args.nproc, **ptrigfind)
+                       cache=pcache, nproc=args.nproc,
+                       trigfind_kwargs=ptrigfindkw, **preadkw)
 fcol, scol = primary.dtype.names[1:3]
 
 if len(primary):
@@ -340,6 +341,9 @@ primary.write(trigfile, format='ascii', overwrite=True)
 logger.info("Reading triggers for aux channels...")
 counter = multiprocessing.Value('i', 0)
 
+areadkw = cp.getparams('auxiliary', 'read-')
+atrigfindkw = cp.getparams('auxiliary', 'trigfind-')
+
 def _get_aux_triggers(channel):
     if acache is None:
         auxcache = None
@@ -350,7 +354,8 @@ def _get_aux_triggers(channel):
     # get triggers
     try:
         trigs = get_triggers(channel, auxetg, analysis.active, snr=minsnr,
-                             frange=auxfreq, cache=auxcache)
+                             frange=auxfreq, cache=auxcache, nproc=1,
+                             trigfind_kwargs=atrigfindkw, **areadkw)
     # catch error and continue
     except ValueError as e:
         warnings.warn('%s: %s' % (type(e).__name__, str(e)))
