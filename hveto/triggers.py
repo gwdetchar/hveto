@@ -25,7 +25,6 @@ import re
 import warnings
 
 import numpy
-from numpy.lib import recfunctions
 
 from glue.lal import Cache
 
