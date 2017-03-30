@@ -400,8 +400,10 @@ pevents = [primary]
 pvetoed = []
 
 auxfcol, auxscol = auxiliary[auxchannels[0]].dtype.names[1:3]
-slabel = get_column_label(auxscol)
-flabel = get_column_label(auxfcol)
+slabel = get_column_label(scol)
+flabel = get_column_label(fcol)
+auxslabel = get_column_label(auxscol)
+auxflabel = get_column_label(auxfcol)
 
 rounds = []
 round = core.HvetoRound(1, pchannel)
@@ -631,7 +633,7 @@ cum. deadtime :   %s""" % (
     png = pngname % 'AUX_SNR_TIME'
     plot.veto_scatter(
         png, beforeaux, winner.events, x='time', y=auxscol, label1=beforeauxl,
-        label2=usedl, epoch=start, xlim=[start, end], ylabel=slabel,
+        label2=usedl, epoch=start, xlim=[start, end], ylabel=auxslabel,
         title=atitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
@@ -640,8 +642,8 @@ cum. deadtime :   %s""" % (
     png = pngname % 'AUX_SNR_FREQUENCY'
     plot.veto_scatter(
         png, beforeaux, winner.events, x=auxfcol, y=auxscol,
-        label1=beforeauxl, label2=usedl, xlabel=flabel,
-        ylabel=slabel, title=atitle, subtitle=subtitle, legend_title="Aux:")
+        label1=beforeauxl, label2=usedl, xlabel=auxflabel,
+        ylabel=auxslabel, title=atitle, subtitle=subtitle, legend_title="Aux:")
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
@@ -649,8 +651,8 @@ cum. deadtime :   %s""" % (
     png = pngname % 'AUX_FREQUENCY_TIME'
     plot.veto_scatter(
         png, beforeaux, winner.events, x='time', y=auxfcol, color=auxscol,
-        label1=None, label2=None, ylabel=flabel, clabel=slabel, clim=[3, 100],
-        cmap='YlGnBu', epoch=start, xlim=[start, end],
+        label1=None, label2=None, ylabel=auxflabel, clabel=auxslabel,
+        clim=[3, 100], cmap='YlGnBu', epoch=start, xlim=[start, end],
         title=atitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
@@ -694,7 +696,7 @@ subtitle = '%d rounds | %d-%d' % (len(rounds), start, end)
 # before/after histogram
 png = pngname % 'HISTOGRAM'
 beforel = 'Before analysis [%d events]' % len(pevents[0])
-afterl = 'After %d rounds [%d]' % (len(pevents), len(pevents[-1]))
+afterl = 'After %d rounds [%d]' % (len(pevents) - 1, len(pevents[-1]))
 plot.before_after_histogram(
     png, pevents[0][scol], pevents[-1][scol],
     label1=beforel, label2=afterl, xlabel=slabel,
@@ -708,15 +710,14 @@ plot.hveto_roc(png, rounds, title=title, subtitle=subtitle)
 plots.append(png)
 logger.debug("Figure written to %s" % png)
 
-
 # frequency versus time
-png = pngname % '%s_TIME' % auxfcol.upper()
+png = pngname % '%s_TIME' % fcol.upper()
 labels = [str(r.n) for r in rounds]
 legtitle = 'Vetoed at\nround'
 plot.veto_scatter(
     png, pevents[0], pvetoed,
     label1='', label2=labels, title=title,
-    subtitle=subtitle, ylabel=flabel, x='time', y=auxfcol,
+    subtitle=subtitle, ylabel=flabel, x='time', y=fcol,
     epoch=start, xlim=[start, end], legend_title=legtitle)
 plots.append(png)
 logger.debug("Figure written to %s" % png)
