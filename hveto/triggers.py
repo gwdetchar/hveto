@@ -48,6 +48,10 @@ ETG_PARAMS = {
         ['time', 'peak_frequency', 'snr'],
         {'format': 'ligolw.sngl_burst'},
     ),
+    'dmt_omega': (
+        ['time', 'central_freq', 'snr'],
+        {'format': 'ligolw.sngl_burst'},
+    ),
 }
 
 
