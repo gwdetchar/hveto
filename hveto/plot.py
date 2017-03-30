@@ -125,6 +125,12 @@ def veto_scatter(
     }
     if x != 'time':
         axargs['xscale'] = 'log'
+    if isinstance(y, (list, tuple)):
+        ya = y[0]
+        yb = y[1]
+    else:
+        ya = yb = y
+
     axargs.update(kwargs)
     # create figure
     plot = EventTablePlot(base=x=='time' and TimeSeriesPlot or Plot,
@@ -133,7 +139,7 @@ def veto_scatter(
     # add data
     scatterargs = {'s': 40}
     if color is None:
-        ax.scatter(a[x], a[y], color='black', marker='o', label=label1, s=40)
+        ax.scatter(a[x], a[ya], color='black', marker='o', label=label1, s=40)
     else:
         colorargs = {'edgecolor': 'none'}
         if clim:
@@ -143,7 +149,7 @@ def veto_scatter(
                 colorargs['norm'] = LogNorm(vmin=clim[0], vmax=clim[1])
         a = a.copy()
         a.sort(color)
-        m = ax.scatter(a[x], a[y], c=a[color], label=label1, **colorargs)
+        m = ax.scatter(a[x], a[ya], c=a[color], label=label1, **colorargs)
         # add colorbar
         plot.add_colorbar(mappable=m, ax=ax, cmap=cmap, label=clabel)
     if isinstance(b, list):
@@ -156,7 +162,7 @@ def veto_scatter(
         # setting the color here looks complicated, but is just a fancy
         # way of looping through the color cycle when scattering, but using
         # red if we only have one other data set
-        ax.scatter(data[x], data[y], marker='+', linewidth=1.5,
+        ax.scatter(data[x], data[yb], marker='+', linewidth=1.5,
                    label=label2[i], s=40, **colors[i % len(colors)])
     # add legend
     if ax.get_legend_handles_labels()[0]:
