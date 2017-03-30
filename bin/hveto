@@ -57,7 +57,6 @@ from hveto import (__version__, log, config, core, plot, html, utils)
 from hveto.segments import (write_ascii as write_ascii_segments,
                             read_veto_definer_file)
 from hveto.triggers import (get_triggers, find_auxiliary_channels,
-                            write_ascii as write_ascii_triggers,
                             get_column_label)
 
 IFO = os.getenv('IFO')
