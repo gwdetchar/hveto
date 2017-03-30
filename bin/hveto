@@ -469,9 +469,9 @@ while True:
     # work out the vetoes for this round
     allaux = auxiliary[winner.name][
         auxiliary[winner.name][scol] >= winner.snr]
-    coincs = core.find_coincidences(allaux['time'], primary['time'],
-                                    dt=winner.window)
     winner.events = allaux
+    coincs = allaux[core.find_coincidences(allaux['time'], primary['time'],
+                                           dt=winner.window)]
     round.vetoes = winner.get_segments(allaux['time'])
     flag = DataQualityFlag(
         '%s:HVT-ROUND_%d:1' % (ifo, round.n), active=round.vetoes,
@@ -583,6 +583,7 @@ cum. deadtime :   %s""" % (
     vetoedl = 'Vetoed\n[%d]' % len(vetoed)
     beforeauxl = 'Before\n[%d]' % len(beforeaux)
     usedl = 'Used\n[%d]' % len(winner.events)
+    coincl = 'Coinc.\n[%d]' % len(coincs)
     title = '%s Hveto round %d' % (ifo, round.n)
     ptitle = '%s: primary impact' % title
     atitle = '%s: auxiliary use' % title
@@ -638,9 +639,9 @@ cum. deadtime :   %s""" % (
     # snr versus time
     png = pngname % 'AUX_SNR_TIME'
     plot.veto_scatter(
-        png, beforeaux, winner.events, x='time', y=auxscol, label1=beforeauxl,
-        label2=usedl, epoch=start, xlim=[start, end], ylabel=auxslabel,
-        title=atitle, subtitle=subtitle)
+        png, beforeaux, (winner.events, coincs), x='time', y=auxscol,
+        label1=beforeauxl, label2=(usedl, coincl), epoch=start,
+        xlim=[start, end], ylabel=auxslabel, title=atitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
