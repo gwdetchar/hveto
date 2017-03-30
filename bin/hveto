@@ -471,9 +471,9 @@ while True:
     # work out the vetoes for this round
     allaux = auxiliary[winner.name][
         auxiliary[winner.name]['snr'] >= winner.snr]
-    coincs = core.find_coincidences(allaux['time'], primary['time'],
-                                    dt=winner.window)
     winner.events = allaux
+    coincs = allaux[core.find_coincidences(allaux['time'], primary['time'],
+                                           dt=winner.window)]
     round.vetoes = winner.get_segments(allaux['time'])
     flag = DataQualityFlag(
         '%s:HVT-ROUND_%d:1' % (ifo, round.n), active=round.vetoes,
