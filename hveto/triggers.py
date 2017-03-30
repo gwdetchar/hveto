@@ -208,7 +208,8 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     if len(tables):
         table = vstack_tables(tables)
     else:
-        table = EventTable(names=read_kwargs['columns'])
+        table = EventTable(names=read_kwargs.get(
+            'columns', ['time', 'frequency', 'snr']))
 
     # parse time, frequency-like and snr-like column names
     columns = table.dtype.names
