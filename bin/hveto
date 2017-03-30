@@ -35,7 +35,6 @@ import subprocess
 import sys
 from socket import getfqdn
 from getpass import getuser
-from math import ceil
 
 try:
     import configparser
