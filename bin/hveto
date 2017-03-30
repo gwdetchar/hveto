@@ -610,7 +610,7 @@ cum. deadtime :   %s""" % (
     png = pngname % 'SNR_%s' % fcol.upper()
     plot.veto_scatter(
         png, before, vetoed, x=fcol, y=scol, label1=beforel,
-        label2=vetoedl, xlabel=flabel, ylabel=slabel,
+        label2=vetoedl, xlabel=flabel, ylabel=slabel, xlim=pfreq,
         title=ptitle, subtitle=subtitle, legend_title="Primary:")
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
@@ -621,7 +621,8 @@ cum. deadtime :   %s""" % (
         png, before, vetoed, x='time', y=fcol, color=scol,
         label1=None, label2=None, ylabel=flabel,
         clabel=slabel, clim=[3, 100], cmap='YlGnBu',
-        epoch=start, xlim=[start, end], title=ptitle, subtitle=subtitle)
+        epoch=start, xlim=[start, end], ylim=pfreq,
+        title=ptitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
