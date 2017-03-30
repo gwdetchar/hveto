@@ -177,9 +177,11 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     """Get triggers for the given channel
     """
     # format params
-    if isinstance(read_kwargs.get('columns', None), string_types):
-        read_kwargs['columns'] = [x.strip(' ') for x in
-                                  read_kwargs['columns'].split(',')]
+    for key in read_kwargs:
+        if (key.endswith(('columns', 'names', 'branches')) and
+                isinstance(read_kwargs[key], string_types)):
+            read_kwargs[key] = [x.strip(' ') for x in
+                                      read_kwargs[key].split(',')]
 
     # find triggers
     if cache is None:
