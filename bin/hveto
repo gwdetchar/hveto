@@ -628,7 +628,7 @@ cum. deadtime :   %s""" % (
     round.plots.append(png)
 
     # aux used versus frequency
-    png = pngname % 'USER_SNR_TIME'
+    png = pngname % 'USED_SNR_TIME'
     plot.veto_scatter(
         png, winner.events, vetoed, x='time', y=[auxscol, scol], label1=usedl,
         label2=vetoedl, ylabel=slabel, epoch=start, xlim=[start, end],
