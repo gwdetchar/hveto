@@ -581,7 +581,7 @@ cum. deadtime :   %s""" % (
     beforel = 'Before\n[%d]' % len(before)
     afterl = 'After\n[%d]' % len(primary)
     vetoedl = 'Vetoed\n[%d]' % len(vetoed)
-    beforeauxl = 'Before\n[%d]' % len(beforeaux)
+    beforeauxl = 'All\n[%d]' % len(beforeaux)
     usedl = 'Used\n[%d]' % len(winner.events)
     coincl = 'Coinc.\n[%d]' % len(coincs)
     title = '%s Hveto round %d' % (ifo, round.n)
