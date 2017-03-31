@@ -21,7 +21,7 @@
 
 import logging
 
-from gwpy.time import tconvert
+from gwpy.time import to_gps
 
 COLORS = dict((c, 30 + i) for i, c in enumerate(
     ['black', 'red', 'green', 'yellow',
@@ -46,7 +46,7 @@ class ColoredFormatter(logging.Formatter):
         self.use_color = use_color
 
     def format(self, record):
-        record.gpstime = tconvert('now')
+        record.gpstime = to_gps('now')
         levelname = record.levelname
         if self.use_color and levelname in LEVEL_COLORS:
             record.levelname = color_text(levelname, LEVEL_COLORS[levelname])

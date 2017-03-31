@@ -25,6 +25,8 @@ import numpy
 
 from glue.lal import Cache
 
+from astropy.table import Table
+
 from gwpy.segments import (Segment, SegmentList)
 
 from hveto import triggers
@@ -53,10 +55,6 @@ class TriggersTestCase(unittest.TestCase):
             out = triggers.get_triggers('X1:DOES_NOT_EXIST', 'omicron',
                                         SegmentList([Segment(0, 100)]))
         # check output type and columns
-        self.assertIsInstance(out, numpy.ndarray)
+        self.assertIsInstance(out, Table)
         for col in ['time', 'frequency', 'snr']:
-            self.assertIn(col, out.dtype.fields)
-        # test that unknown ETG raises KeyError
-        self.assertRaises(KeyError, triggers.get_triggers,
-                          'X1:DOES_NOT_EXIST', 'fake-etg',
-                          SegmentList([Segment(0, 100)]))
+            self.assertIn(col, out.dtype.names)
