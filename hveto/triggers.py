@@ -190,6 +190,12 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
                                                   'peak_frequency', 'snr'])
         read_kwargs.setdefault('get_as_columns', True)
 
+    # hacky fix for reading ASCII
+    #    astropy's ASCII reader uses `include_names` and not `columns`
+    if read_kwargs.get('format', '').startswith('ascii'):
+        read_kwargs.setdefault('include_names',
+                               read_kwargs.pop('columns', None))
+
     # find triggers
     if cache is None:
         cache = find_trigger_files(channel, etg, segments, **trigfind_kwargs)
