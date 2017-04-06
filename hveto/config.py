@@ -228,13 +228,11 @@ class HvetoConfigParser(configparser.ConfigParser):
             'snr-threshold': 8,
             'frequency-range': (30, 2048),
             'read-format': 'ligolw.sngl_burst',
-            'read-columns': 'time, peak_frequency, snr',
         },
         'auxiliary': {
             'trigger-generator': 'Omicron',
             'frequency-range': (30, 2048),
             'read-format': 'ligolw.sngl_burst',
-            'read-columns': 'time, peak_frequency, snr',
         },
         'safety': {
             'unsafe-channels': ['%(IFO)s:GDS-CALIB_STRAIN',

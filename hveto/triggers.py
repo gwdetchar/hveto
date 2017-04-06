@@ -183,6 +183,13 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             read_kwargs[key] = [x.strip(' ') for x in
                                       read_kwargs[key].split(',')]
 
+    # set default columns for sngl_burst table (Omicron)
+    if read_kwargs.get('format', '') == 'ligolw.sngl_burst':
+        read_kwargs.setdefault('columns', ['peak', 'peak_frequency', 'snr'])
+        read_kwargs.setdefault('ligolw_columns', ['peak_time', 'peak_time_ns',
+                                                  'peak_frequency', 'snr'])
+        read_kwargs.setdefault('get_as_columns', True)
+
     # find triggers
     if cache is None:
         cache = find_trigger_files(channel, etg, segments, **trigfind_kwargs)
