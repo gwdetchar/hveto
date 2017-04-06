@@ -200,6 +200,8 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         else:
             outofbounds = abs(cachesegs - segaslist)
         if segcache:
+            if len(segcache) == 1:  # just pass the single filename
+                segcache = segcache[0].path
             new = EventTable.read(segcache, **read_kwargs)
             new.meta = {}  # we never need the metadata
             if outofbounds:
