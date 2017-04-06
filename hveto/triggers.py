@@ -183,6 +183,19 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             read_kwargs[key] = [x.strip(' ') for x in
                                       read_kwargs[key].split(',')]
 
+    # set default columns for sngl_burst table (Omicron)
+    if read_kwargs.get('format', '') == 'ligolw.sngl_burst':
+        read_kwargs.setdefault('columns', ['peak', 'peak_frequency', 'snr'])
+        read_kwargs.setdefault('ligolw_columns', ['peak_time', 'peak_time_ns',
+                                                  'peak_frequency', 'snr'])
+        read_kwargs.setdefault('get_as_columns', True)
+
+    # hacky fix for reading ASCII
+    #    astropy's ASCII reader uses `include_names` and not `columns`
+    if read_kwargs.get('format', '').startswith('ascii'):
+        read_kwargs.setdefault('include_names',
+                               read_kwargs.pop('columns', None))
+
     # find triggers
     if cache is None:
         cache = find_trigger_files(channel, etg, segments, **trigfind_kwargs)
@@ -200,6 +213,8 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         else:
             outofbounds = abs(cachesegs - segaslist)
         if segcache:
+            if len(segcache) == 1:  # just pass the single filename
+                segcache = segcache[0].path
             new = EventTable.read(segcache, **read_kwargs)
             new.meta = {}  # we never need the metadata
             if outofbounds:
