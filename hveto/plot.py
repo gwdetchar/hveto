@@ -152,7 +152,13 @@ def veto_scatter(
         m = ax.scatter(a[x], a[ya], c=a[color], label=label1, **colorargs)
         # add colorbar
         plot.add_colorbar(mappable=m, ax=ax, cmap=cmap, label=clabel)
-    if isinstance(b, (list, tuple)):
+    if isinstance(b, (list, tuple)) and len(b) == 2:
+        # aux channel used/coinc (probably)
+        colors = [{'color': c} for c in (
+            '#ffd200',  # yellow
+            '#d62728',  # red
+        )]
+    elif isinstance(b, (list, tuple)):
         colors = list(rcParams['axes.prop_cycle'])
     else:
         b = [b]
