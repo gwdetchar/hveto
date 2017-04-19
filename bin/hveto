@@ -648,8 +648,8 @@ cum. deadtime :   %s""" % (
     # snr versus frequency
     png = pngname % 'AUX_SNR_FREQUENCY'
     plot.veto_scatter(
-        png, beforeaux, winner.events, x=auxfcol, y=auxscol,
-        label1=beforeauxl, label2=usedl, xlabel=auxflabel,
+        png, beforeaux, (winner.events, coincs), x=auxfcol, y=auxscol,
+        label1=beforeauxl, label2=(usedl, coincl), xlabel=auxflabel,
         ylabel=auxslabel, title=atitle, subtitle=subtitle, legend_title="Aux:")
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
@@ -657,10 +657,10 @@ cum. deadtime :   %s""" % (
     # frequency versus time coloured by SNR
     png = pngname % 'AUX_FREQUENCY_TIME'
     plot.veto_scatter(
-        png, beforeaux, winner.events, x='time', y=auxfcol, color=auxscol,
-        label1=None, label2=None, ylabel=auxflabel, clabel=auxslabel,
-        clim=[3, 100], cmap='YlGnBu', epoch=start, xlim=[start, end],
-        title=atitle, subtitle=subtitle)
+        png, beforeaux, (winner.events, coincs), x='time', y=auxfcol,
+        color=auxscol, label1=None, label2=[None, None], ylabel=auxflabel,
+        clabel=auxslabel, clim=[3, 100], cmap='YlGnBu', epoch=start,
+        xlim=[start, end], title=atitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
     round.plots.append(png)
 
