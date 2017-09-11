@@ -38,7 +38,7 @@ __credits__ = 'Josh Smith, Joe Areeda'
 
 rcParams.update({
     'figure.subplot.bottom': 0.17,
-    'figure.subplot.left': 0.1,
+    'figure.subplot.left': 0.12,
     'figure.subplot.right': 0.9,
     'figure.subplot.top': 0.90,
     'axes.labelsize': 24,
@@ -163,7 +163,7 @@ def veto_scatter(
     else:
         b = [b]
         label2 = [label2]
-        colors = [{'color': 'red'}]
+        colors = [{'color': '#d62728'}]
     for i, data in enumerate(b):
         # setting the color here looks complicated, but is just a fancy
         # way of looping through the color cycle when scattering, but using
@@ -248,7 +248,8 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
         else:
             color = 'red'
         ax.plot([i, i], [old[c], new[c]], color=color, linestyle='-',
-                marker='o', markersize=10, label=c, zorder=old[c])
+                marker='o', markeredgecolor='k', markeredgewidth=.5,
+                markersize=10, label=c, zorder=old[c])
 
     ax.set_xlim(-1, len(channels))
     ax.set_ybound(lower=0)
