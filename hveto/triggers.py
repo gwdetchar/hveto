@@ -202,24 +202,31 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
 
     # read files
     tables = []
-    for segment in segments:
-        segaslist = SegmentList([segment])
-        segcache = cache.sieve(segment=segment)
-        # try and work out if cache overextends segment (so we need to crop)
-        try:
-            cachesegs = segcache.to_segmentlistdict()[channel[:2]]
-        except KeyError:
-            outofbounds = False
-        else:
-            outofbounds = abs(cachesegs - segaslist)
-        if segcache:
-            if len(segcache) == 1:  # just pass the single filename
-                segcache = segcache[0].path
-            new = EventTable.read(segcache, **read_kwargs)
-            new.meta = {}  # we never need the metadata
-            if outofbounds:
-                new = new[new[new.dtype.names[0]].in_segmentlist(segaslist)]
-            tables.append(new)
+    if len(cache) > 1:
+        for segment in segments:
+            segaslist = SegmentList([segment])
+            segcache = cache.sieve(segment=segment)
+            # try and work out if cache overextends segment (so we need to crop)
+            try:
+                cachesegs = segcache.to_segmentlistdict()[channel[:2]]
+            except KeyError:
+                outofbounds = False
+            else:
+                outofbounds = abs(cachesegs - segaslist)
+            if segcache:
+                if len(segcache) == 1:  # just pass the single filename
+                    segcache = segcache[0].path
+                new = EventTable.read(segcache, **read_kwargs)
+                new.meta = {}  # we never need the metadata
+                if outofbounds:
+                    new = new[new[new.dtype.names[0]].in_segmentlist(segaslist)]
+                tables.append(new)
+    else:
+        new = EventTable.read(cache[0].path, **read_kwargs)
+        new.meta = {}  # we never need the metadata
+        new = new[new[new.dtype.names[0]].in_segmentlist(segments)]
+        tables.append(new)
+
     if len(tables):
         table = vstack_tables(tables)
     else:
