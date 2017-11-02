@@ -221,7 +221,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
                 if outofbounds:
                     new = new[new[new.dtype.names[0]].in_segmentlist(segaslist)]
                 tables.append(new)
-    else:
+    elif len(cache) == 1:
         new = EventTable.read(cache[0].path, **read_kwargs)
         new.meta = {}  # we never need the metadata
         new = new[new[new.dtype.names[0]].in_segmentlist(segments)]
