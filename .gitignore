@@ -16,3 +16,6 @@
 # test products
 /.cache/
 /.coverage
+
+# pycharm stuff
+.idea
