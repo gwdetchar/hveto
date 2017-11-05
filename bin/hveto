@@ -783,6 +783,10 @@ with open('summary-stats.json', 'w') as f:
     json.dump(json_, f, sort_keys=True)
 logger.debug("Summary JSON written to %s" % f.name)
 
+# -- write HTML
+index = html.write_hveto_page(ifo, start, end, rounds, plots,  **htmlv)
+logger.debug("HTML written to %s" % index)
+
 # -- generate workflow for omega scans
 
 if args.omega_scans:
@@ -804,9 +808,7 @@ if args.omega_scans:
         raise subprocess.CalledProcessError(proc.returncode, ' '.join(batch))
     dagfile = os.path.join(omegadir, 'condor', 'wdq-batch.dag')
 
-# -- write HTML and finish
+# -- NOTE RUNTIME
 
-index = html.write_hveto_page(ifo, start, end, rounds, plots,  **htmlv)
-logger.debug("HTML written to %s" % index)
 logger.debug("Analysis completed in %d seconds" % (time.time() - jobstart))
 logger.info("-- Hveto complete --")
