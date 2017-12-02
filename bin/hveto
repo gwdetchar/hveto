@@ -152,7 +152,10 @@ aflag = cp.get('segments', 'analysis-flag')
 url = cp.get('segments', 'url')
 padding = tuple(cp.getfloats('segments', 'padding'))
 if args.analysis_segments:
-    segs_ = DataQualityDict.read(args.analysis_segments, gpstype=float)
+    ansegs = args.analysis_segments
+    if isinstance(ansegs, list):
+        ansegs = ansegs[0]
+    segs_ = DataQualityDict.read(ansegs, gpstype=float)
     analysis = segs_[aflag]
     span = SegmentList([Segment(start, end)])
     analysis.active &= span
@@ -350,7 +353,10 @@ def _get_aux_triggers(channel):
     else:
         ifo, name = channel.split(':')
         desc = name.replace('-', '_')
-        auxcache = acache.sieve(ifos=ifo, description='%s*' % desc)
+        if (areadkw.get('format', '').endswith('hdf5')):
+            auxcache = acache
+        else:
+            auxcache = acache.sieve(ifos=ifo, description='%s*' % desc)
     # get triggers
     try:
         trigs = get_triggers(channel, auxetg, analysis.active, snr=minsnr,

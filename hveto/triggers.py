@@ -27,6 +27,7 @@ import warnings
 from six import string_types
 
 import numpy
+import h5py
 
 from glue.lal import Cache
 
@@ -137,11 +138,20 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
     if cache is not None:
         for e in cache:
             ifo = e.observatory
-            name = e.description
-            channel = '%s:%s' % (ifo, name.replace('_', '-', 1))
-            if channel.lower().endswith(etg.lower()):
-                channel = channel[:-len(etg)]
-            out.add(u'%s' % channel.rstrip('_'))
+            if e.path.endswith('h5'):
+                # hdf5 files have a dataset for each channel, many per file
+                h5file = infile = h5py.File(e.path, 'r')
+                for name in infile.keys():
+                    channel = '%s:%s' % (ifo, name.replace('_', '-', 1))
+                    out.add(u'%s' % channel.rstrip('_'))
+                infile.close()
+            else:
+                # XML or csv have one channel per  file ie cache entry line
+                name = e.description
+                channel = '%s:%s' % (ifo, name.replace('_', '-', 1))
+                if channel.lower().endswith(etg.lower()):
+                    channel = channel[:-len(etg)]
+                out.add(u'%s' % channel.rstrip('_'))
     else:
         if not isinstance(gps, (list, tuple)):
             gps = (gps, gps)
@@ -192,7 +202,12 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
 
     # hacky fix for reading ASCII
     #    astropy's ASCII reader uses `include_names` and not `columns`
-    if read_kwargs.get('format', '').startswith('ascii'):
+    elif read_kwargs.get('format', '').startswith('ascii'):
+        read_kwargs.setdefault('include_names',
+                               read_kwargs.pop('columns', None))
+
+    # hdf5 gets column names automatically
+    elif read_kwargs.get('format', '').startswith('h5'):
         read_kwargs.setdefault('include_names',
                                read_kwargs.pop('columns', None))
 
@@ -222,10 +237,18 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
                     new = new[new[new.dtype.names[0]].in_segmentlist(segaslist)]
                 tables.append(new)
     elif len(cache) == 1:
-        new = EventTable.read(cache[0].path, **read_kwargs)
-        new.meta = {}  # we never need the metadata
-        new = new[new[new.dtype.names[0]].in_segmentlist(segments)]
-        tables.append(new)
+        if read_kwargs.get('format', '').startswith('hdf5'):
+            infile = h5py.File(cache[0].path, 'r')
+            dsname = re.sub('-', '_', channel[3:])  # get back to dsname
+            new = infile.get(dsname)
+            et = EventTable(new.value)
+            tables.append(et)
+            infile.close()
+        else:
+            new = EventTable.read(cache[0].path, **read_kwargs)
+            new.meta = {}  # we never need the metadata
+            new = new[new[new.dtype.names[0]].in_segmentlist(segments)]
+            tables.append(new)
 
     if len(tables):
         table = vstack_tables(tables)

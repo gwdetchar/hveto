@@ -28,8 +28,9 @@ from io import BytesIO
 from lxml import etree
 
 from matplotlib.colors import LogNorm
+from  matplotlib import rcParams
 
-from gwpy.plotter import (rcParams, HistogramPlot, EventTablePlot,
+from gwpy.plotter import (HistogramPlot, EventTablePlot,
                           TimeSeriesPlot, Plot)
 from gwpy.plotter.table import get_column_string
 
