@@ -352,7 +352,7 @@ def _get_aux_triggers(channel):
         auxcache = None
     else:
         ifo, name = channel.split(':')
-        desc = name.replace('-', '_')
+        desc = name
         if (areadkw.get('format', '').endswith('hdf5')):
             auxcache = acache
         else:

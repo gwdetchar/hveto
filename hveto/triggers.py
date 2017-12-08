@@ -138,12 +138,12 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
     if cache is not None:
         for e in cache:
             ifo = e.observatory
-            if e.path.endswith('h5'):
+            if e.path.endswith('h5') or e.path.endswith('h5.gz'):
                 # hdf5 files have a dataset for each channel, many per file
                 h5file = infile = h5py.File(e.path, 'r')
                 for name in infile.keys():
-                    channel = '%s:%s' % (ifo, name.replace('_', '-', 1))
-                    out.add(u'%s' % channel.rstrip('_'))
+                    channel = '%s:%s' % (ifo, name)
+                    out.add(channel)
                 infile.close()
             else:
                 # XML or csv have one channel per  file ie cache entry line
@@ -207,7 +207,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
                                read_kwargs.pop('columns', None))
 
     # hdf5 gets column names automatically
-    elif read_kwargs.get('format', '').startswith('h5'):
+    elif read_kwargs.get('format', '').startswith('hdf5'):
         read_kwargs.setdefault('include_names',
                                read_kwargs.pop('columns', None))
 
@@ -239,10 +239,11 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     elif len(cache) == 1:
         if read_kwargs.get('format', '').startswith('hdf5'):
             infile = h5py.File(cache[0].path, 'r')
-            dsname = re.sub('-', '_', channel[3:])  # get back to dsname
+            dsname = channel[3:]      # get back to dsname
             new = infile.get(dsname)
-            et = EventTable(new.value)
-            tables.append(et)
+            if new and len(new) > 0:
+                et = EventTable(new.value)
+                tables.append(et)
             infile.close()
         else:
             new = EventTable.read(cache[0].path, **read_kwargs)
