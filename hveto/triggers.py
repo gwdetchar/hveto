@@ -142,6 +142,8 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
                 # hdf5 files have a dataset for each channel, many per file
                 h5file = infile = h5py.File(e.path, 'r')
                 for name in infile.keys():
+                    if not '-' in name:
+                        name = name.replace('_', '-', 1)
                     channel = '%s:%s' % (ifo, name)
                     out.add(channel)
                 infile.close()
@@ -240,10 +242,17 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         if read_kwargs.get('format', '').startswith('hdf5'):
             infile = h5py.File(cache[0].path, 'r')
             dsname = channel[3:]      # get back to dsname
+            if not dsname in infile.keys():
+                dsname = re.sub('-','_', dsname, count=1)
             new = infile.get(dsname)
             if new and len(new) > 0:
+                before_cnt = len(new)
                 et = EventTable(new.value)
-                tables.append(et)
+                et = et[et[et.dtype.names[0]].in_segmentlist(segments)]
+                after_cnt = len(new)
+                print('%s, before segment filter %d, after %d' % (dsname, before_cnt, after_cnt))
+                if len(et) > 0:
+                    tables.append(et)
             infile.close()
         else:
             new = EventTable.read(cache[0].path, **read_kwargs)
@@ -266,10 +275,13 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     # filter
     keep = numpy.ones(len(table), dtype=bool)
     if snr is not None:
-        keep &= table[scolumn] >= snr
+        keep &=  table[scolumn] >= snr
+        after_snr = numpy.sum(keep)
     if frange is not None:
         keep &= table[fcolumn] >= frange[0]
         keep &= table[fcolumn] < frange[1]
+        after_freq = numpy.sum(keep)
+    print('After snr: %d, freq filters: %d' % (after_snr, after_freq))
     table = table[keep]
 
     # return basic table if 'raw'

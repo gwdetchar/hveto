@@ -57,6 +57,7 @@ from hveto.segments import (write_ascii as write_ascii_segments,
                             read_veto_definer_file)
 from hveto.triggers import (get_triggers, find_auxiliary_channels,
                             get_column_label)
+from astropy.table.column import MaskedColumn
 
 IFO = os.getenv('IFO')
 
@@ -493,6 +494,7 @@ while True:
 
     # apply vetoes to primary
     primary, vetoed = core.veto(primary, round.vetoes)
+
     pevents.append(primary)
     pvetoed.append(vetoed)
     logger.debug("Applied vetoes to primary")
@@ -548,6 +550,7 @@ cum. deadtime :   %s""" % (
         round.cum_deadtime))
 
     # write segments
+
     segfile = os.path.join(segdir, '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.txt' % (
         ifo, round.n, start, duration))
     write_ascii_segments(segfile, round.vetoes)
