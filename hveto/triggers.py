@@ -250,7 +250,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
                 et = EventTable(new.value)
                 et = et[et[et.dtype.names[0]].in_segmentlist(segments)]
                 after_cnt = len(new)
-                print('%s, before segment filter %d, after %d' % (dsname, before_cnt, after_cnt))
+                # print('%s, before segment filter %d, after %d' % (dsname, before_cnt, after_cnt))
                 if len(et) > 0:
                     tables.append(et)
             infile.close()
@@ -281,7 +281,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         keep &= table[fcolumn] >= frange[0]
         keep &= table[fcolumn] < frange[1]
         after_freq = numpy.sum(keep)
-    print('After snr: %d, freq filters: %d' % (after_snr, after_freq))
+    # print('After snr: %d, freq filters: %d' % (after_snr, after_freq))
     table = table[keep]
 
     # return basic table if 'raw'
