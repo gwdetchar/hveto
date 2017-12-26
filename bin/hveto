@@ -450,6 +450,14 @@ while True:
         for subdict in sigsets[1:]:
             newsignificances.update(subdict)
     else:  # single process
+        zcnt =0
+        for key in auxiliary.keys():
+            aux_val = auxiliary[key]
+            if len(aux_val) < 1:
+                zcnt += 1
+                auxiliary.pop(key, None)
+        logger.debug('%d zero len channels' % zcnt)
+
         winner, newsignificances = core.find_max_significance(
             primary, auxiliary, pchannel, snrs, windows, round.livetime)
 
