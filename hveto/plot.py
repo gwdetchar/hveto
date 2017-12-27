@@ -242,15 +242,19 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
     winner = sorted(old.items(), key=lambda x: x[1])[-1][0]
 
     for i, c in enumerate(channels):
+        oldc = old[c]
+        newc = 0
+        if c in new:
+            newc = new[c]
         if c == winner:
             color = 'orange'
-        elif old[c] > new[c]:
+        elif oldc > newc:
             color = 'dodgerblue'
         else:
             color = 'red'
-        ax.plot([i, i], [old[c], new[c]], color=color, linestyle='-',
+        ax.plot([i, i], [oldc, newc], color=color, linestyle='-',
                 marker='o', markeredgecolor='k', markeredgewidth=.5,
-                markersize=10, label=c, zorder=old[c])
+                markersize=10, label=c, zorder=oldc)
 
     ax.set_xlim(-1, len(channels))
     ax.set_ybound(lower=0)
