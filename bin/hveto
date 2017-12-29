@@ -804,7 +804,7 @@ logger.debug("Summary JSON written to %s" % f.name)
 index = html.write_hveto_page(ifo, start, end, rounds, plots,  **htmlv)
 logger.debug("HTML written to %s" % index)
 
-# -- generate workflow for omega scans
+        # -- generate workflow for omega scans
 
 if args.omega_scans:
     omegatimes = list(map(str, sorted(unique(

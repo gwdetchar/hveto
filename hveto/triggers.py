@@ -288,8 +288,10 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     if raw:
         return table
 
-    # rename time column so that all tables match in at least that
+    # rename all columns so that all tables match
     table.rename_column(tcolumn, 'time')
+    table.rename_column(fcolumn, 'frequency')
+    table.rename_column(scolumn, 'snr')
 
     # add channel column to identify all triggers
     table.add_column(table.Column(data=numpy.repeat(channel, len(table)),
