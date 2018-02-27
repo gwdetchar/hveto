@@ -183,12 +183,10 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             read_kwargs[key] = [x.strip(' ') for x in
                                       read_kwargs[key].split(',')]
 
-    # set default columns for sngl_burst table (Omicron)
-    if read_kwargs.get('format', '') == 'ligolw.sngl_burst':
+    if read_kwargs.get('format', None) == 'ligolw':
+        read_kwargs.setdefault('use_numpy_dtypes', True)
+    if read_kwargs.get('tablename', None) == 'sngl_burst':
         read_kwargs.setdefault('columns', ['peak', 'peak_frequency', 'snr'])
-        read_kwargs.setdefault('ligolw_columns', ['peak_time', 'peak_time_ns',
-                                                  'peak_frequency', 'snr'])
-        read_kwargs.setdefault('get_as_columns', True)
 
     # hacky fix for reading ASCII
     #    astropy's ASCII reader uses `include_names` and not `columns`

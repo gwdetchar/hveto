@@ -62,14 +62,13 @@ setup_requires = [
     'setuptools',
     'pytest-runner',
 ]
-install_requires = []
-requires = [
+install_requires = [
     'numpy',
     'matplotlib',
     'scipy',
     'glue',
     'dqsegdb',
-    'gwpy',
+    'gwpy >= 0.7.0',
     'lxml',
     'gwdetchar',  # for omega scans only
 ]
@@ -107,7 +106,6 @@ setup(name=DISTNAME,
       scripts=scripts,
       setup_requires=setup_requires,
       install_requires=install_requires,
-      requires=requires,
       tests_require=tests_require,
       extras_require=extras_require,
       dependency_links=[
