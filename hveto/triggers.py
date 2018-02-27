@@ -96,8 +96,8 @@ def find_trigger_files(channel, etg, segments, **kwargs):
     cache = Cache()
     for start, end in segments:
         try:
-            cache.extend(trigfind.find_trigger_urls(channel, etg, start,
-                                                    end, **kwargs))
+            cache.extend(trigfind.find_trigger_files(channel, etg, start,
+                                                     end, **kwargs))
         except ValueError as e:
             if str(e).lower().startswith('no channel-level directory'):
                 warnings.warn(str(e))
