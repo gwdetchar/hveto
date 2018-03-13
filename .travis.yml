@@ -11,7 +11,6 @@ addons:
       - gfortran  # scipy
       - libblas-dev  # scipy
       - liblapack-dev  # scipy
-      - swig  # m2crypto
       - pkg-config  # lal
       - zlib1g-dev  # lal
       - libgsl0-dev  # lal
