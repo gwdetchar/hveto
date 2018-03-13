@@ -235,7 +235,7 @@ def write_events(channel, tab, segments):
     # append segment tables
     try:
         segments.write(xmldoc, format='ligolw', append=True,
-                       attrs={'process_id': int(process.process_id)})
+                       attrs={'process_id': process.process_id})
     except TypeError as exc:
         if 'process_id' in str(exc):
             segments.write(xmldoc, format='ligolw', append=True)
