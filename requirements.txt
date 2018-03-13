@@ -4,7 +4,7 @@ scipy
 gitpython
 jinja2
 pykerberos
-https://github.com/ligovirgo/trigfind/archive/v0.3.tar.gz
+https://github.com/ligovirgo/trigfind/archive/v0.6.1.tar.gz
 lscsoft-glue
 dqsegdb
 gwpy
