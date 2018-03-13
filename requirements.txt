@@ -8,4 +8,5 @@ https://github.com/ligovirgo/trigfind/archive/v0.3.tar.gz
 lscsoft-glue
 dqsegdb
 gwpy
+git+https://github.com/ligovirgo/gwdetchar.git
 lxml
