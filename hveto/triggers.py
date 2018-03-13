@@ -41,6 +41,9 @@ try:  # use new trigfind module
 except ImportError:
     from gwpy.table.io import trigfind
 
+# Table metadata keys to keep
+TABLE_META = ('tablename',)
+
 # -- utilities ----------------------------------------------------------------
 
 COLUMN_LABEL = {
@@ -214,7 +217,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             if len(segcache) == 1:  # just pass the single filename
                 segcache = segcache[0].path
             new = EventTable.read(segcache, **read_kwargs)
-            new.meta = {}  # we never need the metadata
+            new.meta = {k: new.meta[k] for k in TABLE_META if new.meta.get(k)}
             if outofbounds:
                 new = new[new[new.dtype.names[0]].in_segmentlist(segaslist)]
             tables.append(new)
