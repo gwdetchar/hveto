@@ -86,9 +86,10 @@ Each of the below sections lists the valid options and a description of what the
    ; flow, fhigh
    frequency-range = 0, 2048.
    ; format
-   read-format = ligolw.sngl_burst
+   read-format = ligolw
+   read-tablename = sngl_burst
    ; read-columns to read
-   read-columns = time, peak_frequency, snr
+   read-columns = peak, peak_frequency, snr
 
 .. note::
 
@@ -113,7 +114,8 @@ Each of the below sections lists the valid options and a description of what the
       trigger-generator = daily-cbc
       trigfind-run = bbh_gds
       trigfind-filetag = 16SEC_CLUSTERED
-      read-format = ligolw.sngl_inspiral
+      read-format = ligolw
+      read-tablename = sngl_inspiral
       read-columns = end,template_duration,snr
 
 [auxiliary]
@@ -138,9 +140,10 @@ Each of the below sections lists the valid options and a description of what the
    ; flow, fhigh
    frequency-range = 0, 2048
    ; file format
-   read-format = ligolw.sngl_burst
+   read-format = ligolw
+   read-tablename = sngl_burst
    ; read-columns to read
-   read-columns = time, peak_frequency, snr
+   read-columns = peak, peak_frequency, snr
    ; give tab-indented, line-separated list of channels
    channels =
        %(IFO)s:ASC-AS_B_RF45_I_PIT_OUT_DQ
@@ -227,12 +230,14 @@ class HvetoConfigParser(configparser.ConfigParser):
             'trigger-generator': 'Omicron',
             'snr-threshold': 8,
             'frequency-range': (30, 2048),
-            'read-format': 'ligolw.sngl_burst',
+            'read-format': 'ligolw',
+            'read-tablename': 'sngl_burst',
         },
         'auxiliary': {
             'trigger-generator': 'Omicron',
             'frequency-range': (30, 2048),
-            'read-format': 'ligolw.sngl_burst',
+            'read-format': 'ligolw',
+            'read-tablename': 'sngl_burst',
         },
         'safety': {
             'unsafe-channels': ['%(IFO)s:GDS-CALIB_STRAIN',

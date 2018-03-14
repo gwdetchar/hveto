@@ -41,6 +41,9 @@ try:  # use new trigfind module
 except ImportError:
     from gwpy.table.io import trigfind
 
+# Table metadata keys to keep
+TABLE_META = ('tablename',)
+
 # -- utilities ----------------------------------------------------------------
 
 COLUMN_LABEL = {
@@ -96,8 +99,8 @@ def find_trigger_files(channel, etg, segments, **kwargs):
     cache = Cache()
     for start, end in segments:
         try:
-            cache.extend(trigfind.find_trigger_urls(channel, etg, start,
-                                                    end, **kwargs))
+            cache.extend(trigfind.find_trigger_files(channel, etg, start,
+                                                     end, **kwargs))
         except ValueError as e:
             if str(e).lower().startswith('no channel-level directory'):
                 warnings.warn(str(e))
@@ -183,12 +186,10 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             read_kwargs[key] = [x.strip(' ') for x in
                                       read_kwargs[key].split(',')]
 
-    # set default columns for sngl_burst table (Omicron)
-    if read_kwargs.get('format', '') == 'ligolw.sngl_burst':
+    if read_kwargs.get('format', None) == 'ligolw':
+        read_kwargs.setdefault('use_numpy_dtypes', True)
+    if read_kwargs.get('tablename', None) == 'sngl_burst':
         read_kwargs.setdefault('columns', ['peak', 'peak_frequency', 'snr'])
-        read_kwargs.setdefault('ligolw_columns', ['peak_time', 'peak_time_ns',
-                                                  'peak_frequency', 'snr'])
-        read_kwargs.setdefault('get_as_columns', True)
 
     # hacky fix for reading ASCII
     #    astropy's ASCII reader uses `include_names` and not `columns`
@@ -216,7 +217,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             if len(segcache) == 1:  # just pass the single filename
                 segcache = segcache[0].path
             new = EventTable.read(segcache, **read_kwargs)
-            new.meta = {}  # we never need the metadata
+            new.meta = {k: new.meta[k] for k in TABLE_META if new.meta.get(k)}
             if outofbounds:
                 new = new[new[new.dtype.names[0]].in_segmentlist(segaslist)]
             tables.append(new)
