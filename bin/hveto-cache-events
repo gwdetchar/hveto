@@ -30,15 +30,17 @@ import os
 import warnings
 import multiprocessing
 
-from glue.lal import (Cache, CacheEntry)
+from lal.utils import CacheEntry
+
+from glue.lal import Cache
 from glue.ligolw.ligolw import (Document, LIGO_LW, LIGOLWContentHandler)
+from glue.ligolw.lsctables import ProcessTable
 from glue.ligolw.utils import (write_filename as write_ligolw,
                                load_filename as load_ligolw)
 from glue.ligolw.utils.process import (register_to_xmldoc as
                                        append_process_table)
 
-from gwpy.table.lsctables import (SnglBurstTable, SnglInspiralTable,
-                                  New as new_table)
+from gwpy.io import ligolw as io_ligolw
 from gwpy.time import to_gps
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
@@ -47,9 +49,11 @@ from hveto import (__version__, log, config)
 from hveto.triggers import (get_triggers, find_auxiliary_channels,
                             find_trigger_files)
 
-IFO = os.getenv('IFO')
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+Cache.entry_class = CacheEntry  # remove deprecationwarning
+
+IFO = os.getenv('IFO')
 
 logger = log.Logger('hveto-cache-events')
 
@@ -99,9 +103,19 @@ pout.add_argument('-o', '--output-directory', default=os.curdir,
 args = parser.parse_args()
 
 ifo = args.ifo
-start = args.gpsstart.seconds
-end = args.gpsend.seconds
+start = int(args.gpsstart)
+end = int(args.gpsend)
 duration = end - start
+
+# format process params for LIGO_LW
+procparams = {k.replace('_', '-'): v for k, v in vars(args).items() if v}
+for gpskey in ('gpsstart', 'gpsend'):
+    procparams[gpskey] = int(procparams[gpskey])
+for listkey in ('config-file', 'primary-cache', 'auxiliary-cache'):
+    try:
+        procparams[listkey] = ','.join(procparams[listkey])
+    except KeyError:
+        pass
 
 logger.info("-- Welcome to Hveto --")
 logger.info("GPS start time: %d" % start)
@@ -164,8 +178,8 @@ def create_filename(channel):
                         '%s-%s-%d-%d.xml.gz' % (ifo, name, start, duration))
 
 
-def read_and_cache_events(channel, etg, cache=None, trigfindkwargs={},
-                          **getkwargs):
+def read_and_cache_events(channel, etg, cache=None, trigfind_kw={},
+                          **read_kw):
     cfile = create_filename(channel)
     # read existing cached triggers and work out new segments to query
     if args.append and os.path.isfile(cfile):
@@ -175,7 +189,7 @@ def read_and_cache_events(channel, etg, cache=None, trigfindkwargs={},
         new = analysis.copy()
     # get cache of files
     if cache is None:
-        cache = find_trigger_files(channel, etg, new.active, **trigfindkwargs)
+        cache = find_trigger_files(channel, etg, new.active, **trigfind_kw)
     else:
         cache = cache.sieve(segmentlist=new.active)
     # restrict 'active' segments to when we have data
@@ -186,14 +200,14 @@ def read_and_cache_events(channel, etg, cache=None, trigfindkwargs={},
     # find new triggers
     try:
         trigs = get_triggers(channel, auxetg, new.active, cache=cache,
-                             raw=True, **getkwargs)
+                             raw=True, **read_kw)
     # catch error and continue
     except ValueError as e:
         warnings.warn('%s: %s' % (type(e).__name__, str(e)))
     else:
         a = write_events(channel, trigs, new)
         try:
-            return CacheEntry.from_T050017(a), trigs.size
+            return CacheEntry.from_T050017(a), len(trigs)
         except TypeError:  # None
             return
 
@@ -203,36 +217,35 @@ def write_events(channel, tab, segments):
     """
     # get filename
     filename = create_filename(channel)
-    # if empty, skip
-    if tab.shape[0] == 0 and args.append and os.path.isfile(filename):
-        return filename
-    elif tab.shape[0] == 0:
-        return
-    # get table class and convert back to LIGO_LW table object
-    if 'peak_time' in tab.dtype.fields:
-        Table = SnglBurstTable
-    else:
-        Table = SnglInspiralTable
-    llwtable = Table.from_recarray(tab)
+
     # read existing document
     if args.append and os.path.isfile(filename):
-        xmldoc = load_ligolw(filename, gz=True,
-                             contenthandler=LIGOLWContentHandler)
+        xmldoc = io_ligolw.read_ligolw(filename)
     # or, create document
     else:
         xmldoc = Document()
         xmldoc.appendChild(LIGO_LW())
+
     # append process table
-    append_process_table(xmldoc, os.path.basename(__file__), {})
+    with multiprocessing.Lock():
+        ProcessTable.next_id = type(ProcessTable.next_id)(0)
+        process = append_process_table(xmldoc, os.path.basename(__file__),
+                                       procparams)
+
     # append segment tables
-    segments.write(xmldoc, format='ligolw')
-    # append event table
     try:
-        etable = Table.get_table(xmldoc)
-    except ValueError:
-        etable = new_table(Table, columns=tab.dtype.fields)
-        xmldoc.childNodes[-1].appendChild(etable)
-    etable.extend(llwtable)
+        segments.write(xmldoc, format='ligolw', append=True,
+                       attrs={'process_id': process.process_id})
+    except TypeError as exc:
+        if 'process_id' in str(exc):
+            segments.write(xmldoc, format='ligolw', append=True)
+        else:
+            raise
+
+    # append event table
+    if len(tab):
+        tab.write(xmldoc, append=True)
+
     # write file to disk
     write_ligolw(xmldoc, filename, gz=True)
     return filename
@@ -306,12 +319,13 @@ else:
 petg = cp.get('primary', 'trigger-generator')
 psnr = cp.getfloat('primary', 'snr-threshold')
 pfreq = cp.getfloats('primary', 'frequency-range')
-ptrigfind = dict((key.split('-', 1)[1], val) for (key, val) in
-                 cp.items('primary') if key.startswith('trigfind-'))
+preadkw = cp.getparams('primary', 'read-')
+ptrigfindkw = cp.getparams('primary', 'trigfind-')
 
 # load primary triggers
 out = read_and_cache_events(pchannel, petg, snr=psnr, frange=pfreq,
-                            cache=pcache, trigfindkwargs=ptrigfind)
+                            cache=pcache, trigfind_kw=ptrigfindkw,
+                            **preadkw)
 try:
     e, n = out
 except TypeError:
@@ -339,6 +353,10 @@ logger.info('Primary cache written to %s' % pname)
 logger.info("Reading triggers for aux channels...")
 counter = multiprocessing.Value('i', 0)
 
+areadkw = cp.getparams('auxiliary', 'read-')
+atrigfindkw = cp.getparams('auxiliary', 'trigfind-')
+
+
 def read_and_write_aux_triggers(channel):
     if acache is None:
         auxcache = None
@@ -347,7 +365,8 @@ def read_and_write_aux_triggers(channel):
         desc = name.replace('-', '_')
         auxcache = acache.sieve(ifos=ifo, description='%s*' % desc)
     out = read_and_cache_events(channel, auxetg, cache=auxcache, snr=minsnr,
-                                frange=auxfreq)
+                                frange=auxfreq, trigfind_kw=atrigfindkw,
+                                **areadkw)
     try:
         e, n = out
     except TypeError:

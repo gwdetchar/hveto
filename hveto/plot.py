@@ -27,6 +27,7 @@ from io import BytesIO
 
 from lxml import etree
 
+from matplotlib import rcParams
 from matplotlib.colors import LogNorm
 from  matplotlib import rcParams
 
