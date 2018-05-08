@@ -90,6 +90,31 @@ $(document).ready(function() {
 """
 
 
+# -- set up default header plot captions
+
+head_hist = "Histogram of number of triggers in the primary channel before the hveto analysis, but after the data quality flag cuts (red) compared with the number after vetoes from all hveto rounds have been applied (blue) versus the signal-to-noise ratio of those triggers."
+head_roc = "The fraction of the primary channel triggers vetoed (fractional efficiency) versus the fraction of livetime that is vetoed (fractional deadtime) for each hveto round (blue dots). Guidelines are given for efficiency/deadtime of 1 (the value expected for random chance) and higher."
+head_freq = "Frequency versus time graph of all triggers in the primary channel before the hveto analysis (black dots) and those triggers that are vetoed by a given round (symbols)."
+head_snr = "Signal-to-noise ratio versus time graph of all triggers in the primary channel before the hveto analysis (black dots) and those triggers that are vetoed by a given round (symbols)."
+head_captions = [head_hist, head_roc, head_freq, head_snr]
+
+
+# -- set up default round winner plot captions
+
+round_hist = "Histogram of number of triggers in the primary channel before this round of hveto (red) compared with the number after vetoes from this round have been applied (blue) versus the signal-to-noise ratio of those triggers."
+round_snr_time = "Signal-to-noise ratio versus time graph of all triggers in the primary channel before this round of hveto (black dots) and those triggers that are vetoed by this round (red plusses)."
+round_snr_freq = "Signal-to-noise ratio versus frequency graph of all triggers in the primary channel before this round of hveto (black dots) and those triggers that are vetoed by this round (red plusses)."
+round_freq = "Frequency versus time graph of all triggers in the primary channel before this hveto round (dots colored by signal-to-noise ratio) and those triggers that are vetoed by this round (red plusses)."
+round_used_snr = "Signal-to-noise ratio versus time graph of all triggers in the auxiliary channel above the threshold selected for this round (black dots, these are the triggers used to construct the veto) and the primary channel triggers that are vetoed in this round (red plusses). This can indicate whether, for example, louder triggers in the auxiliary channel are used to veto quieter channels in the primary channel, as might be expected for an external disturbance."
+round_aux_snr = "Signal-to-noise ratio versus time graph of all triggers in the auxiliary channel before this round (black dots), those above the threshold selected for this round (yellow plusses, these are the triggers used to construct the veto), and those triggers that actually veto one of the primary channel triggers (red plusses)."
+round_aux_snr_freq = "Signal-to-noise ratio versus frequency graph of all triggers in the auxiliary channel before this round (black dots), those above the threshold selected for this round (yellow plusses, these are the triggers used to construct the veto), and those triggers that actually veto one of the primary channel triggers (red plusses)."
+round_aux_freq = "Frequency versus time graph of all triggers in the auxiliary channel before this round (dots colored by signal-to-noise ratio), those above the threshold selected for this round (yellow plusses, these are the triggers used to construct the veto), and those triggers that actually veto one of the primary channel triggers (red plusses)."
+round_sig_drop = "This plot includes interactive features (channel names appear when pointed to with your mouse cursor) that can be accessed by opening the plot in a new tab. The statistical significance value (based on Poisson statistics) for the best SNR and time window combination for each auxiliary channel before and after this round are shown as a baton. The round’s winning channel, which had the highest significance, is shown in yellow. The top of the yellow baton is the significance of this channel before this round and the bottom of the baton is its significance in the next round, after its triggers above this round’s SNR threshold and time window have been removed (note that this channel may have nonzero significance in the next round because it may still have triggers left at a lower SNR threshold). Blue batons are for channels whose significance dropped after this round (indicating that that channel had some trigger times in common with the winner) and red batons are for channels whose significance increased in the next round (due to less livetime)."
+round_captions = [round_hist, round_snr_time, round_snr_freq,
+                  round_freq, round_used_snr, round_aux_snr,
+                  round_aux_snr_freq, round_aux_freq, round_sig_drop]
+
+
 # -- HTML construction --------------------------------------------------------
 
 def write_static_files(static):
@@ -519,7 +544,7 @@ def write_config_html(filepath, format='ini'):
 # -- Hveto HTML ---------------------------------------------------------------
 
 def write_summary(
-        rounds, plots=[], header='Summary', plotsperrow=4, pparams=dict(),
+        rounds, plots=[], header='Summary', plotsperrow=4,
         tableclass='table table-condensed table-hover table-responsive'):
     """Write the Hveto analysis summary HTML
 
@@ -533,8 +558,6 @@ def write_summary(
         the text for the section header (``<h2``>)
     plotsperrow : `int`, optional
         the number of plots to display in each row
-    pparams : `dict`
-        a dictionary of image link parameters, indexed by filename
     tableclass : `str`, optional
         the ``class`` for the summary ``<table>``
 
@@ -590,19 +613,20 @@ def write_summary(
 
     # scaffold plots
     if plots:
+        pparams = dict()
+        for i, p in enumerate(plots):
+            pparams[p] = {'title': head_captions[i]}
         page.add(scaffold_plots(plots, nperrow=plotsperrow, pparams=pparams))
     return page()
 
 
-def write_round(round, pparams=dict()):
+def write_round(round):
     """Write the HTML summary for a specific round
 
     Parameters
     ----------
     round : `HvetoRound`
         the analysis round object
-    pparams : `dict`
-        a dictionary of image link parameters, indexed by filename
 
     Returns
     -------
@@ -666,11 +690,14 @@ def write_round(round, pparams=dict()):
     page.div.close()  # col
     # plots
     page.div(class_='col-md-9', id_='hveto-round-%d-plots' % round.n)
-    page.add(scaffold_plots(round.plots[:-1], nperrow=4, pparams=pparams))
+    pparams = dict()
+    for i, p in enumerate(round.plots):
+        pparams[p] = {'title': round_captions[i]}
+    page.add(scaffold_plots(round.plots[:-1], nperrow=4, pparams=pparams[:-1]))
     # add significance drop plot at end
     page.div(class_='row')
     page.div(class_='col-sm-12')
-    page.add(fancybox_img(round.plots[-1]))
+    page.add(fancybox_img(round.plots[-1], pparams=pparams[-1]))
     page.div.close()  # col-sm-12
     page.div.close()  # row
     page.div.close()  # col-md-8
