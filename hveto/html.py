@@ -408,7 +408,7 @@ def fancybox_img(img, linkparams=dict(), **params):
     return str(page)
 
 
-def scaffold_plots(plots, nperrow=2):
+def scaffold_plots(plots, nperrow=2, pparams=dict()):
     """Embed a `list` of images in a bootstrap scaffold
 
     Parameters
@@ -417,6 +417,8 @@ def scaffold_plots(plots, nperrow=2):
         the list of image paths to embed
     nperrow : `int`
         the number of images to place in a row (on a desktop screen)
+    pparams : `dict`
+        a dictionary of image link parameters, indexed by filename
 
     Returns
     -------
@@ -427,10 +429,12 @@ def scaffold_plots(plots, nperrow=2):
     x = int(12//nperrow)
     # scaffold plots
     for i, p in enumerate(plots):
+        if p not in pparams:
+            pparams[p] = dict()
         if i % nperrow == 0:
             page.div(class_='row')
         page.div(class_='col-sm-%d' % x)
-        page.add(fancybox_img(p))
+        page.add(fancybox_img(p, linkparams=pparams[p]))
         page.div.close()  # col
         if i % nperrow == nperrow - 1:
             page.div.close()  # row
@@ -515,7 +519,7 @@ def write_config_html(filepath, format='ini'):
 # -- Hveto HTML ---------------------------------------------------------------
 
 def write_summary(
-        rounds, plots=[], header='Summary', plotsperrow=4,
+        rounds, plots=[], header='Summary', plotsperrow=4, pparams=dict(),
         tableclass='table table-condensed table-hover table-responsive'):
     """Write the Hveto analysis summary HTML
 
@@ -529,6 +533,8 @@ def write_summary(
         the text for the section header (``<h2``>)
     plotsperrow : `int`, optional
         the number of plots to display in each row
+    pparams : `dict`
+        a dictionary of image link parameters, indexed by filename
     tableclass : `str`, optional
         the ``class`` for the summary ``<table>``
 
@@ -584,17 +590,19 @@ def write_summary(
 
     # scaffold plots
     if plots:
-        page.add(scaffold_plots(plots, nperrow=plotsperrow))
+        page.add(scaffold_plots(plots, nperrow=plotsperrow, pparams=pparams))
     return page()
 
 
-def write_round(round):
+def write_round(round, pparams=dict()):
     """Write the HTML summary for a specific round
 
     Parameters
     ----------
     round : `HvetoRound`
         the analysis round object
+    pparams : `dict`
+        a dictionary of image link parameters, indexed by filename
 
     Returns
     -------
@@ -658,7 +666,7 @@ def write_round(round):
     page.div.close()  # col
     # plots
     page.div(class_='col-md-9', id_='hveto-round-%d-plots' % round.n)
-    page.add(scaffold_plots(round.plots[:-1], nperrow=4))
+    page.add(scaffold_plots(round.plots[:-1], nperrow=4, pparams=pparams))
     # add significance drop plot at end
     page.div(class_='row')
     page.div(class_='col-sm-12')
