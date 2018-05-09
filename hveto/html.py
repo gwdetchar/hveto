@@ -92,75 +92,75 @@ $(document).ready(function() {
 
 # -- set up default header plot captions
 
-head_hist = "Histogram of number of triggers in the primary channel before "
-"the hveto analysis, but after the data quality flag cuts (red) compared "
-"with the number after vetoes from all hveto rounds have been applied "
-"(blue) versus the signal-to-noise ratio of those triggers."
-head_roc = "The fraction of the primary channel triggers vetoed (fractional "
-"efficiency) versus the fraction of livetime that is vetoed (fractional "
-"deadtime) for each hveto round (blue dots). Guidelines are given for "
-"efficiency/deadtime of 1 (the value expected for random chance) and higher."
-head_freq = "Frequency versus time graph of all triggers in the primary "
-"channel before the hveto analysis (black dots) and those triggers that are "
-"vetoed by a given round (symbols)."
-head_snr = "Signal-to-noise ratio versus time graph of all triggers in the "
-"primary channel before the hveto analysis (black dots) and those triggers "
-"that are vetoed by a given round (symbols)."
+head_hist = "Histogram of number of triggers in the primary channel before " \
+    "the hveto analysis, but after the data quality flag cuts (red) compared " \
+    "with the number after vetoes from all hveto rounds have been applied " \
+    "(blue) versus the signal-to-noise ratio of those triggers."
+head_roc = "The fraction of the primary channel triggers vetoed (fractional " \
+    "efficiency) versus the fraction of livetime that is vetoed (fractional " \
+    "deadtime) for each hveto round (blue dots). Guidelines are given for " \
+    "efficiency/deadtime of 1 (the value expected for random chance) and higher."
+head_freq = "Frequency versus time graph of all triggers in the primary " \
+    "channel before the hveto analysis (black dots) and those triggers that are " \
+    "vetoed by a given round (symbols)."
+head_snr = "Signal-to-noise ratio versus time graph of all triggers in the " \
+    "primary channel before the hveto analysis (black dots) and those triggers " \
+    "that are vetoed by a given round (symbols)."
 head_captions = [head_hist, head_roc, head_freq, head_snr]
 
 
 # -- set up default round winner plot captions
 
-round_hist = "Histogram of number of triggers in the primary channel before "
-"this round of hveto (red) compared with the number after vetoes from this "
-"round have been applied (blue) versus the signal-to-noise ratio of those "
-"triggers."
-round_snr_time = "Signal-to-noise ratio versus time graph of all triggers in "
-"the primary channel before this round of hveto (black dots) and those "
-"triggers that are vetoed by this round (red plusses)."
-round_snr_freq = "Signal-to-noise ratio versus frequency graph of all "
-"triggers in the primary channel before this round of hveto (black dots) and "
-"those triggers that are vetoed by this round (red plusses)."
-round_freq = "Frequency versus time graph of all triggers in the primary "
-"channel before this hveto round (dots colored by signal-to-noise ratio) and "
-"those triggers that are vetoed by this round (red plusses)."
-round_used_snr = "Signal-to-noise ratio versus time graph of all triggers in "
-"the auxiliary channel above the threshold selected for this round (black "
-"dots, these are the triggers used to construct the veto) and the primary "
-"channel triggers that are vetoed in this round (red plusses). This can "
-"indicate whether, for example, louder triggers in the auxiliary channel are "
-"used to veto quieter channels in the primary channel, as might be expected "
-"for an external disturbance."
-round_aux_snr = "Signal-to-noise ratio versus time graph of all triggers in "
-"the auxiliary channel before this round (black dots), those above the "
-"threshold selected for this round (yellow plusses, these are the triggers "
-"used to construct the veto), and those triggers that actually veto one of the "
-"primary channel triggers (red plusses)."
-round_aux_snr_freq = "Signal-to-noise ratio versus frequency graph of all "
-"triggers in the auxiliary channel before this round (black dots), those above "
-"the threshold selected for this round (yellow plusses, these are the triggers "
-"used to construct the veto), and those triggers that actually veto one of the "
-"primary channel triggers (red plusses)."
-round_aux_freq = "Frequency versus time graph of all triggers in the auxiliary "
-"channel before this round (dots colored by signal-to-noise ratio), those "
-"above the threshold selected for this round (yellow plusses, these are the "
-"triggers used to construct the veto), and those triggers that actually veto "
-"one of the primary channel triggers (red plusses)."
-round_sig_drop = "This plot includes interactive features (channel names "
-"appear when pointed to with your mouse cursor) that can be accessed by "
-"opening the plot in a new tab. The statistical significance value (based on "
-"Poisson statistics) for the best SNR and time window combination for each "
-"auxiliary channel before and after this round are shown as a baton. The "
-"round’s winning channel, which had the highest significance, is shown in "
-"yellow. The top of the yellow baton is the significance of this channel "
-"before this round and the bottom of the baton is its significance in the next "
-"round, after its triggers above this round’s SNR threshold and time window "
-"have been removed (note that this channel may have nonzero significance in "
-"the next round because it may still have triggers left at a lower SNR "
-"threshold). Blue batons are for channels whose significance dropped after "
-"this round (indicating that that channel had some trigger times in common "
-"with the winner) and red batons are for channels whose significance increased "
-"in the next round (due to less livetime)."
+round_hist = "Histogram of number of triggers in the primary channel before " \
+    "this round of hveto (red) compared with the number after vetoes from this " \
+    "round have been applied (blue) versus the signal-to-noise ratio of those " \
+    "triggers."
+round_snr_time = "Signal-to-noise ratio versus time graph of all triggers " \
+    "in the primary channel before this round of hveto (black dots) and those " \
+    "triggers that are vetoed by this round (red plusses)."
+round_snr_freq = "Signal-to-noise ratio versus frequency graph of all " \
+    "triggers in the primary channel before this round of hveto (black dots) " \
+    "and those triggers that are vetoed by this round (red plusses)."
+round_freq = "Frequency versus time graph of all triggers in the primary " \
+    "channel before this hveto round (dots colored by signal-to-noise ratio) " \
+    "and those triggers that are vetoed by this round (red plusses)."
+round_used_snr = "Signal-to-noise ratio versus time graph of all triggers " \
+    "in the auxiliary channel above the threshold selected for this round " \
+    "(black dots, these are the triggers used to construct the veto) and the " \
+    "primary channel triggers that are vetoed in this round (red plusses). This " \
+    "cand indicate whether, for example, louder triggers in the auxiliary " \
+    "channel are used to veto quieter channels in the primary channel, as might " \
+    "be expected for an external disturbance."
+round_aux_snr = "Signal-to-noise ratio versus time graph of all triggers in " \
+    "the auxiliary channel before this round (black dots), those above the " \
+    "threshold selected for this round (yellow plusses, these are the triggers " \
+    "used to construct the veto), and those triggers that actually veto one of " \
+    "the primary channel triggers (red plusses)."
+round_aux_snr_freq = "Signal-to-noise ratio versus frequency graph of all " \
+    "triggers in the auxiliary channel before this round (black dots), those " \
+    "above the threshold selected for this round (yellow plusses, these are the " \
+    "triggers used to construct the veto), and those triggers that actually " \
+    "veto one of the primary channel triggers (red plusses)."
+round_aux_freq = "Frequency versus time graph of all triggers in the " \
+    "auxiliary channel before this round (dots colored by signal-to-noise ratio), " \
+    "those above the threshold selected for this round (yellow plusses, these are " \
+    "the triggers used to construct the veto), and those triggers that actually " \
+    "veto one of the primary channel triggers (red plusses)."
+round_sig_drop = "This plot includes interactive features (channel names " \
+    "appear when pointed to with your mouse cursor) that can be accessed by " \
+    "opening the plot in a new tab. The statistical significance value (based on " \
+    "Poisson statistics) for the best SNR and time window combination for each " \
+    "auxiliary channel before and after this round are shown as a baton. The " \
+    "round’s winning channel, which had the highest significance, is shown in " \
+    "yellow. The top of the yellow baton is the significance of this channel " \
+    "before this round and the bottom of the baton is its significance in the " \
+    "next round, after its triggers above this round’s SNR threshold and time " \
+    "window have been removed (note that this channel may have nonzero " \
+    "significance in the next round because it may still have triggers left at " \
+    "a lower SNR threshold). Blue batons are for channels whose significance " \
+    "dropped after this round (indicating that that channel had some trigger " \
+    "times in common with the winner) and red batons are for channels whose " \
+    "significance increased in the next round (due to less livetime)."
 round_captions = [round_hist, round_snr_time, round_snr_freq,
                   round_freq, round_used_snr, round_aux_snr,
                   round_aux_snr_freq, round_aux_freq]
