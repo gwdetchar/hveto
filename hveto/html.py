@@ -114,6 +114,7 @@ HEADER_CAPTIONS = [
     "are vetoed by a given round (symbols)."
 ]
 
+
 # -- set up default round winner plot captions
 
 ROUND_CAPTIONS = [
