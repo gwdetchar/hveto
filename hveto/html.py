@@ -498,7 +498,7 @@ def fancybox_img(img, linkparams=dict(), **params):
     return str(page)
 
 
-def scaffold_plots(plots, nperrow=2, pparams=dict()):
+def scaffold_plots(plots, nperrow=2, figparams=dict()):
     """Embed a `list` of images in a bootstrap scaffold
 
     Parameters
@@ -507,7 +507,7 @@ def scaffold_plots(plots, nperrow=2, pparams=dict()):
         the list of image paths to embed
     nperrow : `int`
         the number of images to place in a row (on a desktop screen)
-    pparams : `dict`
+    figparams : `dict`
         a dictionary of image link parameters, indexed by filename
 
     Returns
@@ -519,12 +519,12 @@ def scaffold_plots(plots, nperrow=2, pparams=dict()):
     x = int(12//nperrow)
     # scaffold plots
     for i, p in enumerate(plots):
-        if p not in pparams:
-            pparams[p] = dict()
+        if p not in figparams:
+            figparams[p] = dict()
         if i % nperrow == 0:
             page.div(class_='row')
         page.div(class_='col-sm-%d' % x)
-        page.add(fancybox_img(p, linkparams=pparams[p]))
+        page.add(fancybox_img(p, linkparams=figparams[p]))
         page.div.close()  # col
         if i % nperrow == nperrow - 1:
             page.div.close()  # row
@@ -681,7 +681,7 @@ def write_summary(
         pparams = dict()
         for i, p in enumerate(plots):
             pparams[p] = {'title': HEADER_CAPTIONS[i]}
-        page.add(scaffold_plots(plots, nperrow=plotsperrow, pparams=pparams))
+        page.add(scaffold_plots(plots, nperrow=plotsperrow, figparams=pparams))
     return page()
 
 
@@ -758,7 +758,7 @@ def write_round(round):
     pparams = dict()
     for i, p in enumerate(round.plots[:-1]):
         pparams[p] = {'title': ROUND_CAPTIONS[i]}
-    page.add(scaffold_plots(round.plots[:-1], nperrow=4, pparams=pparams))
+    page.add(scaffold_plots(round.plots[:-1], nperrow=4, figparams=pparams))
     # add significance drop plot at end
     page.div(class_='row')
     page.div(class_='col-sm-12')
