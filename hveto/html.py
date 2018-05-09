@@ -112,7 +112,7 @@ round_aux_freq = "Frequency versus time graph of all triggers in the auxiliary c
 round_sig_drop = "This plot includes interactive features (channel names appear when pointed to with your mouse cursor) that can be accessed by opening the plot in a new tab. The statistical significance value (based on Poisson statistics) for the best SNR and time window combination for each auxiliary channel before and after this round are shown as a baton. The round’s winning channel, which had the highest significance, is shown in yellow. The top of the yellow baton is the significance of this channel before this round and the bottom of the baton is its significance in the next round, after its triggers above this round’s SNR threshold and time window have been removed (note that this channel may have nonzero significance in the next round because it may still have triggers left at a lower SNR threshold). Blue batons are for channels whose significance dropped after this round (indicating that that channel had some trigger times in common with the winner) and red batons are for channels whose significance increased in the next round (due to less livetime)."
 round_captions = [round_hist, round_snr_time, round_snr_freq,
                   round_freq, round_used_snr, round_aux_snr,
-                  round_aux_snr_freq, round_aux_freq, round_sig_drop]
+                  round_aux_snr_freq, round_aux_freq]
 
 
 # -- HTML construction --------------------------------------------------------
@@ -698,7 +698,7 @@ def write_round(round):
     page.div(class_='row')
     page.div(class_='col-sm-12')
     page.add(fancybox_img(round.plots[-1],
-                          pparams={'title': round_captions[-1]}))
+                          pparams={'title': round_sig_drop}))
     page.div.close()  # col-sm-12
     page.div.close()  # row
     page.div.close()  # col-md-8
