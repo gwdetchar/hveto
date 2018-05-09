@@ -33,7 +33,7 @@ from glue import markup
 from _version import get_versions
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = 'Josh Smith, Joe Areeda'
+__credits__ = 'Josh Smith, Joe Areeda, Alex Urban'
 
 # -- set up default JS and CSS files
 
