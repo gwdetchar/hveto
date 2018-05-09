@@ -691,13 +691,14 @@ def write_round(round):
     # plots
     page.div(class_='col-md-9', id_='hveto-round-%d-plots' % round.n)
     pparams = dict()
-    for i, p in enumerate(round.plots):
+    for i, p in enumerate(round.plots[:-1]):
         pparams[p] = {'title': round_captions[i]}
-    page.add(scaffold_plots(round.plots[:-1], nperrow=4, pparams=pparams[:-1]))
+    page.add(scaffold_plots(round.plots[:-1], nperrow=4, pparams=pparams))
     # add significance drop plot at end
     page.div(class_='row')
     page.div(class_='col-sm-12')
-    page.add(fancybox_img(round.plots[-1], pparams=pparams[-1]))
+    page.add(fancybox_img(round.plots[-1],
+                          pparams={'title': round_captions[-1]}))
     page.div.close()  # col-sm-12
     page.div.close()  # row
     page.div.close()  # col-md-8
