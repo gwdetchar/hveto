@@ -27,8 +27,11 @@ import datetime
 from getpass import getuser
 
 from hveto import html
-from hveto.plot import FancyPlot
 from hveto._version import get_versions
+
+from matplotlib import use
+use('agg')  # nopep8
+from hveto.plot import FancyPlot
 
 from common import unittest
 
