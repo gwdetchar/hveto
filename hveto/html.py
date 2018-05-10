@@ -85,100 +85,10 @@ $(document).ready(function() {
 	$(\".fancybox\").fancybox({
 		nextEffect: 'none',
 		prevEffect: 'none',
+		helpers: {title: {type: 'inside'}}
 	});
 });
 """
-
-
-# -- set up default header plot captions
-
-HEADER_CAPTIONS = [
-    # histogram of triggers
-    "Histogram of number of triggers in the primary channel before the hveto "
-    "analysis, but after the data quality flag cuts (red) compared with the "
-    "number after vetoes from all hveto rounds have been applied (blue) "
-    "versus the signal-to-noise ratio of those triggers.",
-    # ROC curve
-    "The fraction of the primary channel triggers vetoed (fractional "
-    "efficiency) versus the fraction of livetime that is vetoed (fractional "
-    "deadtime) for each hveto round (blue dots). Guidelines are given for "
-    "efficiency/deadtime of 1 (the value expected for random chance) and "
-    "higher.",
-    # trigger frequency vs. time
-    "Frequency versus time graph of all triggers in the primary channel "
-    "before the hveto analysis (black dots) and those triggers that are "
-    "vetoed by a given round (symbols).",
-    # SNR timeseries
-    "Signal-to-noise ratio versus time graph of all triggers in the primary "
-    "channel before the hveto analysis (black dots) and those triggers that "
-    "are vetoed by a given round (symbols)."
-]
-
-
-# -- set up default round winner plot captions
-
-ROUND_CAPTIONS = [
-    # histogram of triggers
-    "Histogram of number of triggers in the primary channel before this round "
-    "of hveto (red) compared with the number after vetoes from this round "
-    "have been applied (blue) versus the signal-to-noise ratio of those "
-    "triggers.",
-    # SNR timeseries
-    "Signal-to-noise ratio versus time graph of all triggers in the primary "
-    "channel before this round of hveto (black dots) and those triggers that "
-    "are vetoed by this round (red plusses).",
-    # SNR frequencyseries
-    "Signal-to-noise ratio versus frequency graph of all triggers in the "
-    "primary channel before this round of hveto (black dots) and those "
-    "triggers that are vetoed by this round (red plusses).",
-    # trigger frequency vs. time
-    "Frequency versus time graph of all triggers in the primary channel "
-    "before this hveto round (dots colored by signal-to-noise ratio) and "
-    "those triggers that are vetoed by this round (red plusses).",
-    # used SNR timeseries
-    "Signal-to-noise ratio versus time graph of all triggers in the auxiliary "
-    "channel above the threshold selected for this round (black dots, these "
-    "are the triggers used to construct the veto) and the primary channel "
-    "triggers that are vetoed in this round (red plusses). This can indicate "
-    "whether, for example, louder triggers in the auxiliary channel are used "
-    "to veto quieter channels in the primary channel, as might be expected "
-    "for an external disturbance.",
-    # all auxiliary SNR timeseries
-    "Signal-to-noise ratio versus time graph of all triggers in the auxiliary "
-    "channel before this round (black dots), those above the threshold "
-    "selected for this round (yellow plusses, these are the triggers used to "
-    "construct the veto), and those triggers that actually veto one of the "
-    "primary channel triggers (red plusses).",
-    # all auxiliary SNR frequencyseries
-    "Signal-to-noise ratio versus frequency graph of all triggers in the "
-    "auxiliary channel before this round (black dots), those above the "
-    "threshold selected for this round (yellow plusses, these are the "
-    "triggers used to construct the veto), and those triggers that actually "
-    "veto one of the primary channel triggers (red plusses).",
-    # all auxiliary trigger frequency vs. time
-    "Frequency versus time graph of all triggers in the auxiliary channel "
-    "before this round (dots colored by signal-to-noise ratio), those above "
-    "the threshold selected for this round (yellow plusses, these are the "
-    "triggers used to construct the veto), and those triggers that actually "
-    "veto one of the primary channel triggers (red plusses)."
-]
-
-ROUND_SIG_DROP_CAPTION = "This plot includes interactive features (channel " \
-    "names appear when pointed to with your mouse cursor) that can be " \
-    "accessed by opening the plot in a new tab. The statistical " \
-    "significance value (based on Poisson statistics) for the best SNR and " \
-    "time window combination for each auxiliary channel before and after " \
-    "this round are shown as a baton. The round’s winning channel, which " \
-    "had the highest significance, is shown in yellow. The top of the " \
-    "yellow baton is the significance of this channel before this round and " \
-    "the bottom of the baton is its significance in the next round, after " \
-    "its triggers above this round’s SNR threshold and time window have " \
-    "been removed (note that this channel may have nonzero significance in " \
-    "the next round because it may still have triggers left at a lower SNR " \
-    "threshold). Blue batons are for channels whose significance dropped " \
-    "after this round (indicating that that channel had some trigger times " \
-    "in common with the winner) and red batons are for channels whose " \
-    "significance increased in the next round (due to less livetime)."
 
 
 # -- HTML construction --------------------------------------------------------
@@ -466,7 +376,8 @@ def fancybox_img(img, linkparams=dict(), **params):
     Parameters
     ----------
     img : `str`
-        the path of the image to embed
+        a `FancyPlot` object containing the path of the image to embed
+        and its caption to be displayed
     linkparams : `dict`
         the HTML attributes for the ``<a>`` tag
     **params
@@ -478,12 +389,13 @@ def fancybox_img(img, linkparams=dict(), **params):
     """
     page = markup.page()
     aparams = {
-        'title': os.path.basename(img),
+        'title': img.caption,
         'class_': 'fancybox',
         'target': '_blank',
         'data-fancybox-group': 'hveto-image',
     }
     aparams.update(linkparams)
+    img = str(img)
     page.a(href=img, **aparams)
     imgparams = {
         'alt': os.path.basename(img),
@@ -499,7 +411,7 @@ def fancybox_img(img, linkparams=dict(), **params):
     return str(page)
 
 
-def scaffold_plots(plots, nperrow=2, figparams=dict()):
+def scaffold_plots(plots, nperrow=2):
     """Embed a `list` of images in a bootstrap scaffold
 
     Parameters
@@ -508,8 +420,6 @@ def scaffold_plots(plots, nperrow=2, figparams=dict()):
         the list of image paths to embed
     nperrow : `int`
         the number of images to place in a row (on a desktop screen)
-    figparams : `dict`
-        a dictionary of image link parameters, indexed by filename
 
     Returns
     -------
@@ -520,12 +430,10 @@ def scaffold_plots(plots, nperrow=2, figparams=dict()):
     x = int(12//nperrow)
     # scaffold plots
     for i, p in enumerate(plots):
-        if p not in figparams:
-            figparams[p] = dict()
         if i % nperrow == 0:
             page.div(class_='row')
         page.div(class_='col-sm-%d' % x)
-        page.add(fancybox_img(p, linkparams=figparams[p]))
+        page.add(fancybox_img(p))
         page.div.close()  # col
         if i % nperrow == nperrow - 1:
             page.div.close()  # row
@@ -679,10 +587,7 @@ def write_summary(
 
     # scaffold plots
     if plots:
-        pparams = dict()
-        for i, p in enumerate(plots):
-            pparams[p] = {'title': HEADER_CAPTIONS[i]}
-        page.add(scaffold_plots(plots, nperrow=plotsperrow, figparams=pparams))
+        page.add(scaffold_plots(plots, nperrow=plotsperrow))
     return page()
 
 
@@ -756,15 +661,11 @@ def write_round(round):
     page.div.close()  # col
     # plots
     page.div(class_='col-md-9', id_='hveto-round-%d-plots' % round.n)
-    pparams = dict()
-    for i, p in enumerate(round.plots[:-1]):
-        pparams[p] = {'title': ROUND_CAPTIONS[i]}
-    page.add(scaffold_plots(round.plots[:-1], nperrow=4, figparams=pparams))
+    page.add(scaffold_plots(round.plots[:-1], nperrow=4))
     # add significance drop plot at end
     page.div(class_='row')
     page.div(class_='col-sm-12')
-    page.add(fancybox_img(round.plots[-1],
-                          linkparams={'title': ROUND_SIG_DROP_CAPTION}))
+    page.add(fancybox_img(round.plots[-1]))
     page.div.close()  # col-sm-12
     page.div.close()  # row
     page.div.close()  # col-md-8

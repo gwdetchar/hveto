@@ -21,6 +21,7 @@
 
 from __future__ import division
 
+import os.path
 import warnings
 from math import (log10, floor)
 from io import BytesIO
@@ -35,7 +36,7 @@ from gwpy.plotter import (HistogramPlot, EventTablePlot,
 from gwpy.plotter.table import get_column_string
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = 'Josh Smith, Joe Areeda'
+__credits__ = 'Josh Smith, Joe Areeda, Alex Urban'
 
 rcParams.update({
     'figure.subplot.bottom': 0.17,
@@ -73,6 +74,112 @@ SHOW_HIDE_JAVASCRIPT = """
     ]]>
     </script>"""
 
+
+# -- set up default header plot captions
+
+HEADER_CAPTION = {
+    'HISTOGRAM':
+    "Histogram of number of triggers in the primary channel before the hveto "
+    "analysis, but after the data quality flag cuts (red) compared with the "
+    "number after vetoes from all hveto rounds have been applied (blue) "
+    "versus the signal-to-noise ratio of those triggers.",
+    'ROC':
+    "The fraction of the primary channel triggers vetoed (fractional "
+    "efficiency) versus the fraction of livetime that is vetoed (fractional "
+    "deadtime) for each hveto round (blue dots). Guidelines are given for "
+    "efficiency/deadtime of 1 (the value expected for random chance) and "
+    "higher.",
+    'TIME':
+     "Frequency versus time graph of all triggers in the primary channel "
+    "before the hveto analysis (black dots) and those triggers that are "
+    "vetoed by a given round (symbols).",
+    'SNR_TIME':
+    "Signal-to-noise ratio versus time graph of all triggers in the primary "
+    "channel before the hveto analysis (black dots) and those triggers that "
+    "are vetoed by a given round (symbols)."
+}
+
+
+# -- set up default round winner plot captions
+
+ROUND_CAPTION = {
+    'HISTOGRAM':
+    "Histogram of number of triggers in the primary channel before this round "
+    "of hveto (red) compared with the number after vetoes from this round "
+    "have been applied (blue) versus the signal-to-noise ratio of those "
+    "triggers.",
+    'SNR_TIME':
+    "Signal-to-noise ratio versus time graph of all triggers in the primary "
+    "channel before this round of hveto (black dots) and those triggers that "
+    "are vetoed by this round (red plusses).",
+    'SNR':
+    "Signal-to-noise ratio versus frequency graph of all triggers in the "
+    "primary channel before this round of hveto (black dots) and those "
+    "triggers that are vetoed by this round (red plusses).",
+    'TIME':
+    "Frequency versus time graph of all triggers in the primary channel "
+    "before this hveto round (dots colored by signal-to-noise ratio) and "
+    "those triggers that are vetoed by this round (red plusses).",
+    'USED_SNR_TIME':
+    "Signal-to-noise ratio versus time graph of all triggers in the auxiliary "
+    "channel above the threshold selected for this round (black dots, these "
+    "are the triggers used to construct the veto) and the primary channel "
+    "triggers that are vetoed in this round (red plusses). This can indicate "
+    "whether, for example, louder triggers in the auxiliary channel are used "
+    "to veto quieter channels in the primary channel, as might be expected "
+    "for an external disturbance.",
+    'AUX_SNR_TIME':
+    "Signal-to-noise ratio versus time graph of all triggers in the auxiliary "
+    "channel before this round (black dots), those above the threshold "
+    "selected for this round (yellow plusses, these are the triggers used to "
+    "construct the veto), and those triggers that actually veto one of the "
+    "primary channel triggers (red plusses).",
+    'AUX_SNR_FREQUENCY':
+    "Signal-to-noise ratio versus frequency graph of all triggers in the "
+    "auxiliary channel before this round (black dots), those above the "
+    "threshold selected for this round (yellow plusses, these are the "
+    "triggers used to construct the veto), and those triggers that actually "
+    "veto one of the primary channel triggers (red plusses).",
+    'AUX_FREQUENCY_TIME':
+    "Frequency versus time graph of all triggers in the auxiliary channel "
+    "before this round (dots colored by signal-to-noise ratio), those above "
+    "the threshold selected for this round (yellow plusses, these are the "
+    "triggers used to construct the veto), and those triggers that actually "
+    "veto one of the primary channel triggers (red plusses).",
+    'SIG_DROP':
+    "This plot includes interactive features (channel "
+    "names appear when pointed to with your mouse cursor) that can be "
+    "accessed by opening the plot in a new tab. The statistical "
+    "significance value (based on Poisson statistics) for the best SNR and "
+    "time window combination for each auxiliary channel before and after "
+    "this round are shown as a baton. The round’s winning channel, which "
+    "had the highest significance, is shown in yellow. The top of the "
+    "yellow baton is the significance of this channel before this round and "
+    "the bottom of the baton is its significance in the next round, after "
+    "its triggers above this round’s SNR threshold and time window have "
+    "been removed (note that this channel may have nonzero significance in "
+    "the next round because it may still have triggers left at a lower SNR "
+    "threshold). Blue batons are for channels whose significance dropped "
+    "after this round (indicating that that channel had some trigger times "
+    "in common with the winner) and red batons are for channels whose "
+    "significance increased in the next round (due to less livetime)."
+}
+
+
+# -- Plot construction --------------------------------------------------------
+
+class FancyPlot(object):
+    def __init__(self, img, caption=None):
+        if isinstance(img, FancyPlot):
+            caption = caption if caption else img.caption
+        self.img = str(img)
+        self.caption = caption if caption else os.path.basename(self.img)
+
+    def __str__(self):
+        return self.img
+
+
+# -- Functions ----------------------------------------------------------------
 
 def before_after_histogram(
         outfile, x, y, label1='Before', label2='After',
