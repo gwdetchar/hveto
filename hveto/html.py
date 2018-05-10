@@ -375,7 +375,7 @@ def fancybox_img(img, linkparams=dict(), **params):
 
     Parameters
     ----------
-    img : `str`
+    img : `FancyPlot`
         a `FancyPlot` object containing the path of the image to embed
         and its caption to be displayed
     linkparams : `dict`
@@ -386,6 +386,10 @@ def fancybox_img(img, linkparams=dict(), **params):
     Returns
     -------
     html : `str`
+
+    Notes
+    -----
+    See `~hveto.plot.FancyPlot` for more about the `FancyPlot` class.
     """
     page = markup.page()
     aparams = {
