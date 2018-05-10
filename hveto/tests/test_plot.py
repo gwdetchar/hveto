@@ -53,3 +53,8 @@ class PlotTestCase(unittest.TestCase):
             finally:
                 if os.path.isfile(svg):
                     os.remove(svg)
+
+    def test_fancy_plot(self):
+        test = plot.FancyPlot('test.png')
+        assert test.img is 'test.png'
+        assert test.caption is 'test.png'
