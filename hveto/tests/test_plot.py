@@ -53,3 +53,14 @@ class PlotTestCase(unittest.TestCase):
             finally:
                 if os.path.isfile(svg):
                     os.remove(svg)
+
+    def test_fancy_plot(self):
+        # create a dummy FancyPlot instance
+        test = plot.FancyPlot('test.png')
+        assert test.img is 'test.png'
+        assert test.caption is 'test.png'
+        # check that its properties are unchanged when the argument
+        # to FancyPlot() is also a FancyPlot instance
+        test = plot.FancyPlot(test)
+        assert test.img is 'test.png'
+        assert test.caption is 'test.png'

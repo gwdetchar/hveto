@@ -33,7 +33,7 @@ from glue import markup
 from _version import get_versions
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = 'Josh Smith, Joe Areeda'
+__credits__ = 'Josh Smith, Joe Areeda, Alex Urban'
 
 # -- set up default JS and CSS files
 
@@ -85,6 +85,7 @@ $(document).ready(function() {
 	$(\".fancybox\").fancybox({
 		nextEffect: 'none',
 		prevEffect: 'none',
+		helpers: {title: {type: 'inside'}}
 	});
 });
 """
@@ -374,8 +375,9 @@ def fancybox_img(img, linkparams=dict(), **params):
 
     Parameters
     ----------
-    img : `str`
-        the path of the image to embed
+    img : `FancyPlot`
+        a `FancyPlot` object containing the path of the image to embed
+        and its caption to be displayed
     linkparams : `dict`
         the HTML attributes for the ``<a>`` tag
     **params
@@ -384,15 +386,20 @@ def fancybox_img(img, linkparams=dict(), **params):
     Returns
     -------
     html : `str`
+
+    Notes
+    -----
+    See `~hveto.plot.FancyPlot` for more about the `FancyPlot` class.
     """
     page = markup.page()
     aparams = {
-        'title': os.path.basename(img),
+        'title': img.caption,
         'class_': 'fancybox',
         'target': '_blank',
         'data-fancybox-group': 'hveto-image',
     }
     aparams.update(linkparams)
+    img = str(img)
     page.a(href=img, **aparams)
     imgparams = {
         'alt': os.path.basename(img),
