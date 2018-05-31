@@ -29,6 +29,10 @@ from getpass import getuser
 from hveto import html
 from hveto._version import get_versions
 
+from matplotlib import use
+use('agg')  # nopep8
+from hveto.plot import FancyPlot
+
 from common import unittest
 
 VERSION = get_versions()['version']
@@ -149,7 +153,8 @@ class HtmlTestCase(unittest.TestCase):
                  'X1:TEST-CHANNEL">X1:TEST-CHANNEL</a>')
 
     def test_fancybox_img(self):
-        out = html.fancybox_img('test.png')
+        img = FancyPlot('test.png')
+        out = html.fancybox_img(img)
         self.assertEqual(
             out, '<a class="fancybox" href="test.png" target="_blank" '
                  'data-fancybox-group="hveto-image" title="test.png">\n'
@@ -157,7 +162,8 @@ class HtmlTestCase(unittest.TestCase):
                  '\n</a>')
 
     def test_scaffold_plots(self):
-        out = html.scaffold_plots(['plot1.png', 'plot2.png'])
+        out = html.scaffold_plots([FancyPlot('plot1.png'),
+                                   FancyPlot('plot2.png')])
         self.assertEqual(
             out, '<div class="row">\n'
                  '<div class="col-sm-6">\n'
