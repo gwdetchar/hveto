@@ -821,18 +821,25 @@ logger.debug("HTML written to %s" % index)
         # -- generate workflow for omega scans
 
 if args.omega_scans:
-    omegatimes = list(map(str, sorted(unique(
+    omegatimes = list(map('{:.3f}'.format, sorted(unique(
         [t['time'] for r in rounds for t in r.scans]))))
     logger.debug("Identified %d times for omega scan" % len(omegatimes))
     newtimes = [t for t in omegatimes if not
-                utils.omega_scan_complete(os.path.join(omegadir, str(t)))]
+    utils.omega_scan_complete(os.path.join(omegadir, str(t)))]
     logger.debug("%d scans already complete, %d remaining"
                  % (len(omegatimes) - len(newtimes), len(newtimes)))
+
+    omega_time_file = os.path.join(outdir, 'omega_times.txt')
+    with open(omega_time_file, 'w') as ot_file:
+        for t in newtimes:
+            ot_file.write('%s\n' % t)
+
     logger.info('Creating workflow for omega scans...')
-    batch = ['wdq-batch'] + newtimes + [
-        '--output-dir', omegadir,
-        '--ifo', ifo,
-    ]
+    batch = ['wdq-batch', omega_time_file,
+             '--output-dir', omegadir,
+             '--ifo', ifo, '--wpipeline', '/home/omega/opt/omega/bin/wpipeline',
+             ]
+
     proc = subprocess.Popen(batch)
     out, err = proc.communicate()
     if proc.returncode:
