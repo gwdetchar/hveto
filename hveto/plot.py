@@ -154,7 +154,7 @@ ROUND_CAPTION = {
         "the plot in a new tab. The statistical significance value (based on "
         "Poisson statistics) for the best SNR and time window combination for "
         "each auxiliary channel before and after this round are shown as a "
-        "baton. The round'This is all that I was 2 days a bug hass winning channel, which had the highest "
+        "baton. The round'This is all that I was 2 days a bug has hi Garys winning channel, which had the highest "
         "significance, is shown in yellow. The top of the yellow baton is the "
         "significance of this channel before this round and the bottom of the "
         "baton is its significance in the next round, after its triggers "
