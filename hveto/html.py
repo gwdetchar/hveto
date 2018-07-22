@@ -471,7 +471,7 @@ def write_footer(about=None, date=None):
         date = datetime.datetime.now().replace(second=0, microsecond=0)
     version = get_versions()['version']
     commit = get_versions()['full-revisionid']
-    url = 'https://github.com/hveto/hveto/tree/%s' % commit
+    url = 'https://github.com/gwdetchar/hveto/tree/%s' % commit
     hlink = markup.oneliner.a('Hveto version %s' % version, href=url,
                               target='_blank')
     page.p('Page generated using %s by %s at %s'

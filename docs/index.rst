@@ -14,11 +14,11 @@ For full details see `Smith et al. (Classical and Quantum Gravity, 2011) <https:
 Installing Hveto
 ----------------
 
-The easiest method to install hveto is using `pip <https://pip.pypa.io/en/stable/>`_ directly from the `GitHub repository <https://github.com/hveto/hveto.git>`_:
+The easiest method to install hveto is using `pip <https://pip.pypa.io/en/stable/>`_ directly from the `GitHub repository <https://github.com/gwdetchar/hveto.git>`_:
 
 .. code-block:: bash
 
-   $ pip install git+https://github.com/hveto/hveto.git
+   $ pip install git+https://github.com/gwdetchar/hveto.git
 
 How to run Hveto
 ----------------
