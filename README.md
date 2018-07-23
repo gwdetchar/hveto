@@ -8,5 +8,5 @@ See [the documentation](https://ldas-jobs.ligo.caltech.edu/~duncan.macleod/hveto
 
 ## Project status
 
-[![Build Status](https://travis-ci.org/hveto/hveto.svg?branch=master)](https://travis-ci.org/hveto/hveto)  
-[![Coverage Status](https://coveralls.io/repos/github/hveto/hveto/badge.svg?branch=master)](https://coveralls.io/github/hveto/hveto?branch=master)
+[![Build Status](https://travis-ci.com/gwdetchar/hveto.svg?branch=master)](https://travis-ci.com/gwdetchar/hveto)  
+[![Coverage Status](https://coveralls.io/repos/github/gwdetchar/hveto/badge.svg?branch=master)](https://coveralls.io/github/gwdetchar/hveto?branch=master)
