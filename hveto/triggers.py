@@ -136,7 +136,11 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
     out = set()
     if cache is not None:
         for url in cache:
-            ifo, name = os.path.basename(url).split('-')[:2]
+            try:
+                ifo, name = os.path.basename(url).split('-')[:2]
+            except AttributeError:  # CacheEntry
+                ifo = url.observatory
+                name = url.description
             channel = '%s:%s' % (ifo, name.replace('_', '-', 1))
             if channel.lower().endswith(etg.lower()):
                 channel = channel[:-len(etg)]

@@ -23,11 +23,11 @@ import pytest
 
 import numpy
 
-from glue.lal import Cache
-
 from astropy.table import Table
 
 from gwpy.segments import (Segment, SegmentList)
+
+from glue.lal import Cache
 
 from hveto import triggers
 
@@ -43,9 +43,12 @@ AUX_FILES = {
 class TriggersTestCase(unittest.TestCase):
 
     def test_aux_channels_from_cache(self):
-        cache = Cache.from_urls(AUX_FILES.values())
-        channels = triggers.find_auxiliary_channels('omicron', None, None,
-                                                    cache=cache)
+        cache = list(AUX_FILES.values())
+        channels = triggers.find_auxiliary_channels(
+            'omicron', None, None, cache=cache)
+        self.assertListEqual(channels, sorted(AUX_FILES.keys()))
+        channels = triggers.find_auxiliary_channels(
+            'omicron', None, None, cache=Cache.from_urls(cache))
         self.assertListEqual(channels, sorted(AUX_FILES.keys()))
 
     def test_get_triggers(self):
