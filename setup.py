@@ -71,7 +71,7 @@ install_requires = [
     'gwpy >= 0.7.0',
     'lxml',
     'gwdetchar',  # for omega scans only
-    'trigfind >= 0.4.0',
+    'gwtrigfind',
 ]
 tests_require = [
     'pytest'
