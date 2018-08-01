@@ -23,23 +23,20 @@ import glob
 import os.path
 import re
 import warnings
+from collections import OrderedDict
 
 from six import string_types
 
 import numpy
 
-from glue.lal import Cache
-
 from astropy.table import vstack as vstack_tables
 
+import gwtrigfind
+
+from gwpy.io import cache as io_cache
 from gwpy.table import EventTable
 from gwpy.plotter.table import get_column_string
 from gwpy.segments import SegmentList
-
-try:  # use new trigfind module
-    import trigfind
-except ImportError:
-    from gwpy.table.io import trigfind
 
 # Table metadata keys to keep
 TABLE_META = ('tablename',)
@@ -84,29 +81,29 @@ def find_trigger_files(channel, etg, segments, **kwargs):
 
     **kwargs
         all other keyword arguments are passed to
-        `trigfind.find_trigger_urls`
+        `gwtrigfind.find_trigger_urls`
 
     Returns
     -------
-    cache : :class:`~glue.lal.Cache`
+    cache : `list` of `str`
         cache of trigger file paths
 
     See Also
     --------
-    trigfind.find_trigger_urls
+    gwtrigfind.find_trigger_urls
         for details on file discovery
     """
-    cache = Cache()
+    cache = []
     for start, end in segments:
         try:
-            cache.extend(trigfind.find_trigger_files(channel, etg, start,
-                                                     end, **kwargs))
+            cache.extend(gwtrigfind.find_trigger_files(channel, etg, start,
+                                                       end, **kwargs))
         except ValueError as e:
             if str(e).lower().startswith('no channel-level directory'):
                 warnings.warn(str(e))
             else:
                 raise
-    return cache.unique()
+    return type(cache)(OrderedDict.fromkeys(cache))
 
 
 re_delim = re.compile('[_-]')
@@ -128,8 +125,8 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
         at which to find channels
     ifo : `str`, optional
         interferometer prefix for which to find channels
-    cache : `~glue.lal.Cache`, optional
-        `Cache` of files from which to parse channels
+    cache : `list` of `str`, optional
+        `list` of files from which to parse channels
 
     Returns
     -------
@@ -138,9 +135,12 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
     """
     out = set()
     if cache is not None:
-        for e in cache:
-            ifo = e.observatory
-            name = e.description
+        for url in cache:
+            try:
+                ifo, name = os.path.basename(url).split('-')[:2]
+            except AttributeError:  # CacheEntry
+                ifo = url.observatory
+                name = url.description
             channel = '%s:%s' % (ifo, name.replace('_', '-', 1))
             if channel.lower().endswith(etg.lower()):
                 channel = channel[:-len(etg)]
@@ -205,17 +205,13 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     tables = []
     for segment in segments:
         segaslist = SegmentList([segment])
-        segcache = cache.sieve(segment=segment)
+        segcache = io_cache.sieve(cache, segment=segment)
         # try and work out if cache overextends segment (so we need to crop)
-        try:
-            cachesegs = segcache.to_segmentlistdict()[channel[:2]]
-        except KeyError:
-            outofbounds = False
-        else:
-            outofbounds = abs(cachesegs - segaslist)
+        cachesegs = io_cache.cache_segments(segcache)
+        outofbounds = abs(cachesegs - segaslist)
         if segcache:
             if len(segcache) == 1:  # just pass the single filename
-                segcache = segcache[0].path
+                segcache = segcache[0]
             new = EventTable.read(segcache, **read_kwargs)
             new.meta = {k: new.meta[k] for k in TABLE_META if new.meta.get(k)}
             if outofbounds:
