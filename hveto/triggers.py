@@ -35,32 +35,10 @@ import gwtrigfind
 
 from gwpy.io import cache as io_cache
 from gwpy.table import EventTable
-from gwpy.plotter.table import get_column_string
 from gwpy.segments import SegmentList
 
 # Table metadata keys to keep
 TABLE_META = ('tablename',)
-
-# -- utilities ----------------------------------------------------------------
-
-COLUMN_LABEL = {
-    'peal_frequency': r"Frequency [Hz]",
-    'central_freq': r"Frequency [Hz]",
-    'frequency': r"Frequency [Hz]",
-    'mchirp': r"Chirp mass [M$_\odot$]",
-    'new_snr': r"$\chi^2$-weighted signal-to-noise ratio (New SNR)",
-    'peak_frequency': r"Frequency [Hz]",
-    'rho': r"$\rho$",
-    'snr': r"Signal-to-noise ratio (SNR)",
-    'template_duration': r"Template duration [s]",
-}
-
-
-def get_column_label(column):
-    try:
-        return COLUMN_LABEL[column]
-    except KeyError:
-        return get_column_string(column)
 
 
 # -- find files/channels ------------------------------------------------------

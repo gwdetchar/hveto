@@ -53,11 +53,11 @@ from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
 from hveto import (__version__, log, config, core, plot, html, utils)
-from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, FancyPlot)
+from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, FancyPlot,
+                        get_column_label)
 from hveto.segments import (write_ascii as write_ascii_segments,
                             read_veto_definer_file)
-from hveto.triggers import (get_triggers, find_auxiliary_channels,
-                            get_column_label)
+from hveto.triggers import (get_triggers, find_auxiliary_channels)
 
 IFO = os.getenv('IFO')
 

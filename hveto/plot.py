@@ -168,6 +168,28 @@ ROUND_CAPTION = {
 }
 
 
+# -- utilities ----------------------------------------------------------------
+
+COLUMN_LABEL = {
+    'peal_frequency': r"Frequency [Hz]",
+    'central_freq': r"Frequency [Hz]",
+    'frequency': r"Frequency [Hz]",
+    'mchirp': r"Chirp mass [M$_\odot$]",
+    'new_snr': r"$\chi^2$-weighted signal-to-noise ratio (New SNR)",
+    'peak_frequency': r"Frequency [Hz]",
+    'rho': r"$\rho$",
+    'snr': r"Signal-to-noise ratio (SNR)",
+    'template_duration': r"Template duration [s]",
+}
+
+
+def get_column_label(column):
+    try:
+        return COLUMN_LABEL[column]
+    except KeyError:
+        return r'\texttt{{{0}}}'.format(column)
+
+
 # -- Plot construction --------------------------------------------------------
 
 class FancyPlot(object):
