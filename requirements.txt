@@ -7,6 +7,6 @@ pykerberos
 gwtrigfind
 lscsoft-glue
 dqsegdb
-gwpy
+gwpy >= 0.12.0
 git+https://github.com/ligovirgo/gwdetchar.git
 lxml
