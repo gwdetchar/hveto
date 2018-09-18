@@ -26,14 +26,14 @@ import warnings
 from math import (log10, floor)
 from io import BytesIO
 
+import numpy
+
 from lxml import etree
 
 from matplotlib import rcParams
 from matplotlib.colors import LogNorm
 
-from gwpy.plotter import (HistogramPlot, EventTablePlot,
-                          TimeSeriesPlot, Plot)
-from gwpy.plotter.table import get_column_string
+from gwpy.plot import Plot
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda, Alex Urban'
@@ -41,7 +41,7 @@ __credits__ = 'Josh Smith, Joe Areeda, Alex Urban'
 rcParams.update({
     'figure.subplot.bottom': 0.17,
     'figure.subplot.left': 0.12,
-    'figure.subplot.right': 0.9,
+    'figure.subplot.right': 0.88,
     'figure.subplot.top': 0.90,
     'axes.labelsize': 24,
     'axes.labelpad': 2,
@@ -236,11 +236,11 @@ def before_after_histogram(
     }
     axargs.update(kwargs)
     # create figure
-    plot = HistogramPlot(figsize=figsize)
+    plot = Plot(figsize=figsize)
     ax = plot.gca()
     # make histogram
     if range is None:
-        range = ax.common_limits((x, y))
+        range = min(map(numpy.min, (x, y))), max(map(numpy.max, (x, y)))
     axargs.setdefault('xlim', range)
     histargs = {
         'range': range,
@@ -272,8 +272,7 @@ def veto_scatter(
         'yscale': 'log',
         'ylabel': 'Loudness',
     }
-    if x != 'time':
-        axargs['xscale'] = 'log'
+    axargs['xscale'] = 'auto-gps' if x == 'time' else 'log'
     if isinstance(y, (list, tuple)):
         ya = y[0]
         yb = y[1]
@@ -282,11 +281,9 @@ def veto_scatter(
 
     axargs.update(kwargs)
     # create figure
-    plot = EventTablePlot(base=x=='time' and TimeSeriesPlot or Plot,
-                          figsize=figsize)
+    plot = Plot(figsize=figsize)
     ax = plot.gca()
     # add data
-    scatterargs = {'s': 40}
     if color is None:
         ax.scatter(a[x], a[ya], color='black', marker='o', label=label1, s=40)
     else:
@@ -300,7 +297,7 @@ def veto_scatter(
         a.sort(color)
         m = ax.scatter(a[x], a[ya], c=a[color], label=label1, **colorargs)
         # add colorbar
-        plot.add_colorbar(mappable=m, ax=ax, cmap=cmap, label=clabel)
+        ax.colorbar(mappable=m, cmap=cmap, label=clabel)
     if isinstance(b, (list, tuple)) and len(b) == 2:
         # aux channel used/coinc (probably)
         colors = [{'color': c} for c in (
@@ -365,9 +362,6 @@ def _finalize_plot(plot, ax, outfile, bbox_inches=None, close=True, **axargs):
         ax.set_xlim(*xlim)
     if ylim is not None:
         ax.set_ylim(*ylim)
-     # add colorbar
-    if not plot.colorbars:
-        plot.add_colorbar(ax=ax, visible=False)
     # save and close
     plot.save(outfile, bbox_inches=bbox_inches)
     if close:
