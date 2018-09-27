@@ -68,7 +68,7 @@ install_requires = [
     'scipy',
     'lscsoft-glue',
     'dqsegdb',
-    'gwpy >= 0.7.0',
+    'gwpy >= 0.12.0',
     'lxml',
     'gwdetchar',  # for omega scans only
     'gwtrigfind',
