@@ -5,7 +5,7 @@ gitpython
 jinja2
 pykerberos
 gwtrigfind
-lscsoft-glue
+lscsoft-glue >= 1.60.0
 dqsegdb
 gwpy >= 0.12.0
 git+https://github.com/ligovirgo/gwdetchar.git
