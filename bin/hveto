@@ -107,7 +107,7 @@ parser.add_argument('-w', '--omega-scans', type=int, metavar='NSCAN',
                     help='generate a workflow of omega scans for each round, '
                          'requires the gwdetchar package')
 parser.add_argument('-W', '--wdq-batch', type=find_executable,
-                    required=WDQ_BATCH is None, default=WDQ_BATCH,
+                    default=WDQ_BATCH,
                     help='path of wdq-batch executable to '
                          'use (default: %(default)s)')
 
@@ -116,6 +116,10 @@ pout.add_argument('-o', '--output-directory', default=os.curdir,
                   help='path of output directory, default: %(default)s')
 
 args = parser.parse_args()
+
+if args.omega_scans and not args.wdq_batch:
+    parser.error('argument --wdq-batch is required with --omega-scans when '
+                 'wdq-batch is not on PATH')
 
 ifo = args.ifo
 start = int(args.gpsstart)
