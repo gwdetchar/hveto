@@ -35,6 +35,7 @@ import subprocess
 import sys
 from socket import getfqdn
 from getpass import getuser
+from distutils.spawn import find_executable
 
 try:
     import configparser
@@ -60,6 +61,7 @@ from hveto.segments import (write_ascii as write_ascii_segments,
 from hveto.triggers import (get_triggers, find_auxiliary_channels)
 
 IFO = os.getenv('IFO')
+WDQ_BATCH = find_executable('wdq-batch')
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
@@ -104,6 +106,10 @@ parser.add_argument('-S', '--analysis-segments', action='append', default=[],
 parser.add_argument('-w', '--omega-scans', type=int, metavar='NSCAN',
                     help='generate a workflow of omega scans for each round, '
                          'requires the gwdetchar package')
+parser.add_argument('-W', '--wdq-batch', type=find_executable,
+                    required=WDQ_BATCH is None, default=WDQ_BATCH,
+                    help='path of wdq-batch executable to '
+                         'use (default: %(default)s)')
 
 pout = parser.add_argument_group('Output options')
 pout.add_argument('-o', '--output-directory', default=os.curdir,
@@ -808,10 +814,11 @@ if args.omega_scans:
     logger.debug("%d scans already complete, %d remaining"
                  % (len(omegatimes) - len(newtimes), len(newtimes)))
     logger.info('Creating workflow for omega scans...')
-    batch = ['wdq-batch'] + newtimes + [
+    batch = [args.wdq_batch] + newtimes + [
         '--output-dir', omegadir,
         '--ifo', ifo,
     ]
+    logger.debug(batch)
     proc = subprocess.Popen(batch)
     out, err = proc.communicate()
     if proc.returncode:
