@@ -45,36 +45,3 @@ def channel_groups(channellist, ngroups):
     n = int(ceil(len(channellist) / ngroups))
     for i in range(0, len(channellist), n):
         yield channellist[i:i+n]
-
-
-def omega_scan_complete(scandir):
-    """Determine whether an omega scan was completed in the given directory
-
-    Parameters
-    ----------
-    scandir : `str`
-        output directory for a single omega scan
-
-    Returns
-    -------
-    complete : `bool`
-        `True` if the scan is considered complete, otherwise `False`
-
-    Notes
-    -----
-    The test is whether the final line of the `log.txt` file in the `scandir`
-    starts with 'finished on'.
-    """
-    logfile = os.path.join(scandir, 'log.txt')
-    try:
-        with open(logfile) as f:
-            f.seek(-2, 2)
-            while f.read(1) != b'\n':
-                f.seek(-2, 1)
-            line = f.readline()
-    except IOError:
-        return False
-    else:
-        if line.startswith('finished on '):
-            return True
-    return False

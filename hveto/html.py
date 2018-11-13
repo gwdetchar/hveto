@@ -656,8 +656,8 @@ def write_round(round):
             for c, tag in zip([round.primary, round.winner.name],
                               ['Primary', 'Auxiliary']):
                 caption = 'Omega scan of %s at %s' % (c, t['time'])
-                png = ('./scans/%s/%s_%s_1.00_spectrogram_whitened.png'
-                       % (t['time'], t['time'], c))
+                png = ('./scans/%s/plots/%s-qscan_whitened-1.png'
+                       % (t['time'], c.replace('-', '_').replace(':', '-')))
                 page.a('[%s]' % tag[0].lower(), class_='fancybox',
                        href=png, title=caption,
                        **{'data-fancybox-group': 'omega-preview'})
