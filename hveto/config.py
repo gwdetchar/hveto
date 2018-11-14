@@ -204,10 +204,13 @@ Module API
 ==========
 """
 
+import os
 try:
     import configparser
 except ImportError:  # python 2.x
     import ConfigParser as configparser
+
+from .segments import DEFAULT_SEGMENT_SERVER
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
@@ -221,7 +224,7 @@ class HvetoConfigParser(configparser.ConfigParser):
             'minimum-significance': 5,
         },
         'segments': {
-            'url': 'https://segments.ligo.org',
+            'url': DEFAULT_SEGMENT_SERVER,
             'analysis-flag': '%(IFO)s:DMT-ANALYSIS_READY:1',
             'padding': (0, 0),
         },
