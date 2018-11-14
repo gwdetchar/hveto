@@ -21,6 +21,7 @@
 
 from __future__ import print_function
 
+import os
 import os.path
 from functools import wraps
 from urlparse import urlparse
@@ -30,6 +31,9 @@ from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
+
+DEFAULT_SEGMENT_SERVER = os.getenv('DEFAULT_SEGMENT_SERVER',
+                                   'https://segments.ligo.org')
 
 
 def integer_segments(f):
@@ -41,7 +45,7 @@ def integer_segments(f):
 
 
 @integer_segments
-def query(flag, start, end, url='https://segments.ligo.org'):
+def query(flag, start, end, url=DEFAULT_SEGMENT_SERVER):
     """Query a segment database for active segments associated with a flag
     """
     return DataQualityFlag.query(flag, start, end, url=url)
