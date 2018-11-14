@@ -60,8 +60,10 @@ else:
 
 setup_requires = [
     'setuptools',
-    'pytest-runner',
 ]
+if 'test' in sys.argv:
+    setup_requires.append('pytest-runner')
+
 install_requires = [
     'numpy',
     'matplotlib',
@@ -75,9 +77,8 @@ install_requires = [
 ]
 tests_require = [
     'pytest'
+    'mock ; python_version < \'3\'',
 ]
-if sys.version_info < (2, 7):
-    tests_require.append('unittest2')
 extras_require = {
     'doc': [
         'sphinx',

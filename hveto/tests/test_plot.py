@@ -19,48 +19,40 @@
 """Tests for `hveto.plot`
 """
 
-import os
 import tempfile
+
+import pytest
 
 from matplotlib import use
 use('agg')
 
 from numpy import random
 
-from hveto import plot
-
-from common import unittest
+from .. import plot
 
 
-class PlotTestCase(unittest.TestCase):
-    def setUp(self):
-        self.tempfileid, self.tempfile = tempfile.mkstemp(suffix='.png')
+@pytest.mark.parametrize('num', (10, 50, 200))
+def test_drop_plot(num):
+    random.seed(0)
+    # this test just makes sure the drop plot code runs end-to-end
+    channels = ['X1:TEST-%d' % i for i in range(num)]
+    old = dict(zip(channels, random.normal(size=num)))
+    new = dict(zip(channels, random.normal(size=num)))
+    with tempfile.NamedTemporaryFile(suffix='.png') as png:
+        plot.significance_drop(png.name, old, new)
 
-    def tearDown(self):
-        if os.path.isfile(self.tempfile):
-            os.remove(self.tempfile)
+    with tempfile.NamedTemporaryFile(suffix='.svg') as svg:
+        plot.significance_drop(svg.name, old, new)
 
-    def test_drop_plot(self):
-        # this test just makes sure the drop plot code runs end-to-end
-        for x in [10, 50, 200]:
-            channels = ['X1:TEST-%d' % i for i in range(x)]
-            old = dict(zip(channels, random.normal(size=x)))
-            new = dict(zip(channels, random.normal(size=x)))
-            plot.significance_drop(self.tempfile, old, new)
-            svg = self.tempfile.replace('.png', '.svg')
-            try:
-                plot.significance_drop(svg, old, new)
-            finally:
-                if os.path.isfile(svg):
-                    os.remove(svg)
 
-    def test_fancy_plot(self):
-        # create a dummy FancyPlot instance
-        test = plot.FancyPlot('test.png')
-        assert test.img is 'test.png'
-        assert test.caption is 'test.png'
-        # check that its properties are unchanged when the argument
-        # to FancyPlot() is also a FancyPlot instance
-        test = plot.FancyPlot(test)
-        assert test.img is 'test.png'
-        assert test.caption is 'test.png'
+def test_fancy_plot():
+    # create a dummy FancyPlot instance
+    test = plot.FancyPlot('test.png')
+    assert test.img is 'test.png'
+    assert test.caption is 'test.png'
+
+    # check that its properties are unchanged when the argument
+    # to FancyPlot() is also a FancyPlot instance
+    test = plot.FancyPlot(test)
+    assert test.img is 'test.png'
+    assert test.caption is 'test.png'

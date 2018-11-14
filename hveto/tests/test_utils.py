@@ -19,16 +19,15 @@
 """Tests for `hveto.utils`
 """
 
-from hveto import utils
+import pytest
 
-from common import unittest
+from .. import utils
 
 
-class UtilsTestCase(unittest.TestCase):
-    def test_channel_groups(self):
-        self.assertListEqual(list(utils.channel_groups([1, 2, 3, 4, 5], 1)),
-                             [[1, 2, 3, 4, 5]])
-        self.assertListEqual(list(utils.channel_groups([1, 2, 3, 4, 5], 2)),
-                             [[1, 2, 3], [4, 5]])
-        self.assertListEqual(list(utils.channel_groups([1, 2, 3, 4, 5], 10)),
-                             [[1], [2], [3], [4], [5]])
+@pytest.mark.parametrize('n, out', [
+    (1, [[1, 2, 3, 4, 5]]),
+    (2, [[1, 2, 3], [4, 5]]),
+    (10, [[1], [2], [3], [4], [5]]),
+])
+def test_channel_groups(n, out):
+    assert list(utils.channel_groups([1, 2, 3, 4, 5], n)) == out

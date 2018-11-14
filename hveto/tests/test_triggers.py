@@ -29,9 +29,7 @@ from gwpy.segments import (Segment, SegmentList)
 
 from glue.lal import Cache
 
-from hveto import triggers
-
-from common import unittest
+from .. import triggers
 
 AUX_FILES = {
     'L1:GDS-CALIB_STRAIN': 'L1-GDS_CALIB_STRAIN_OMICRON-12345-67890.xml.gz',
@@ -40,24 +38,24 @@ AUX_FILES = {
 }
 
 
-class TriggersTestCase(unittest.TestCase):
+def test_aux_channels_from_cache():
+    cache = list(AUX_FILES.values())
+    channels = triggers.find_auxiliary_channels(
+        'omicron', None, None, cache=cache)
+    assert channels == sorted(AUX_FILES.keys())
 
-    def test_aux_channels_from_cache(self):
-        cache = list(AUX_FILES.values())
-        channels = triggers.find_auxiliary_channels(
-            'omicron', None, None, cache=cache)
-        self.assertListEqual(channels, sorted(AUX_FILES.keys()))
-        channels = triggers.find_auxiliary_channels(
-            'omicron', None, None, cache=Cache.from_urls(cache))
-        self.assertListEqual(channels, sorted(AUX_FILES.keys()))
+    channels = triggers.find_auxiliary_channels(
+        'omicron', None, None, cache=Cache.from_urls(cache))
+    assert channels == sorted(AUX_FILES.keys())
 
-    def test_get_triggers(self):
-        # test that trigfind raises a warning if the channel-level directory
-        # doesn't exist
-        with pytest.warns(UserWarning):
-            out = triggers.get_triggers('X1:DOES_NOT_EXIST', 'omicron',
-                                        SegmentList([Segment(0, 100)]))
-        # check output type and columns
-        self.assertIsInstance(out, Table)
-        for col in ['time', 'frequency', 'snr']:
-            self.assertIn(col, out.dtype.names)
+
+def test_get_triggers():
+    # test that trigfind raises a warning if the channel-level directory
+    # doesn't exist
+    with pytest.warns(UserWarning):
+        out = triggers.get_triggers('X1:DOES_NOT_EXIST', 'omicron',
+                                    SegmentList([Segment(0, 100)]))
+    # check output type and columns
+    assert isinstance(out, Table)
+    for col in ['time', 'frequency', 'snr']:
+        assert col in out.dtype.names

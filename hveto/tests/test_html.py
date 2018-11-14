@@ -26,14 +26,14 @@ import time
 import datetime
 from getpass import getuser
 
-from hveto import html
-from hveto._version import get_versions
+import pytest
 
 from matplotlib import use
 use('agg')  # nopep8
-from hveto.plot import FancyPlot
 
-from common import unittest
+from .. import html
+from .._version import get_versions
+from ..plot import FancyPlot
 
 VERSION = get_versions()['version']
 COMMIT = get_versions()['full-revisionid']
@@ -73,117 +73,126 @@ HTML_CLOSE = """</div>
 </body>
 </html>""" % HTML_FOOTER
 
+TEMPDIR = None
+_OLDPWD = None
 
-class HtmlTestCase(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.tempdir = tempfile.mkdtemp()
-        cls._startdir = os.getcwd()
-        os.chdir(cls.tempdir)
+def setup_module():
+    global TEMPDIR, _OLDPWD
+    TEMPDIR = tempfile.mkdtemp()
+    _OLDPWD = os.getcwd()
+    os.chdir(TEMPDIR)
 
-    @classmethod
-    def tearDownClass(cls):
-        os.chdir(cls._startdir)
-        if os.path.isdir(cls.tempdir):
-            shutil.rmtree(cls.tempdir)
-        del cls._startdir
-        del cls.tempdir
 
-    def test_init_page(self):
-        # test simple content
-        out = html.init_page('L1', 0, 100, base=self.tempdir)
-        css = os.path.join(os.path.curdir, 'static', 'hveto.css')
-        js = os.path.join(os.path.curdir, 'static', 'hveto.js')
-        self.assertEqual(str(out),
-                         HTML_INIT.format(base=self.tempdir, css=css, js=js))
+def teardown_module():
+    os.chdir(_OLDPWD)
+    if os.path.isdir(TEMPDIR):
+        shutil.rmtree(TEMPDIR)
 
-    def test_write_static_files(self):
-        # test files get written
-        static = os.path.join(self.tempdir, 'static')
-        files = html.write_static_files(static)
-        for ext in ['css', 'js']:
-            self.assertTrue(os.path.isfile(
-                os.path.join(static, 'hveto.%s' % ext)))
-        now = time.time()
-        # test files don't get written again
-        html.write_static_files(static)
-        for ext in ['css', 'js']:
-            f = os.path.join(static, 'hveto.%s' % ext)
-            self.assertLess(os.path.getmtime(f), now)
-        # check content
-        for ext, content in zip(
-                ['css', 'js'], [html.HVETO_CSS, html.HVETO_JS]):
-            f = os.path.join(static, 'hveto.%s' % ext)
-            with open(f, 'r') as fp:
-                self.assertEqual(fp.read(), content)
 
-    def test_close_page(self):
-        # test simple content
-        target = os.path.join(self.tempdir, 'test.html')
-        date = datetime.datetime.now()
-        page = html.close_page(html.markup.page(), target, date=date)
-        self.assertEqual(str(page),
-                         HTML_CLOSE.format(user=getuser(), date=str(date)))
-        self.assertTrue(os.path.isfile(target))
-        with open(target, 'r') as fp:
-            self.assertEqual(fp.read(), str(page))
+def test_init_page():
+    # test simple content
+    out = html.init_page('L1', 0, 100, base=TEMPDIR)
+    css = os.path.join(os.path.curdir, 'static', 'hveto.css')
+    js = os.path.join(os.path.curdir, 'static', 'hveto.js')
+    assert str(out) == HTML_INIT.format(base=TEMPDIR, css=css, js=js)
 
-    def test_bold_param(self):
-        out = html.bold_param('Key', 'Value')
-        self.assertEqual(out, '<p><b>Key</b>: Value</p>')
-        out = html.bold_param('Key', 'Value', class_='hveto', id_='test-case')
-        self.assertEqual(
-            out, '<p class="hveto" id="test-case"><b>Key</b>: Value</p>')
 
-    def test_html_link(self):
-        out = html.html_link('test.html', 'Test link')
-        self.assertEqual(
-            out, '<a href="test.html" target="_blank">Test link</a>')
-        out = html.html_link('test.html', 'Test link', class_='test-case')
-        self.assertEqual(out, '<a class="test-case" href="test.html" '
-                              'target="_blank">Test link</a>')
+def test_write_static_files():
+    # test files get written
+    static = os.path.join(TEMPDIR, 'static')
+    html.write_static_files(static)
+    for ext in ['css', 'js']:
+        assert os.path.isfile(os.path.join(static, 'hveto.%s' % ext))
 
-    def test_cis_link(self):
-        out = html.cis_link('X1:TEST-CHANNEL')
-        self.assertEqual(
-            out, '<a style="font-family: Monaco, &quot;Courier New&quot;, '
-                 'monospace;" href="https://cis.ligo.org/channel/byname/'
-                 'X1:TEST-CHANNEL" target="_blank" title="CIS entry for '
-                 'X1:TEST-CHANNEL">X1:TEST-CHANNEL</a>')
+    # test files don't get written again
+    now = time.time()
+    html.write_static_files(static)
+    for ext in ['css', 'js']:
+        f = os.path.join(static, 'hveto.%s' % ext)
+        assert os.path.getmtime(f) < now
 
-    def test_fancybox_img(self):
-        img = FancyPlot('test.png')
-        out = html.fancybox_img(img)
-        self.assertEqual(
-            out, '<a class="fancybox" href="test.png" target="_blank" '
-                 'data-fancybox-group="hveto-image" title="test.png">\n'
-                 '<img class="img-responsive" alt="test.png" src="test.png" />'
-                 '\n</a>')
+    # check content
+    for ext, content in zip(
+            ['css', 'js'], [html.HVETO_CSS, html.HVETO_JS]):
+        f = os.path.join(static, 'hveto.%s' % ext)
+        with open(f, 'r') as fp:
+            assert fp.read() == content
 
-    def test_scaffold_plots(self):
-        out = html.scaffold_plots([FancyPlot('plot1.png'),
-                                   FancyPlot('plot2.png')])
-        self.assertEqual(
-            out, '<div class="row">\n'
-                 '<div class="col-sm-6">\n'
-                 '<a class="fancybox" href="plot1.png" target="_blank" '
-                     'data-fancybox-group="hveto-image" title="plot1.png">\n'
-                 '<img class="img-responsive" alt="plot1.png" '
-                     'src="plot1.png" />\n'
-                 '</a>\n'
-                 '</div>\n'
-                 '<div class="col-sm-6">\n'
-                 '<a class="fancybox" href="plot2.png" target="_blank" '
-                 'data-fancybox-group="hveto-image" title="plot2.png">\n'
-                 '<img class="img-responsive" alt="plot2.png" '
-                     'src="plot2.png" />\n'
-                 '</a>\n'
-                 '</div>\n'
-                 '</div>')
 
-    def test_write_footer(self):
-        date = datetime.datetime.now()
-        out = html.write_footer(date=date)
-        self.assertEqual(str(out),
-                         HTML_FOOTER.format(user=getuser(), date=date))
+def test_close_page():
+    # test simple content
+    target = os.path.join(TEMPDIR, 'test.html')
+    date = datetime.datetime.now()
+    page = html.close_page(html.markup.page(), target, date=date)
+    assert str(page) == HTML_CLOSE.format(user=getuser(), date=str(date))
+    assert os.path.isfile(target)
+    with open(target, 'r') as fp:
+        assert fp.read() == str(page)
+
+
+@pytest.mark.parametrize('args, kwargs, result', [
+    (('Key', 'Value'), {}, '<p><b>Key</b>: Value</p>'),
+    (('Key', 'Value'), {'class': 'hveto', 'id_': 'test-case'},
+     '<p id="test-case" class="hveto"><b>Key</b>: Value</p>'),
+])
+def test_bold_param(args, kwargs, result):
+    assert html.bold_param(*args, **kwargs) == result
+
+
+@pytest.mark.parametrize('args, kwargs, result', [
+    (('test.html', 'Test link'), {},
+     '<a href="test.html" target="_blank">Test link</a>'),
+    (('test.html', 'Test link'), {'class_': 'test-case'},
+     '<a class="test-case" href="test.html" target="_blank">Test link</a>'),
+])
+def test_html_link(args, kwargs, result):
+    assert html.html_link(*args, **kwargs) == result
+
+
+def test_cis_link():
+    assert html.cis_link('X1:TEST-CHANNEL') == (
+        '<a style="font-family: Monaco, &quot;Courier New&quot;, '
+        'monospace;" href="https://cis.ligo.org/channel/byname/'
+        'X1:TEST-CHANNEL" target="_blank" title="CIS entry for '
+        'X1:TEST-CHANNEL">X1:TEST-CHANNEL</a>'
+    )
+
+
+def test_fancybox_img():
+    img = FancyPlot('test.png')
+    out = html.fancybox_img(img)
+    assert out == (
+        '<a class="fancybox" href="test.png" target="_blank" '
+        'data-fancybox-group="hveto-image" title="test.png">\n'
+        '<img class="img-responsive" alt="test.png" src="test.png" />'
+        '\n</a>'
+    )
+
+
+def test_scaffold_plots():
+    assert html.scaffold_plots([FancyPlot('plot1.png'),
+                                FancyPlot('plot2.png')]) == (
+        '<div class="row">\n'
+        '<div class="col-sm-6">\n'
+        '<a class="fancybox" href="plot1.png" target="_blank" '
+            'data-fancybox-group="hveto-image" title="plot1.png">\n'
+        '<img class="img-responsive" alt="plot1.png" '
+            'src="plot1.png" />\n'
+        '</a>\n'
+        '</div>\n'
+        '<div class="col-sm-6">\n'
+        '<a class="fancybox" href="plot2.png" target="_blank" '
+        'data-fancybox-group="hveto-image" title="plot2.png">\n'
+        '<img class="img-responsive" alt="plot2.png" '
+            'src="plot2.png" />\n'
+        '</a>\n'
+        '</div>\n'
+        '</div>'
+    )
+
+
+def test_write_footer():
+    date = datetime.datetime.now()
+    out = html.write_footer(date=date)
+    assert str(out) == HTML_FOOTER.format(user=getuser(), date=date)
