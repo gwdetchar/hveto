@@ -10,3 +10,4 @@ dqsegdb
 gwpy >= 0.12.0
 git+https://github.com/ligovirgo/gwdetchar.git
 lxml
+pytest >= 3.0.0

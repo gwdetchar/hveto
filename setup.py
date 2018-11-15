@@ -76,7 +76,7 @@ install_requires = [
     'gwtrigfind',
 ]
 tests_require = [
-    'pytest'
+    'pytest >= 3.0.0',
     'mock ; python_version < \'3\'',
 ]
 extras_require = {
