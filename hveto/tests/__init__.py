@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Joshua Smith (2016-)
+# Copyright (C) Joshua Smith (2018-)
 #
 # This file is part of the hveto python package.
 #
@@ -16,12 +16,5 @@
 # You should have received a copy of the GNU General Public License
 # along with hveto.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Common things for hveto test suite
+"""Test for Heto
 """
-
-import sys
-
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest

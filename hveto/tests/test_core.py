@@ -16,23 +16,28 @@
 # You should have received a copy of the GNU General Public License
 # along with hveto.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tests for `hveto.core`
+"""Tests for :mod:`hveto.core`
 """
 
-from hveto import core
+import pytest
 
-from common import unittest
-
-
-class HvetoRoundTestCase(unittest.TestCase):
-    def test_init(self):
-        r = core.HvetoRound(1, 'X1:PRIMARY')
-        self.assertEqual(r.n, 1)
-        self.assertEqual(r.primary, 'X1:PRIMARY')
+from .. import core
 
 
-class CoreTestCase(unittest.TestCase):
-    def test_significance(self):
-        self.assertAlmostEqual(core.significance(1, 1), 0.19920008462778135)
-        self.assertAlmostEqual(core.significance(100, 10), 62.26771967596927)
-        self.assertEqual(core.significance(1, 100), 0.0)
+def test_create_round():
+    """Test creation of a `hveto.core.HvetoRound` object
+    """
+    r = core.HvetoRound(1, 'X1:PRIMARY')
+    assert r.n == 1
+    assert r.primary == 'X1:PRIMARY'
+
+
+@pytest.mark.parametrize('n, mu, sig', [
+    (1, 1, 0.19920008462778135),
+    (100, 10, 62.26771967596927),
+    (1, 100, 0.0),
+])
+def test_significance(n, mu, sig):
+    """Test :func:`hveto.core.significance`
+    """
+    assert core.significance(n, mu) == pytest.approx(sig)

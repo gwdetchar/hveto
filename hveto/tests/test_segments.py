@@ -21,11 +21,11 @@
 
 from tempfile import NamedTemporaryFile
 
+import pytest
+
 from gwpy.segments import (Segment, SegmentList)
 
-from hveto import segments
-
-from common import unittest
+from .. import segments
 
 TEST_SEGMENTS = SegmentList([
     Segment(0.1, 1.234567),
@@ -35,11 +35,10 @@ TEST_SEGMENTS_2 = SegmentList([Segment(round(a, 6), round(b, 6)) for
                                a, b in TEST_SEGMENTS])
 
 
-class SegmentsTestCase(unittest.TestCase):
-    def test_write_segments_ascii(self):
-        for ncol in [2, 4]:
-            with NamedTemporaryFile(suffix='.txt', delete=False) as f:
-                segments.write_ascii(f.name, TEST_SEGMENTS, ncol=ncol)
-                f.delete = True
-                a = SegmentList.read(f.name, gpstype=float, strict=False)
-                self.assertEqual(a, TEST_SEGMENTS_2)
+@pytest.mark.parametrize('ncol', (2, 4))
+def test_write_segments_ascii(ncol):
+    with NamedTemporaryFile(suffix='.txt', delete=False) as tmp:
+        segments.write_ascii(tmp.name, TEST_SEGMENTS, ncol=ncol)
+        tmp.delete = True
+        a = SegmentList.read(tmp.name, gpstype=float, strict=False)
+        assert a == TEST_SEGMENTS_2
