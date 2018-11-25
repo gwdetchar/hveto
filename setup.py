@@ -68,7 +68,7 @@ install_requires = [
     'numpy',
     'matplotlib',
     'scipy',
-    'lscsoft-glue',
+    'lscsoft-glue >= 1.60.0',
     'dqsegdb',
     'gwpy >= 0.12.0',
     'lxml',

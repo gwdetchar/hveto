@@ -54,7 +54,7 @@ def find_trigger_files(channel, etg, segments, **kwargs):
     etg : `str`
         name of event trigger generator to find
 
-    segments : :class:`~glue.segments.segmentlist`
+    segments : :class:`~ligo.segments.segmentlist`
         list of segments to find
 
     **kwargs

@@ -304,7 +304,7 @@ def veto(table, segmentlist):
     ----------
     table : `numpy.recarray`
         the table of event triggers to veto
-    segmentlist : `~glue.segments.segmentlist`
+    segmentlist : `~ligo.segments.segmentlist`
         the list of veto segments to use
 
     Returns
@@ -347,7 +347,7 @@ def veto_all(auxiliary, segmentlist):
     ----------
     auxiliary : `dict` of `numpy.recarray`
         a `dict` of event arrays to veto
-    segmentlist : `~glue.segments.segmentlist`
+    segmentlist : `~ligo.segments.segmentlist`
         the list of veto segments to use
 
     Returns
