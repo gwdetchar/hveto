@@ -34,11 +34,20 @@ from matplotlib import rcParams
 from matplotlib.colors import LogNorm
 
 from gwpy.plot import Plot
+from gwpy.plot.tex import MACROS as GWPY_TEX_MACROS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda, Alex Urban'
 
 rcParams.update({
+    # reproduce GWPY_TEX_RCPARAMS
+    'text.usetex': True,
+    'text.latex.preamble': (
+        rcParams.get('text.latex.preamble', []) + GWPY_TEX_MACROS),
+    'font.family': ['serif'],
+    'font.size': 16,
+    'axes.formatter.use_mathtext': False,
+    # custom Hveto formatting
     'figure.subplot.bottom': 0.17,
     'figure.subplot.left': 0.12,
     'figure.subplot.right': 0.88,
