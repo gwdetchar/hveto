@@ -52,8 +52,11 @@ rcParams.update({
     'figure.subplot.left': 0.12,
     'figure.subplot.right': 0.88,
     'figure.subplot.top': 0.90,
+    'xtick.labelsize': 16,
+    'ytick.labelsize': 16,
     'axes.labelsize': 24,
     'axes.labelpad': 2,
+    'axes.titlesize': 24,
     'grid.color': 'gray',
     'grid.alpha': 0.5,
 })
