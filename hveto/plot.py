@@ -45,7 +45,7 @@ rcParams.update({
     'text.latex.preamble': (
         rcParams.get('text.latex.preamble', []) + GWPY_TEX_MACROS),
     'font.family': ['serif'],
-    'font.size': 16,
+    'font.size': 10,
     'axes.formatter.use_mathtext': False,
     # custom Hveto formatting
     'figure.subplot.bottom': 0.17,
@@ -55,6 +55,7 @@ rcParams.update({
     'axes.labelsize': 24,
     'axes.labelpad': 2,
     'grid.color': 'gray',
+    'grid.alpha': 0.5,
 })
 
 SHOW_HIDE_JAVASCRIPT = """
