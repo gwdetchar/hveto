@@ -49,11 +49,7 @@ FANCYBOX_CSS = (
 FANCYBOX_JS = (
     "//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.js")
 
-FONT_LATO_CSS = (
-    "//fonts.googleapis.com/css?family=Lato:300,700"
-)
-
-CSS_FILES = [BOOTSTRAP_CSS, FANCYBOX_CSS, FONT_LATO_CSS]
+CSS_FILES = [BOOTSTRAP_CSS, FANCYBOX_CSS]
 JS_FILES = [JQUERY_JS, BOOTSTRAP_JS, FANCYBOX_JS]
 
 HVETO_CSS = """
@@ -63,7 +59,7 @@ html {
 }
 body {
 		margin-bottom: 120px;
-		font-family: "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 		-webkit-font-smoothing: antialiased;
 }
 .footer {
