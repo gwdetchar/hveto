@@ -27,6 +27,7 @@ jobstart = time.time()
 
 import argparse
 import os
+import random
 import warnings
 import multiprocessing
 import json
@@ -575,12 +576,13 @@ cum. deadtime :   %s""" % (
                      % (round.n, tag.lower(), f))
         round.files[tag] = f
 
-    # record times for omega scans
+    # record times to omega scan
     if args.omega_scans:
-        vetoed.sort(scol)
-        round.scans = vetoed[-args.omega_scans:][::-1]
-        logger.debug("Identified %d events for omega scan\n%s"
-                     % (args.omega_scans, round.scans))
+        N = len(vetoed)
+        ind = random.sample(range(0, N), min(args.omega_scans, N))
+        round.scans = vetoed[ind]
+        logger.debug("Collected %d events to omega scan\n%s"
+                     % (len(round.scans), round.scans))
 
     # -- make some plots --
 
@@ -812,7 +814,7 @@ logger.debug("Summary JSON written to %s" % f.name)
 if args.omega_scans:
     omegatimes = list(map(str, sorted(unique(
         [t['time'] for r in rounds for t in r.scans]))))
-    logger.debug("Identified %d times for omega scan" % len(omegatimes))
+    logger.debug("Collected %d times to omega scan" % len(omegatimes))
     newtimes = [t for t in omegatimes if not
                 os.path.exists(os.path.join(omegadir, str(t)))]
     logger.debug("%d scans already complete or in progress, %d remaining"
@@ -820,7 +822,6 @@ if args.omega_scans:
     if len(newtimes) > 0:
         logger.info('Creating workflow for omega scans...')
         batch = [args.wdq_batch] + newtimes + [
-            '--wpipeline', 'gwdetchar-omega',
             '--ignore-state-flags',
             '--output-dir', omegadir,
             '--ifo', ifo,
