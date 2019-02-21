@@ -30,7 +30,7 @@ from getpass import getuser
 
 from glue import markup
 
-from _version import get_versions
+from ._version import get_versions
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda, Alex Urban'

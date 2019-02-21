@@ -274,7 +274,7 @@ logger.debug("Read list of %d unsafe channels" % len(unsafe))
 
 # remove unsafe channels
 nunsafe = 0
-for i in xrange(len(auxchannels) -1, -1, -1):
+for i in range(len(auxchannels) -1, -1, -1):
     if auxchannels[i] in unsafe:
         logger.warning("Auxiliary channel %r identified as unsafe and has "
                        "been removed" % auxchannels[i])
@@ -443,7 +443,7 @@ while True:
         # separate channel list into chunks and process each chunk
         pool = multiprocessing.Pool(
             processes=min(args.nproc, len(auxiliary.keys())))
-        chunks = utils.channel_groups(auxiliary.keys(), args.nproc)
+        chunks = utils.channel_groups(list(auxiliary.keys()), args.nproc)
         results = pool.map(_find_max_significance, chunks)
         pool.close()
         winners, sigsets = zip(*results)
@@ -526,7 +526,7 @@ while True:
         # separate channel list into chunks and process each chunk
         pool = multiprocessing.Pool(
             processes=min(args.nproc, len(auxiliary.keys())))
-        chunks = utils.channel_groups(auxiliary.keys(), args.nproc)
+        chunks = utils.channel_groups(list(auxiliary.keys()), args.nproc)
         results = pool.map(_veto, chunks)
         pool.close()
         auxiliary = results[0]
@@ -797,7 +797,7 @@ with open('summary-stats.txt', 'w') as f:
                 r.cum_deadtime[0] / r.cum_deadtime[1] * 100.),
         ]
         # write to ASCII
-        print(' '.join(map(str, zip(*results)[1])), file=f)
+        print(' '.join(map(str, list(zip(*results))[1])), file=f)
         # write to JSON
         results.append(('files', r.files))
         json_['rounds'].append(dict(results))

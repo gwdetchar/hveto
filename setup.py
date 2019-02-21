@@ -65,15 +65,15 @@ if 'test' in sys.argv:
     setup_requires.append('pytest-runner')
 
 install_requires = [
-    'numpy',
-    'matplotlib',
-    'scipy',
-    'lscsoft-glue >= 1.60.0',
-    'dqsegdb',
-    'gwpy >= 0.12.0',
-    'lxml',
     'gwdetchar',  # for omega scans only
+    'gwpy >= 0.12.0',
     'gwtrigfind',
+    'lxml',
+    'lscsoft-glue >= 1.60.0 ; python_version < \'3\'',
+    'lscsoft-glue >= 2.0.0 ; python_version > \'3\'',
+    'matplotlib',
+    'numpy',
+    'scipy',
 ]
 tests_require = [
     'pytest >= 3.0.0',

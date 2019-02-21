@@ -24,8 +24,13 @@ from __future__ import print_function
 import os
 import os.path
 from functools import wraps
-from urlparse import urlparse
-from urllib2 import urlopen
+
+try:
+    from urllib.parse import urlparse
+    from urllib.request import urlopen
+except ImportError:  # python < 3
+    from urlparse import urlparse
+    from urllib2 import urlopen
 
 from gwpy.segments import (DataQualityFlag, DataQualityDict)
 
