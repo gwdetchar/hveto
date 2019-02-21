@@ -345,9 +345,17 @@ def veto_scatter(
         ax.legend(**legargs)
     # finalize
     for axis in ['x', 'y']:
+        # get data limits
         lim = list(getattr(ax, '%saxis' % axis).get_data_interval())
+        # use given ybound
         lim[0] = axargs.get('%sbound' % axis, lim[0])
-        axargs.setdefault('%slim' % axis, (lim[0] * 0.95, lim[1] * 1.05))
+        # scale out for visual
+        lim[0] *= 0.95
+        lim[1] *= 1.05
+        # handle logs
+        if axargs.get("yscale", "linear") == "log" and lim[0] <= 0.:
+            lim[0] = None
+        axargs.setdefault('%slim' % axis, lim)
     _finalize_plot(plot, ax, outfile, **axargs)
 
 
