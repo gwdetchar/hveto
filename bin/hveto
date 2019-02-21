@@ -826,7 +826,7 @@ if args.omega_scans:
             '--ifo', ifo,
             '--condor-timeout', str(24)
         ]
-        logger.debug(batch)
+        logger.debug("$ {}".format(" ".join(batch)))
         proc = subprocess.Popen(batch)
         out, err = proc.communicate()
         if proc.returncode:
