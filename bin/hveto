@@ -106,6 +106,7 @@ parser.add_argument('-S', '--analysis-segments', action='append', default=[],
                          'must match analysis-flag in config file)')
 parser.add_argument('-w', '--omega-scans', type=int, metavar='NSCAN',
                     help='generate a workflow of omega scans for each round, '
+                         'this will launch automatically to condor, '
                          'requires the gwdetchar package')
 parser.add_argument('-W', '--wdq-batch', type=find_executable,
                     default=WDQ_BATCH,
@@ -825,7 +826,8 @@ if args.omega_scans:
             '--ignore-state-flags',
             '--output-dir', omegadir,
             '--ifo', ifo,
-            '--condor-timeout', str(24)
+            '--condor-timeout', str(4),
+            '--submit'
         ]
         logger.debug(batch)
         proc = subprocess.Popen(batch)
@@ -833,7 +835,8 @@ if args.omega_scans:
         if proc.returncode:
             raise subprocess.CalledProcessError(
                 proc.returncode, ' '.join(batch))
-        dagfile = os.path.join(omegadir, 'condor', 'wdq-batch.dag')
+        loggger.info('Launched %d omega scans to condor, ' % newtimes
+                     'check their progress with condor_q')
     else:
         logger.debug('Skipping omega scans')
 
