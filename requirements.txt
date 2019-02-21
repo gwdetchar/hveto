@@ -1,13 +1,13 @@
-numpy >= 1.10
-matplotlib >= 1.5
-scipy
-gitpython
-jinja2
-pykerberos
-gwtrigfind
-lscsoft-glue >= 1.60.0
 dqsegdb
-gwpy >= 0.12.0
+gitpython
 git+https://github.com/ligovirgo/gwdetchar.git
+gwpy >= 0.12.0
+gwtrigfind
+jinja2
+lscsoft-glue >= 2.0.0
 lxml
+matplotlib >= 1.5
+numpy >= 1.10
+pykerberos
 pytest >= 3.0.0
+scipy
