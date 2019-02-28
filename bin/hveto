@@ -835,8 +835,8 @@ if args.omega_scans:
         if proc.returncode:
             raise subprocess.CalledProcessError(
                 proc.returncode, ' '.join(batch))
-        loggger.info('Launched %d omega scans to condor, ' % newtimes
-                     'check their progress with condor_q')
+        loggger.info('Launched {} omega scans to condor, check their progress '
+                     'with condor_q'.format(newtimes))
     else:
         logger.debug('Skipping omega scans')
 

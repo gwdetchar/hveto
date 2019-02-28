@@ -1,18 +1,30 @@
 language: python
 
-python:
-  - '2.7'
-  - '3.6'
-
-env:
-  matrix:
-    - PIP_FLAGS="--quiet"
-    - PIP_FLAGS="--quiet --pre"
-
 matrix:
-  allow_failures:
-    - python: '3.6'
   fast_finish: true
+
+  include:
+    - python: '2.7'
+      env: PIP_FLAGS="--quiet --pre"
+    - python: '3.5'
+      env: PIP_FLAGS="--quiet --pre"
+    - python: '3.6'
+      env: PIP_FLAGS="--quiet --pre"
+    - python: '3.7'
+      dist: xenial
+      sudo: required
+      env: PIP_FLAGS="--quiet --pre"
+
+    - python: '2.7'
+      env: PIP_FLAGS="--quiet"
+    - python: '3.5'
+      env: PIP_FLAGS="--quiet"
+    - python: '3.6'
+      env: PIP_FLAGS="--quiet"
+    - python: '3.7'
+      dist: xenial
+      sudo: required
+      env: PIP_FLAGS="--quiet"
 
 before_install:
   - python -m pip install -q --upgrade pip
