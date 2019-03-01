@@ -1,6 +1,6 @@
 dqsegdb
 gitpython
-git+https://github.com/ligovirgo/gwdetchar.git
+gwdetchar
 gwpy >= 0.12.0
 gwtrigfind
 jinja2

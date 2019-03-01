@@ -62,7 +62,7 @@ from hveto.segments import (write_ascii as write_ascii_segments,
 from hveto.triggers import (get_triggers, find_auxiliary_channels)
 
 IFO = os.getenv('IFO')
-WDQ_BATCH = find_executable('wdq-batch')
+WDQ_BATCH = find_executable('gwdetchar-omega-batch')
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
