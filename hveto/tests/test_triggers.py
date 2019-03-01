@@ -27,8 +27,6 @@ from astropy.table import Table
 
 from gwpy.segments import (Segment, SegmentList)
 
-from glue.lal import Cache
-
 from .. import triggers
 
 AUX_FILES = {
@@ -45,7 +43,7 @@ def test_aux_channels_from_cache():
     assert channels == sorted(AUX_FILES.keys())
 
     channels = triggers.find_auxiliary_channels(
-        'omicron', None, None, cache=Cache.from_urls(cache))
+        'omicron', None, None, cache=cache)
     assert channels == sorted(AUX_FILES.keys())
 
 

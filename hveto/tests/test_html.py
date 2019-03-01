@@ -20,7 +20,6 @@
 """
 
 import os
-import tempfile
 import shutil
 import time
 import datetime
@@ -34,6 +33,7 @@ use('agg')  # nopep8
 from .. import html
 from .._version import get_versions
 from ..plot import FancyPlot
+from ..utils import parse_html
 
 VERSION = get_versions()['version']
 COMMIT = get_versions()['full-revisionid']
@@ -44,7 +44,6 @@ HTML_INIT = """<!DOCTYPE HTML>
 <base href="{base}" />
 <link media="all" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
 <link media="all" href="//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" type="text/css" rel="stylesheet" />
-<link media="all" href="//fonts.googleapis.com/css?family=Lato:300,700" type="text/css" rel="stylesheet" />
 <link media="all" href="{css}" type="text/css" rel="stylesheet" />
 <script src="//code.jquery.com/jquery-1.11.2.min.js" type="text/javascript"></script>
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js" type="text/javascript"></script>
@@ -73,34 +72,23 @@ HTML_CLOSE = """</div>
 </body>
 </html>""" % HTML_FOOTER
 
-TEMPDIR = None
-_OLDPWD = None
 
+# -- unit tests ---------------------------------------------------------------
 
-def setup_module():
-    global TEMPDIR, _OLDPWD
-    TEMPDIR = tempfile.mkdtemp()
-    _OLDPWD = os.getcwd()
-    os.chdir(TEMPDIR)
-
-
-def teardown_module():
-    os.chdir(_OLDPWD)
-    if os.path.isdir(TEMPDIR):
-        shutil.rmtree(TEMPDIR)
-
-
-def test_init_page():
+def test_init_page(tmpdir):
     # test simple content
-    out = html.init_page('L1', 0, 100, base=TEMPDIR)
+    base = str(tmpdir)
+    out = html.init_page('L1', 0, 100, base=base)
     css = os.path.join(os.path.curdir, 'static', 'hveto.css')
     js = os.path.join(os.path.curdir, 'static', 'hveto.js')
-    assert str(out) == HTML_INIT.format(base=TEMPDIR, css=css, js=js)
+    h1 = parse_html(str(out))
+    h2 = parse_html(HTML_INIT.format(base=base, css=css, js=js))
+    assert h1 == h2
 
 
-def test_write_static_files():
+def test_write_static_files(tmpdir):
     # test files get written
-    static = os.path.join(TEMPDIR, 'static')
+    static = os.path.join(str(tmpdir), 'static')
     html.write_static_files(static)
     for ext in ['css', 'js']:
         assert os.path.isfile(os.path.join(static, 'hveto.%s' % ext))
@@ -119,16 +107,21 @@ def test_write_static_files():
         with open(f, 'r') as fp:
             assert fp.read() == content
 
+    # remove tmp workspace
+    shutil.rmtree(static, ignore_errors=True)
 
-def test_close_page():
+
+def test_close_page(tmpdir):
     # test simple content
-    target = os.path.join(TEMPDIR, 'test.html')
+    target = os.path.join(str(tmpdir), 'test.html')
     date = datetime.datetime.now()
     page = html.close_page(html.markup.page(), target, date=date)
-    assert str(page) == HTML_CLOSE.format(user=getuser(), date=str(date))
+    assert parse_html(str(page)) == parse_html(
+        HTML_CLOSE.format(user=getuser(), date=str(date)))
     assert os.path.isfile(target)
     with open(target, 'r') as fp:
         assert fp.read() == str(page)
+    shutil.rmtree(target, ignore_errors=True)
 
 
 @pytest.mark.parametrize('args, kwargs, result', [
@@ -137,7 +130,9 @@ def test_close_page():
      '<p id="test-case" class="hveto"><b>Key</b>: Value</p>'),
 ])
 def test_bold_param(args, kwargs, result):
-    assert html.bold_param(*args, **kwargs) == result
+    h1 = parse_html(html.bold_param(*args, **kwargs))
+    h2 = parse_html(result)
+    assert h1 == h2
 
 
 @pytest.mark.parametrize('args, kwargs, result', [
@@ -147,22 +142,26 @@ def test_bold_param(args, kwargs, result):
      '<a class="test-case" href="test.html" target="_blank">Test link</a>'),
 ])
 def test_html_link(args, kwargs, result):
-    assert html.html_link(*args, **kwargs) == result
+    h1 = parse_html(html.html_link(*args, **kwargs))
+    h2 = parse_html(result)
+    assert h1 == h2
 
 
 def test_cis_link():
-    assert html.cis_link('X1:TEST-CHANNEL') == (
+    h1 = parse_html(html.cis_link('X1:TEST-CHANNEL'))
+    h2 = parse_html(
         '<a style="font-family: Monaco, &quot;Courier New&quot;, '
         'monospace;" href="https://cis.ligo.org/channel/byname/'
         'X1:TEST-CHANNEL" target="_blank" title="CIS entry for '
         'X1:TEST-CHANNEL">X1:TEST-CHANNEL</a>'
     )
+    assert h1 == h2
 
 
 def test_fancybox_img():
     img = FancyPlot('test.png')
     out = html.fancybox_img(img)
-    assert out == (
+    assert parse_html(out) == parse_html(
         '<a class="fancybox" href="test.png" target="_blank" '
         'data-fancybox-group="hveto-image" title="test.png">\n'
         '<img class="img-responsive" alt="test.png" src="test.png" />'
@@ -171,8 +170,9 @@ def test_fancybox_img():
 
 
 def test_scaffold_plots():
-    assert html.scaffold_plots([FancyPlot('plot1.png'),
-                                FancyPlot('plot2.png')]) == (
+    h1 = parse_html(html.scaffold_plots([FancyPlot('plot1.png'),
+                                         FancyPlot('plot2.png')]))
+    h2 = parse_html(
         '<div class="row">\n'
         '<div class="col-sm-6">\n'
         '<a class="fancybox" href="plot1.png" target="_blank" '
@@ -190,9 +190,25 @@ def test_scaffold_plots():
         '</div>\n'
         '</div>'
     )
+    assert h1 == h2
 
 
 def test_write_footer():
     date = datetime.datetime.now()
     out = html.write_footer(date=date)
-    assert str(out) == HTML_FOOTER.format(user=getuser(), date=date)
+    assert parse_html(str(out)) == parse_html(
+        HTML_FOOTER.format(user=getuser(), date=date))
+
+
+# -- end-to-end tests ---------------------------------------------------------
+
+def test_write_hveto_page(tmpdir):
+    os.chdir(str(tmpdir))
+    html.write_hveto_page('L1', 0, 86400, [], [])
+    shutil.rmtree(str(tmpdir), ignore_errors=True)
+
+
+def test_write_null_page(tmpdir):
+    os.chdir(str(tmpdir))
+    html.write_null_page('L1', 0, 86400, 'test', 'info')
+    shutil.rmtree(str(tmpdir), ignore_errors=True)
