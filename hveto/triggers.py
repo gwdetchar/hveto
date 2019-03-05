@@ -34,11 +34,62 @@ from astropy.table import vstack as vstack_tables
 import gwtrigfind
 
 from gwpy.io import cache as io_cache
+from gwpy.io.utils import file_list
 from gwpy.table import EventTable
+from gwpy.table.io.pycbc import filter_empty_files as filter_empty_pycbc_files
 from gwpy.segments import SegmentList
 
 # Table metadata keys to keep
 TABLE_META = ('tablename',)
+
+DEFAULT_FORMAT = {
+    # ETG      format
+    "omicron": "hdf5",
+    "pycbc_live": "hdf5.pycbc_live",
+    "kleinewelle": "ligolw",
+    "dmt_omega": "ligolw",
+}
+
+DEFAULT_TRIGFIND_OPTIONS = {
+    # ETG          format
+    ("dmt_omega", "ligolw"): {
+        "ext": "xml.gz",
+    },
+    ("kleinewelle", "ligolw"): {
+        "ext": "xml.gz",
+    },
+    ("omicron", "hdf5"): {
+        "ext": "h5",
+    },
+    ("omicron", "ligolw"): {
+        "ext": "xml.gz",
+    },
+    ("omicron", "root.omicron"): {
+        "ext": "root",
+    }
+}
+
+_SNGL_BURST_OPTIONS = {
+    "tablename": "sngl_burst",
+    "columns": ["peak", "peak_frequency", "snr"],
+    "use_numpy_dtypes": True,
+}
+
+DEFAULT_READ_OPTIONS = {
+    # ETG          format
+    ("dmt_omega", "ligolw"): _SNGL_BURST_OPTIONS,
+    ("kleinewelle", "ligolw"): _SNGL_BURST_OPTIONS,
+    ("omicron", "ligolw"): _SNGL_BURST_OPTIONS,
+    ("omicron", "hdf5"): {
+        "path": "triggers",
+        "columns": ["time", "frequency", "snr"],
+    },
+    ("pycbc_live", "hdf5.pycbc_live"): {
+        "extended_metadata": False,
+        "loudest": True,
+        "columns": ["end_time", "template_duration", "new_snr"],
+    },
+}
 
 
 # -- find files/channels ------------------------------------------------------
@@ -81,6 +132,15 @@ def find_trigger_files(channel, etg, segments, **kwargs):
                 warnings.warn(str(e))
             else:
                 raise
+
+    # sanitise URLs (remove 'file://' prefix, etc)
+    cache = file_list(cache)
+
+    # remove 'empty' pycbc files from the cache
+    if etg == "pycbc_live":
+        ifo = channel.split(":", 1)[0]
+        cache = filter_empty_pycbc_files(cache, ifo=ifo)
+
     return type(cache)(OrderedDict.fromkeys(cache))
 
 
@@ -153,27 +213,53 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
 
 # -- read ---------------------------------------------------------------------
 
-def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
-                 raw=False, trigfind_kwargs={}, **read_kwargs):
-    """Get triggers for the given channel
-    """
+
+def _sanitize_name(name):
+    return re.sub("[-_\.]", "_", name).lower()
+
+
+def _format_params(channel, etg, fmt, trigfind_kwargs, read_kwargs):
+    # format kwargs for trigfind
+    if trigfind_kwargs is None:
+        trigfind_kwargs = {}
+    for key, val in DEFAULT_TRIGFIND_OPTIONS.get((etg, fmt), {}).items():
+        trigfind_kwargs.setdefault(key, val)
+
+    # format default read kwargs
+    for key, val in DEFAULT_READ_OPTIONS.get((etg, fmt), {}).items():
+        read_kwargs.setdefault(key, val)
+    read_kwargs.setdefault("format", fmt)
+
     # format params
     for key in read_kwargs:
         if (key.endswith(('columns', 'names', 'branches')) and
                 isinstance(read_kwargs[key], string_types)):
-            read_kwargs[key] = [x.strip(' ') for x in
-                                      read_kwargs[key].split(',')]
+            read_kwargs[key] = [x.strip() for x in read_kwargs[key].split(',')]
 
-    if read_kwargs.get('format', None) == 'ligolw':
-        read_kwargs.setdefault('use_numpy_dtypes', True)
-    if read_kwargs.get('tablename', None) == 'sngl_burst':
-        read_kwargs.setdefault('columns', ['peak', 'peak_frequency', 'snr'])
+    # custom params for ETGs
+    if etg == "pycbc_live":
+        read_kwargs.setdefault("ifo", channel.split(":", 1)[0])
 
-    # hacky fix for reading ASCII
-    #    astropy's ASCII reader uses `include_names` and not `columns`
-    if read_kwargs.get('format', '').startswith('ascii'):
-        read_kwargs.setdefault('include_names',
-                               read_kwargs.pop('columns', None))
+    return trigfind_kwargs, read_kwargs
+
+
+def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
+                 raw=False, trigfind_kwargs={}, **read_kwargs):
+    """Get triggers for the given channel
+    """
+    etg = _sanitize_name(etg)
+    # format arguments
+    try:
+        readfmt = read_kwargs.pop("format", DEFAULT_FORMAT[etg])
+    except KeyError:
+        raise ValueError("unsupported ETG {!r}".format(etg))
+    trigfind_kwargs, read_kwargs = _format_params(
+        channel,
+        etg,
+        readfmt,
+        trigfind_kwargs,
+        read_kwargs
+    )
 
     # find triggers
     if cache is None:
@@ -221,7 +307,8 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         return table
 
     # rename time column so that all tables match in at least that
-    table.rename_column(tcolumn, 'time')
+    if tcolumn != "time":
+        table.rename_column(tcolumn, 'time')
 
     # add channel column to identify all triggers
     table.add_column(table.Column(data=numpy.repeat(channel, len(table)),
