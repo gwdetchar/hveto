@@ -66,7 +66,7 @@ if 'test' in sys.argv:
 
 install_requires = [
     'gwdetchar',  # for omega scans only
-    'gwpy >= 0.12.0',
+    'gwpy >= 0.14.0',
     'gwtrigfind',
     'lxml',
     'lscsoft-glue >= 1.60.0 ; python_version < \'3\'',

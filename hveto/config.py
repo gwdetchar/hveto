@@ -67,7 +67,8 @@ Each of the below sections lists the valid options and a description of what the
 ``snr-threshold``      The minimum threshold on signal-to-noise ratio for
                        primary channel events to be included in the analysis
 ``frequency-range``    The `(low, high`) frequency range of interest for this
-                       analysis
+                       analysis. Note that for CBC trigger generators, the
+                       ``'template_duration'`` column is used here.
 ``read-format``        The ``format`` name to use when reading files for this
                        trigger generator
 ``read-columns``       The list of three column names equivalent to
@@ -233,14 +234,10 @@ class HvetoConfigParser(configparser.ConfigParser):
             'trigger-generator': 'Omicron',
             'snr-threshold': 8,
             'frequency-range': (30, 2048),
-            'read-format': 'ligolw',
-            'read-tablename': 'sngl_burst',
         },
         'auxiliary': {
             'trigger-generator': 'Omicron',
             'frequency-range': (30, 2048),
-            'read-format': 'ligolw',
-            'read-tablename': 'sngl_burst',
         },
         'safety': {
             'unsafe-channels': ['%(IFO)s:GDS-CALIB_STRAIN',

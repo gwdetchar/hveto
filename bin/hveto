@@ -482,7 +482,7 @@ while True:
 
     # work out the vetoes for this round
     allaux = auxiliary[winner.name][
-        auxiliary[winner.name][scol] >= winner.snr]
+        auxiliary[winner.name][auxscol] >= winner.snr]
     winner.events = allaux
     coincs = allaux[core.find_coincidences(allaux['time'], primary['time'],
                                            dt=winner.window)]

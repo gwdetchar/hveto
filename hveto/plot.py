@@ -357,7 +357,7 @@ def veto_scatter(
         lim[0] *= 0.95
         lim[1] *= 1.05
         # handle logs
-        if axargs.get("yscale", "linear") == "log" and lim[0] <= 0.:
+        if axargs.get("%sscale" % axis, "linear") == "log" and lim[0] <= 0.:
             lim[0] = None
         axargs.setdefault('%slim' % axis, lim)
     _finalize_plot(plot, ax, outfile, **axargs)
