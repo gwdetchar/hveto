@@ -20,33 +20,13 @@
 """Setup the Hveto package
 """
 
-from __future__ import print_function
-
-import sys
-if sys.version < '2.6':
-    raise ImportError("Python versions older than 2.6 are not supported.")
-
-import glob
-import os.path
-
-from setuptools import (setup, find_packages)
-
-# set basic metadata
-PACKAGENAME = 'hveto'
-DISTNAME = 'hveto'
-AUTHOR = 'Joshua Smith'
-AUTHOR_EMAIL = 'joshua.smith@ligo.org'
-LICENSE = 'GPLv3'
-
-cmdclass = {}
-
-# -- versioning ---------------------------------------------------------------
+from setuptools import setup
 
 import versioneer
-__version__ = versioneer.get_version()
-cmdclass.update(versioneer.get_cmdclass())
 
-# -- documentation ------------------------------------------------------------
+# versioneer
+version = versioneer.get_version()
+cmdclass = versioneer.get_cmdclass()
 
 # import sphinx commands
 try:
@@ -56,79 +36,9 @@ except ImportError:
 else:
     cmdclass['build_sphinx'] = BuildDoc
 
-# -- dependencies -------------------------------------------------------------
-
-setup_requires = [
-    'setuptools',
-]
-if 'test' in sys.argv:
-    setup_requires.append('pytest-runner')
-
-install_requires = [
-    'gwdetchar',  # for omega scans only
-    'gwpy >= 0.14.0',
-    'gwtrigfind',
-    'lxml',
-    'lscsoft-glue >= 1.60.0 ; python_version < \'3\'',
-    'lscsoft-glue >= 2.0.0 ; python_version > \'3\'',
-    'matplotlib',
-    'numpy',
-    'scipy',
-]
-tests_require = [
-    'pytest >= 3.0.0',
-    'mock ; python_version < \'3\'',
-]
-extras_require = {
-    'doc': [
-        'sphinx',
-        'numpydoc',
-        'sphinx_rtd_theme',
-        'sphinxcontrib_programoutput',
-        'sphinxcontrib_epydoc',
-    ],
-}
-
-# -- run setup ----------------------------------------------------------------
-
-packagenames = find_packages()
-scripts = glob.glob(os.path.join('bin', '*'))
-
-setup(name=DISTNAME,
-      provides=[PACKAGENAME],
-      version=__version__,
-      description=None,
-      long_description=None,
-      author=AUTHOR,
-      author_email=AUTHOR_EMAIL,
-      license=LICENSE,
-      packages=packagenames,
-      include_package_data=True,
-      cmdclass=cmdclass,
-      scripts=scripts,
-      setup_requires=setup_requires,
-      install_requires=install_requires,
-      tests_require=tests_require,
-      extras_require=extras_require,
-      test_suite='hveto.tests',
-      use_2to3=True,
-      classifiers=[
-          'Programming Language :: Python',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3.5',
-          'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 3.7',
-          'Development Status :: 3 - Alpha',
-          'Intended Audience :: Science/Research',
-          'Intended Audience :: End Users/Desktop',
-          'Intended Audience :: Developers',
-          'Natural Language :: English',
-          'Topic :: Scientific/Engineering',
-          'Topic :: Scientific/Engineering :: Astronomy',
-          'Topic :: Scientific/Engineering :: Physics',
-          'Operating System :: POSIX',
-          'Operating System :: Unix',
-          'Operating System :: MacOS',
-          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-      ],
-      )
+# run setup
+# NOTE: all other metadata and options come from setup.cfg
+setup(
+    version=version,
+    cmdclass=cmdclass,
+)
