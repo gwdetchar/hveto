@@ -32,7 +32,7 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 
-from glue import markup
+from MarkupPy import markup
 
 from ._version import get_versions
 
@@ -427,7 +427,7 @@ def scaffold_plots(plots, nperrow=2):
 
     Returns
     -------
-    page : `~glue.markup.page`
+    page : `~MarkupPy.markup.page`
         the markup object containing the scaffolded HTML
     """
     page = markup.page()
@@ -459,7 +459,7 @@ def write_footer(about=None, date=None):
 
     Returns
     -------
-    page : `~glue.markup.page`
+    page : `~MarkupPy.markup.page`
         the markup object containing the footer HTML
     """
     page = markup.page()
@@ -506,7 +506,7 @@ def write_summary(
 
     Returns
     -------
-    page : `~glue.markup.page`
+    page : `~MarkupPy.markup.page`
         the formatted markup object containing the analysis summary table,
         and images
     """
@@ -570,7 +570,7 @@ def write_round(round):
 
     Returns
     -------
-    page : `~glue.markup.page`
+    page : `~MarkupPy.markup.page`
         the formatted HTML for this round
     """
     page = markup.page()
