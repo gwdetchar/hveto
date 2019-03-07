@@ -37,6 +37,7 @@ import sys
 from socket import getfqdn
 from getpass import getuser
 from distutils.spawn import find_executable
+from pathlib import Path
 
 try:
     import configparser
@@ -47,8 +48,6 @@ from numpy import unique
 
 from matplotlib import use
 use('agg')
-
-from glue.lal import Cache
 
 from gwpy.time import to_gps
 from gwpy.segments import (Segment, SegmentList,
@@ -237,7 +236,7 @@ pchannel = cp.get('primary', 'channel')
 
 # read auxiliary cache
 if args.auxiliary_cache:
-    acache = Cache.fromfilenames(args.auxiliary_cache)
+    acache = read_cache(args.auxiliary_cache)
 else:
     acache = None
 
@@ -301,7 +300,7 @@ htmlv['config'] = inifile
 
 # read primary cache
 if args.primary_cache:
-    pcache = Cache.fromfilenames(args.primary_cache)
+    pcache = read_cache(args.primary_cache)
 else:
     pcache = None
 
@@ -362,8 +361,8 @@ def _get_aux_triggers(channel):
         auxcache = None
     else:
         ifo, name = channel.split(':')
-        desc = name.replace('-', '_')
-        auxcache = acache.sieve(ifos=ifo, description='%s*' % desc)
+        match = "{}-{}".format(ifo, name.replace('-', '_'))
+        auxcache = [e for e in cache if Path(e).name.startswith(match)]
     # get triggers
     try:
         trigs = get_triggers(channel, auxetg, analysis.active, snr=minsnr,
