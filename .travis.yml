@@ -36,13 +36,17 @@ install:
   - python -m pip install --editable .
 
 script:
-  - python -m pip install ${PIP_FLAGS} "pytest>=3.0.0" "mock ; python_version < '3'"
+  - python -m pip install ${PIP_FLAGS} \
+        "pytest>=3.0.0" \
+        "mock ; python_version < '3'" \
+        "coverage"
   - python -m coverage run -m pytest hveto/
   - python -m coverage run --append `which hveto` --help
   - python -m coverage run --append `which hveto-cache-events` --help
   - python -m coverage run --append `which hveto-trace` --help
 
 after_success:
+  - python -m pip install coveralls
   - coveralls
 
 cache:
