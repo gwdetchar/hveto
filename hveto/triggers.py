@@ -122,6 +122,15 @@ def find_trigger_files(channel, etg, segments, **kwargs):
     gwtrigfind.find_trigger_urls
         for details on file discovery
     """
+    # format arguments
+    etg = _sanitize_name(etg)
+    try:
+        readfmt = kwargs.pop("format", DEFAULT_FORMAT[etg])
+    except KeyError:
+        raise ValueError("unsupported ETG {!r}".format(etg))
+    for key, val in DEFAULT_TRIGFIND_OPTIONS.get((etg, readfmt), {}).items():
+        kwargs.setdefault(key, val)
+
     cache = []
     for start, end in segments:
         try:
