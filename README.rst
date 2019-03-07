@@ -51,8 +51,8 @@ proposing additions/changes.
 
 .. |PyPI version| image:: https://badge.fury.io/py/hveto.svg
    :target: http://badge.fury.io/py/hveto
-.. |DOI| image:: https://zenodo.org/badge/2584616.svg
-   :target: https://zenodo.org/badge/latestdoi/2584616
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/2584620.svg
+   :target: https://doi.org/10.5281/zenodo.2587020
 .. |License| image:: https://img.shields.io/pypi/l/hveto.svg
    :target: https://choosealicense.com/licenses/gpl-3.0/
 .. |Supported Python versions| image:: https://img.shields.io/pypi/pyversions/hveto.svg
