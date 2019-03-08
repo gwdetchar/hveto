@@ -1,2 +1,3 @@
+include LICENSE
 include versioneer.py
 include hveto/_version.py
