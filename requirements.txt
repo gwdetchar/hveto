@@ -4,10 +4,11 @@ gwdetchar
 gwpy >= 0.14.0
 gwtrigfind
 jinja2
-lscsoft-glue >= 2.0.0
 lxml
+MarkupPy >= 1.14
 matplotlib >= 1.5
 numpy >= 1.10
+pathlib
 pykerberos
 pytest >= 3.0.0
 scipy
