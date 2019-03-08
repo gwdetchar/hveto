@@ -28,6 +28,10 @@ import subprocess
 from functools import wraps
 from getpass import getuser
 
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters import HtmlFormatter
+
 from glue import markup
 
 from ._version import get_versions
@@ -468,51 +472,16 @@ def write_footer(about=None, date=None):
     version = get_versions()['version']
     commit = get_versions()['full-revisionid']
     url = 'https://github.com/gwdetchar/hveto/tree/%s' % commit
-    hlink = markup.oneliner.a('Hveto version %s' % version, href=url,
-                              target='_blank')
-    page.p('Page generated using %s by %s at %s'
-           % (hlink, getuser(), date))
+    link = markup.oneliner.a('hveto version %s' % version, href=url,
+                             target='_blank')
+    page.p('These results were obtained using {link} by {user} at '
+           '{date}.'.format(link=link, user=getuser(), date=date))
     # link to 'about'
     if about is not None:
         page.a('How was this page generated?', href=about)
     page.div.close()  # container
     markup.element('footer', case=page.case, parent=page).close()
     return page
-
-
-def write_config_html(filepath, format='ini'):
-    """Return an HTML-formatted copy of the file with syntax highlighting
-
-    This method attemps to use the `highlight` package to provide a block
-    of HTML that can be embedded inside a ``<pre></pre>`` tag.
-
-    Parameters
-    ----------
-    filepath : `str`
-        path of file to format
-    format : `str`, optional
-        syntax format for this file
-
-    Returns
-    -------
-    html : `str`
-        a formatted block of HTML containing HTML with inline CSS
-    """
-    highlight = ['highlight', '--out-format', 'html', '--syntax', format,
-                 '--inline-css', '--fragment', '--input', filepath]
-    try:
-        process = subprocess.Popen(highlight, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-    except OSError:
-        with open(filepath, 'r') as fobj:
-            return fobj.read()
-    else:
-        out, err = process.communicate()
-        if process.returncode != 0:
-            with open(filepath, 'r') as fobj:
-                return fobj.read()
-        else:
-            return out
 
 
 # -- Hveto HTML ---------------------------------------------------------------
@@ -769,9 +738,19 @@ def write_about_page(configfile):
     index : `str`
         the path of the HTML written for this analysis
     """
+    # configure syntax highlighting
+    blexer = get_lexer_by_name('bash', stripall=True)
+    ilexer = get_lexer_by_name('ini', stripall=True)
+    formatter = HtmlFormatter(noclasses=True)
+    # set up page
     page = markup.page()
-    page.h2('Command-line')
-    page.pre(' '.join(sys.argv))
+    page.h2('On the command line')
+    page.p('This page was generated with the command line call shown below.')
+    commandline = highlight(' '.join(sys.argv), blexer, formatter)
+    page.add(commandline)
     page.h2('Configuration')
-    page.pre(write_config_html(configfile))
+    with open(configfile, 'r') as fobj:
+        inifile = fobj.read()
+    contents = highlight(inifile, ilexer, formatter)
+    page.add(contents)
     return page
