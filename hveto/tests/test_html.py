@@ -170,18 +170,18 @@ def test_fancybox_img():
 
 
 def test_scaffold_plots():
-    h1 = parse_html(html.scaffold_plots([FancyPlot('plot1.png'),
-                                         FancyPlot('plot2.png')]))
+    h1 = parse_html(html.scaffold_plots(
+        [FancyPlot('plot1.png'), FancyPlot('plot2.png')], nperrow=3))
     h2 = parse_html(
         '<div class="row">\n'
-        '<div class="col-sm-6">\n'
+        '<div class="col-sm-4">\n'
         '<a class="fancybox" href="plot1.png" target="_blank" '
             'data-fancybox-group="hveto-image" title="plot1.png">\n'
         '<img class="img-responsive" alt="plot1.png" '
             'src="plot1.png" />\n'
         '</a>\n'
         '</div>\n'
-        '<div class="col-sm-6">\n'
+        '<div class="col-sm-4">\n'
         '<a class="fancybox" href="plot2.png" target="_blank" '
         'data-fancybox-group="hveto-image" title="plot2.png">\n'
         '<img class="img-responsive" alt="plot2.png" '
@@ -204,7 +204,15 @@ def test_write_footer():
 
 def test_write_hveto_page(tmpdir):
     os.chdir(str(tmpdir))
-    html.write_hveto_page('L1', 0, 86400, [], [])
+    config = 'test.ini'
+    with open(config, 'w') as fobj:
+        fobj.write('[test]\nchannel = X1:TEST')
+    htmlv = {
+        'title': 'test',
+        'base': 'test',
+        'config': config,
+    }
+    html.write_hveto_page('L1', 0, 86400, [], [], **htmlv)
     shutil.rmtree(str(tmpdir), ignore_errors=True)
 
 
