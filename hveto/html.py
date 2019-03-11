@@ -24,9 +24,12 @@ from __future__ import division
 import sys
 import os.path
 import datetime
+import json
 import subprocess
 from functools import wraps
 from getpass import getuser
+from operator import itemgetter
+from pathlib import Path
 
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
@@ -484,6 +487,28 @@ def write_footer(about=None, date=None):
     return page
 
 
+def get_package_list():
+    """Get the list of packages installed alongside this one
+
+    Returns a `list` of `dict`
+    """
+    prefix = sys.prefix
+    if (Path(prefix) / "conda-meta").is_dir():
+        raw = subprocess.check_output(
+            ["conda", "list",
+             "--prefix", prefix,
+             "--json"],
+        )
+    else:
+        raw = subprocess.check_output(
+            [sys.executable,
+             "-m", "pip",
+             "list", "installed",
+             "--format", "json"],
+        )
+    return json.loads(raw)
+
+
 # -- Hveto HTML ---------------------------------------------------------------
 
 def write_summary(
@@ -744,13 +769,41 @@ def write_about_page(configfile):
     formatter = HtmlFormatter(noclasses=True)
     # set up page
     page = markup.page()
+
+    # command line
     page.h2('On the command line')
     page.p('This page was generated with the command line call shown below.')
     commandline = highlight(' '.join(sys.argv), blexer, formatter)
     page.add(commandline)
+
+    # configuration file
     page.h2('Configuration')
     with open(configfile, 'r') as fobj:
         inifile = fobj.read()
     contents = highlight(inifile, ilexer, formatter)
     page.add(contents)
+
+    # runtime environment
+    pkgs = get_package_list()
+    if "build_string" in pkgs[0]:  # conda list
+        cols = ("name", "version", "channel", "build_string")
+    else:  # pip list installed
+        cols = ("name", "version")
+    page.h2("Environment")
+    page.table(class_="table table-hover table-condensed table-responsive")
+    page.caption("List of packages installed alongside hveto")
+    page.thead()
+    page.tr()
+    for head in cols:
+        page.th(head.title(), scope="col")
+    page.tr.close()
+    page.thead.close()
+    page.tbody()
+    for pkg in sorted(get_package_list(), key=itemgetter("name")):
+        page.tr()
+        for col in cols:
+            page.td(pkg[col.lower()])
+        page.tr.close()
+    page.tbody.close()
+    page.table.close()
     return page
