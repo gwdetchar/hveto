@@ -49,6 +49,7 @@ from numpy import unique
 from matplotlib import use
 use('agg')
 
+from gwpy.io.cache import read_cache
 from gwpy.time import to_gps
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
