@@ -19,11 +19,15 @@
 """Tests for `hveto.segments`
 """
 
+import os
+import shutil
 from tempfile import NamedTemporaryFile
 
 import pytest
 
-from gwpy.segments import (Segment, SegmentList)
+from gwpy.testing.compat import mock
+from gwpy.segments import (Segment, SegmentList,
+                           DataQualityFlag, DataQualityDict)
 
 from .. import segments
 
@@ -34,6 +38,23 @@ TEST_SEGMENTS = SegmentList([
 TEST_SEGMENTS_2 = SegmentList([Segment(round(a, 6), round(b, 6)) for
                                a, b in TEST_SEGMENTS])
 
+TEST_FLAG = DataQualityFlag(
+    known=SegmentList([Segment(0, 7)]),
+    active=TEST_SEGMENTS,
+    name='X1:TEST-FLAG')
+TEST_DICT = DataQualityDict({
+    TEST_FLAG.name: TEST_FLAG})
+
+
+# -- unit tests ---------------------------------------------------------------
+
+@mock.patch('gwpy.segments.DataQualityFlag.query', return_value=TEST_FLAG)
+def test_query(dqflag):
+    flag = segments.query('X1:TEST-FLAG', 0, 7)
+    assert flag.known == TEST_FLAG.known
+    assert flag.active == SegmentList([
+        Segment((int(seg[0]), int(seg[1]))) for seg in TEST_FLAG.active])
+
 
 @pytest.mark.parametrize('ncol', (2, 4))
 def test_write_segments_ascii(ncol):
@@ -42,3 +63,19 @@ def test_write_segments_ascii(ncol):
         tmp.delete = True
         a = SegmentList.read(tmp.name, gpstype=float, strict=False)
         assert a == TEST_SEGMENTS_2
+
+
+def test_write_segments_ascii_failure():
+    with pytest.raises(ValueError) as exc:
+        segments.write_ascii('test.txt', TEST_SEGMENTS, ncol=42)
+    assert str(exc.value).startswith('Invalid number of columns')
+
+
+@mock.patch('gwpy.segments.DataQualityDict.from_veto_definer_file')
+def test_read_veto_definer_file(dqflag, tmpdir):
+    dqflag.return_value = TEST_DICT
+    os.chdir(str(tmpdir))
+    testfile = 'https://www.w3.org/TR/PNG/iso_8859-1.txt'
+    dqdict = segments.read_veto_definer_file(testfile)
+    assert dqdict == TEST_DICT
+    shutil.rmtree(str(tmpdir), ignore_errors=True)

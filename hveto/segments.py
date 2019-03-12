@@ -44,8 +44,10 @@ DEFAULT_SEGMENT_SERVER = os.getenv('DEFAULT_SEGMENT_SERVER',
 def integer_segments(f):
     @wraps(f)
     def decorated_method(*args, **kwargs):
-        segs = f(*args, **kwargs)
-        return type(segs)(type(s)(int(s[0]), int(s[1])) for s in segs)
+        flag = f(*args, **kwargs)
+        segs = flag.active
+        flag.active = type(segs)(type(s)(int(s[0]), int(s[1])) for s in segs)
+        return flag
     return decorated_method
 
 
@@ -74,6 +76,6 @@ def read_veto_definer_file(vetofile, start=None, end=None, ifo=None):
         tmp = urlopen(vetofile)
         vetofile = os.path.abspath(os.path.basename(vetofile))
         with open(vetofile, 'w') as f:
-            f.write(tmp.read())
+            f.write(str(tmp.read()))
     return DataQualityDict.from_veto_definer_file(
         vetofile, format='ligolw', start=start, end=end, ifo=ifo)

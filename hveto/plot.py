@@ -207,36 +207,6 @@ def get_column_label(column):
         return r'\texttt{{{0}}}'.format(column)
 
 
-# -- Plot construction --------------------------------------------------------
-
-class FancyPlot(object):
-    """A helpful class of objects that coalesce image links and caption text
-    for fancybox figures.
-
-    Parameters
-    ----------
-    img : `str` or `FancyPlot`
-        either a filename (including relative or absolute path) or another
-        FancyPlot instance
-    caption : `str`
-        the text to be displayed in a fancybox as this figure's caption
-
-    Examples
-    --------
-    >>> from hveto.plot import FancyPlot
-    >>> example = FancyPlot('plot.png')
-    >>> print example.img, example.caption
-    """
-    def __init__(self, img, caption=None):
-        if isinstance(img, FancyPlot):
-            caption = caption if caption else img.caption
-        self.img = str(img)
-        self.caption = caption if caption else os.path.basename(self.img)
-
-    def __str__(self):
-        return self.img
-
-
 # -- Functions ----------------------------------------------------------------
 
 def before_after_histogram(

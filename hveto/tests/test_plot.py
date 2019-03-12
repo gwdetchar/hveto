@@ -43,16 +43,3 @@ def test_drop_plot(num):
 
     with tempfile.NamedTemporaryFile(suffix='.svg') as svg:
         plot.significance_drop(svg.name, old, new)
-
-
-def test_fancy_plot():
-    # create a dummy FancyPlot instance
-    test = plot.FancyPlot('test.png')
-    assert test.img is 'test.png'
-    assert test.caption is 'test.png'
-
-    # check that its properties are unchanged when the argument
-    # to FancyPlot() is also a FancyPlot instance
-    test = plot.FancyPlot(test)
-    assert test.img is 'test.png'
-    assert test.caption is 'test.png'

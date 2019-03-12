@@ -33,7 +33,7 @@ from pygments.formatters import HtmlFormatter
 
 from MarkupPy import markup
 
-from gwdetchar.io.html import package_table
+from gwdetchar.io import html as gwhtml
 
 from ._version import get_versions
 
@@ -325,128 +325,6 @@ def bold_param(key, value, **attrs):
     return markup.oneliner.p('<b>%s</b>: %s' % (key, value), **attrs)
 
 
-def html_link(href, txt, target="_blank", **params):
-    """Write an HTML <a> tag
-
-    Parameters
-    ----------
-    href : `str`
-        the URL to point to
-    txt : `str`
-        the text for the link
-    target : `str`, optional
-        the ``target`` of this link
-    **params
-        other HTML parameters for the ``<a>`` tag
-
-    Returns
-    -------
-    html : `str`
-    """
-    if target is not None:
-        params.setdefault('target', target)
-    return markup.oneliner.a(txt, href=href, **params)
-
-
-def cis_link(channel, **params):
-    """Write a channel name as a link to the Channel Information System
-
-    Parameters
-    ----------
-    channel : `str`
-        the name of the channel to link
-    **params
-        other HTML parmeters for the ``<a>`` tag
-
-    Returns
-    -------
-    html : `str`
-    """
-    kwargs = {
-        'title': "CIS entry for %s" % channel,
-        'style': "font-family: Monaco, \"Courier New\", monospace;",
-    }
-    kwargs.update(params)
-    return html_link("https://cis.ligo.org/channel/byname/%s" % channel,
-                     channel, **kwargs)
-
-
-def fancybox_img(img, linkparams=dict(), **params):
-    """Return the markup to embed an <img> in HTML
-
-    Parameters
-    ----------
-    img : `FancyPlot`
-        a `FancyPlot` object containing the path of the image to embed
-        and its caption to be displayed
-    linkparams : `dict`
-        the HTML attributes for the ``<a>`` tag
-    **params
-        the HTML attributes for the ``<img>`` tag
-
-    Returns
-    -------
-    html : `str`
-
-    Notes
-    -----
-    See `~hveto.plot.FancyPlot` for more about the `FancyPlot` class.
-    """
-    page = markup.page()
-    aparams = {
-        'title': img.caption,
-        'class_': 'fancybox',
-        'target': '_blank',
-        'data-fancybox-group': 'hveto-image',
-    }
-    aparams.update(linkparams)
-    img = str(img)
-    page.a(href=img, **aparams)
-    imgparams = {
-        'alt': os.path.basename(img),
-        'class_': 'img-responsive',
-    }
-    if img.endswith('.svg') and os.path.isfile(img.replace('.svg', '.png')):
-        imgparams['src'] = img.replace('.svg', '.png')
-    else:
-        imgparams['src'] = img
-    imgparams.update(params)
-    page.img(**imgparams)
-    page.a.close()
-    return str(page)
-
-
-def scaffold_plots(plots, nperrow=2):
-    """Embed a `list` of images in a bootstrap scaffold
-
-    Parameters
-    ----------
-    plot : `list` of `str`
-        the list of image paths to embed
-    nperrow : `int`
-        the number of images to place in a row (on a desktop screen)
-
-    Returns
-    -------
-    page : `~MarkupPy.markup.page`
-        the markup object containing the scaffolded HTML
-    """
-    page = markup.page()
-    x = int(12//nperrow)
-    # scaffold plots
-    for i, p in enumerate(plots):
-        if i % nperrow == 0:
-            page.div(class_='row')
-        page.div(class_='col-sm-%d' % x)
-        page.add(fancybox_img(p))
-        page.div.close()  # col
-        if i % nperrow == nperrow - 1:
-            page.div.close()  # row
-    if i % nperrow < nperrow-1:
-        page.div.close()  # row
-    return page()
-
-
 def write_footer(about=None, date=None):
     """Write a <footer> for an Hveto page
 
@@ -529,10 +407,10 @@ def write_summary(
     for r in rounds:
         page.tr()
         # link round down page
-        page.td(html_link('#hveto-round-%d' % r.n, r.n, target=None,
-                          title="Jump to round %d details" % r.n))
+        page.td(gwhtml.html_link('#hveto-round-%d' % r.n, r.n, target=None,
+                                 title="Jump to round %d details" % r.n))
         # link name to CIS
-        page.td(cis_link(r.winner.name))
+        page.td(gwhtml.cis_link(r.winner.name))
         for attr in ['window', 'snr', 'significance']:
             v = getattr(r.winner, attr)
             if isinstance(v, float):
@@ -557,7 +435,7 @@ def write_summary(
 
     # scaffold plots
     if plots:
-        page.add(scaffold_plots(plots, nperrow=plotsperrow))
+        page.add(gwhtml.scaffold_plots(plots, nperrow=plotsperrow))
     return page()
 
 
@@ -605,7 +483,7 @@ def write_round(round):
             files = [round.files[tag]]
         else:
             files = round.files[tag]
-        link = ' '.join([html_link(
+        link = ' '.join([gwhtml.html_link(
             f, '[%s]' % os.path.splitext(f)[1].strip('.')) for f in files])
         page.add(bold_param(desc, link))
     # link omega scans if generated
@@ -631,11 +509,11 @@ def write_round(round):
     page.div.close()  # col
     # plots
     page.div(class_='col-md-9', id_='hveto-round-%d-plots' % round.n)
-    page.add(scaffold_plots(round.plots[:-1], nperrow=4))
+    page.add(gwhtml.scaffold_plots(round.plots[:-1], nperrow=4))
     # add significance drop plot at end
     page.div(class_='row')
     page.div(class_='col-sm-12')
-    page.add(fancybox_img(round.plots[-1]))
+    page.add(gwhtml.fancybox_img(round.plots[-1]))
     page.div.close()  # col-sm-12
     page.div.close()  # row
     page.div.close()  # col-md-8
@@ -760,6 +638,6 @@ def write_about_page(configfile):
     page.add(contents)
 
     # runtime environment
-    page.add(package_table())
+    page.add(gwhtml.package_table())
 
     return page
