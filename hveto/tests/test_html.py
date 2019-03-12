@@ -21,14 +21,9 @@
 
 import os
 import shutil
-import sys
 import time
 import datetime
 from getpass import getuser
-try:
-    from unittest import mock
-except ImportError:  # python < 3
-    import mock
 
 import pytest
 
@@ -203,26 +198,6 @@ def test_write_footer():
     out = html.write_footer(date=date)
     assert parse_html(str(out)) == parse_html(
         HTML_FOOTER.format(user=getuser(), date=date))
-
-
-@mock.patch("pathlib.Path.is_dir")
-@mock.patch("subprocess.check_output", return_value="{\"key\": 0}")
-@pytest.mark.parametrize("isdir, cmd", [
-    pytest.param(
-        False,
-        "{} -m pip list installed --format json".format(sys.executable),
-        id="pip",
-    ),
-    pytest.param(
-        True,
-        "conda list --prefix {} --json".format(sys.prefix),
-        id="conda",
-    ),
-])
-def test_get_package_list(check_output, is_dir, isdir, cmd):
-    is_dir.return_value = isdir
-    assert html.get_package_list() == {"key": 0}
-    check_output.assert_called_with(cmd.split())
 
 
 # -- end-to-end tests ---------------------------------------------------------
