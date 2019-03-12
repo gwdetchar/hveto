@@ -19,9 +19,23 @@
 """Tests for `hveto.utils`
 """
 
+import tempfile
+
 import pytest
 
+from gwpy.io.cache import read_cache
+
 from .. import utils
+
+
+def test_write_lal_cache(tmpdir):
+    cache = [
+        "/test/path/X-TEST-0-1.txt",
+        "/test/path/X-TEST-2-3.txt",
+    ]
+    target = tmpdir.join("cache.lcf")
+    utils.write_lal_cache(str(target), cache)
+    assert read_cache(str(target)) == cache
 
 
 @pytest.mark.parametrize('n, out', [

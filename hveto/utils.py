@@ -19,11 +19,13 @@
 """General utilities for hveto
 """
 
-from __future__ import division
+from __future__ import (division, print_function)
 
 import sys
 import os.path
 from math import ceil
+
+from gwdatafind.utils import filename_metadata
 
 try:  # python 3.x
     from io import StringIO
@@ -36,6 +38,21 @@ except:  # python 2.7
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
+
+
+def write_lal_cache(target, paths):
+    # if not an open file, open it
+    if isinstance(target, str):
+        with open(target, "w") as fobj:
+            write_lal_cache(fobj, paths)
+            return target
+
+    # write to file
+    for path in paths:
+        obs, tag, segment = filename_metadata(path)
+        print(obs, tag, segment[0], abs(segment), path, file=target)
+
+    return target
 
 
 # -- class for HTML parsing ---------------------------------------------------

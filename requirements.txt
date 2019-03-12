@@ -1,14 +1,14 @@
 dqsegdb
 gitpython
-gwdetchar
+gwdetchar >= 0.3.0
 gwpy >= 0.14.0
 gwtrigfind
 jinja2
-lscsoft-glue >= 2.0.0
 lxml
+MarkupPy >= 1.14
 matplotlib >= 1.5
 numpy >= 1.10
-pykerberos
-pytest >= 3.0.0
+pathlib ; python_version < '3'
+pytest >= 3.1.0
 scipy
 pygments

@@ -258,7 +258,7 @@ class HvetoConfigParser(configparser.ConfigParser):
     def set_hveto_defaults(self):
         for section in self.HVETO_DEFAULTS:
             self.add_section(section)
-            for key, val in self.HVETO_DEFAULTS[section].iteritems():
+            for key, val in self.HVETO_DEFAULTS[section].items():
                 if key.endswith('channels') and isinstance(val, (tuple, list)):
                     self.set(section, key, '\n'.join(list(val)))
                 elif isinstance(val, tuple):
@@ -294,4 +294,4 @@ class HvetoConfigParser(configparser.ConfigParser):
 
 
 def comma_separated_floats(string):
-    return map(float, string.split(','))
+    return tuple(map(float, string.split(',')))

@@ -37,6 +37,7 @@ import sys
 from socket import getfqdn
 from getpass import getuser
 from distutils.spawn import find_executable
+from pathlib import Path
 
 try:
     import configparser
@@ -48,8 +49,7 @@ from numpy import unique
 from matplotlib import use
 use('agg')
 
-from glue.lal import Cache
-
+from gwpy.io.cache import read_cache
 from gwpy.time import to_gps
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
@@ -101,8 +101,8 @@ parser.add_argument('-a', '--auxiliary-cache', action='append', default=[],
                          '<ext>\' for L1:GDS-CALIB_STRAIN triggers')
 parser.add_argument('-S', '--analysis-segments', action='append', default=[],
                     type=abs_path,
-                    help='path to LIGO_LW XML file containing segments for '
-                         'the analysis flag (name in segment_definer table '
+                    help='path to file containing segments for '
+                         'the analysis flag (name in data file '
                          'must match analysis-flag in config file)')
 parser.add_argument('-w', '--omega-scans', type=int, metavar='NSCAN',
                     help='generate a workflow of omega scans for each round, '
@@ -237,7 +237,7 @@ pchannel = cp.get('primary', 'channel')
 
 # read auxiliary cache
 if args.auxiliary_cache:
-    acache = Cache.fromfilenames(args.auxiliary_cache)
+    acache = read_cache(args.auxiliary_cache)
 else:
     acache = None
 
@@ -301,7 +301,7 @@ htmlv['config'] = inifile
 
 # read primary cache
 if args.primary_cache:
-    pcache = Cache.fromfilenames(args.primary_cache)
+    pcache = read_cache(args.primary_cache)
 else:
     pcache = None
 
@@ -362,8 +362,8 @@ def _get_aux_triggers(channel):
         auxcache = None
     else:
         ifo, name = channel.split(':')
-        desc = name.replace('-', '_')
-        auxcache = acache.sieve(ifos=ifo, description='%s*' % desc)
+        match = "{}-{}".format(ifo, name.replace('-', '_'))
+        auxcache = [e for e in cache if Path(e).name.startswith(match)]
     # get triggers
     try:
         trigs = get_triggers(channel, auxetg, analysis.active, snr=minsnr,
@@ -560,11 +560,7 @@ cum. deadtime :   %s""" % (
         ifo, round.n, start, duration))
     write_ascii_segments(segfile, round.vetoes)
     logger.debug("Round %d vetoes written to %s" % (round.n, segfile))
-    segxml = os.path.join(segdir, '%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.xml' % (
-        ifo, round.n, start, duration))
-    flag.write(segxml, overwrite=True)
-    logger.debug("Round %d vetoes written to %s" % (round.n, segxml))
-    round.files['VETO_SEGS'] = (segfile, segxml)
+    round.files['VETO_SEGS'] = (segfile,)
     # write triggers
     trigfile = os.path.join(trigdir, '%s-HVETO_%%s_TRIGS_ROUND_%d-%d-%d.txt'
                                      % (ifo, round.n, start, duration))
@@ -694,7 +690,7 @@ cum. deadtime :   %s""" % (
 
 # write file with all segments
 segfile = os.path.join(
-    segdir, '%s-HVETO_SEGMENTS-%d-%d.xml.gz' % (ifo, start, duration))
+    segdir, '%s-HVETO_SEGMENTS-%d-%d.h5' % (ifo, start, duration))
 segments.write(segfile, overwrite=True)
 logger.debug("Segment summary written to %s" % segfile)
 

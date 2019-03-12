@@ -24,7 +24,6 @@ from __future__ import division
 import sys
 import os.path
 import datetime
-import subprocess
 from functools import wraps
 from getpass import getuser
 
@@ -32,7 +31,9 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 
-from glue import markup
+from MarkupPy import markup
+
+from gwdetchar.io.html import package_table
 
 from ._version import get_versions
 
@@ -427,7 +428,7 @@ def scaffold_plots(plots, nperrow=2):
 
     Returns
     -------
-    page : `~glue.markup.page`
+    page : `~MarkupPy.markup.page`
         the markup object containing the scaffolded HTML
     """
     page = markup.page()
@@ -459,7 +460,7 @@ def write_footer(about=None, date=None):
 
     Returns
     -------
-    page : `~glue.markup.page`
+    page : `~MarkupPy.markup.page`
         the markup object containing the footer HTML
     """
     page = markup.page()
@@ -506,7 +507,7 @@ def write_summary(
 
     Returns
     -------
-    page : `~glue.markup.page`
+    page : `~MarkupPy.markup.page`
         the formatted markup object containing the analysis summary table,
         and images
     """
@@ -570,7 +571,7 @@ def write_round(round):
 
     Returns
     -------
-    page : `~glue.markup.page`
+    page : `~MarkupPy.markup.page`
         the formatted HTML for this round
     """
     page = markup.page()
@@ -744,13 +745,21 @@ def write_about_page(configfile):
     formatter = HtmlFormatter(noclasses=True)
     # set up page
     page = markup.page()
+
+    # command line
     page.h2('On the command line')
     page.p('This page was generated with the command line call shown below.')
     commandline = highlight(' '.join(sys.argv), blexer, formatter)
     page.add(commandline)
+
+    # configuration file
     page.h2('Configuration')
     with open(configfile, 'r') as fobj:
         inifile = fobj.read()
     contents = highlight(inifile, ilexer, formatter)
     page.add(contents)
+
+    # runtime environment
+    page.add(package_table())
+
     return page

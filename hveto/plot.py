@@ -344,8 +344,10 @@ def veto_scatter(
             'handlelength': 1,
             'handletextpad': .5
         }
-        legargs.update(dict((x[7:], axargs.pop(x)) for x in axargs.keys()
-                            if x.startswith('legend_')))
+        legargs.update(dict(
+            (x[7:], axargs.pop(x)) for x in list(axargs.keys()) if
+            x.startswith('legend_')
+        ))
         ax.legend(**legargs)
     # finalize
     for axis in ['x', 'y']:
