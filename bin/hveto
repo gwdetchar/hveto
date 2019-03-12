@@ -813,7 +813,7 @@ if args.omega_scans:
     omegatimes = list(map(str, sorted(numpy.unique(
         [t['time'] for r in rounds for t in r.scans]))))
     logger.debug("Collected %d times to omega scan" % len(omegatimes))
-    newtimes = [t for t in numpy.round(omegatimes, 2) if not
+    newtimes = [t for t in omegatimes if not
                 os.path.exists(os.path.join(omegadir, str(t)))]
     logger.debug("%d scans already complete or in progress, %d remaining"
                  % (len(omegatimes) - len(newtimes), len(newtimes)))
