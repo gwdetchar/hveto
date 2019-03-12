@@ -54,9 +54,10 @@ from gwpy.time import to_gps
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
+from gwdetchar.io.html import FancyPlot
+
 from hveto import (__version__, log, config, core, plot, html, utils)
-from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, FancyPlot,
-                        get_column_label)
+from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, get_column_label)
 from hveto.segments import (write_ascii as write_ascii_segments,
                             read_veto_definer_file)
 from hveto.triggers import (get_triggers, find_auxiliary_channels)

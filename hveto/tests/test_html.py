@@ -32,7 +32,6 @@ use('agg')  # nopep8
 
 from .. import html
 from .._version import get_versions
-from ..plot import FancyPlot
 from ..utils import parse_html
 
 VERSION = get_versions()['version']
@@ -132,64 +131,6 @@ def test_close_page(tmpdir):
 def test_bold_param(args, kwargs, result):
     h1 = parse_html(html.bold_param(*args, **kwargs))
     h2 = parse_html(result)
-    assert h1 == h2
-
-
-@pytest.mark.parametrize('args, kwargs, result', [
-    (('test.html', 'Test link'), {},
-     '<a href="test.html" target="_blank">Test link</a>'),
-    (('test.html', 'Test link'), {'class_': 'test-case'},
-     '<a class="test-case" href="test.html" target="_blank">Test link</a>'),
-])
-def test_html_link(args, kwargs, result):
-    h1 = parse_html(html.html_link(*args, **kwargs))
-    h2 = parse_html(result)
-    assert h1 == h2
-
-
-def test_cis_link():
-    h1 = parse_html(html.cis_link('X1:TEST-CHANNEL'))
-    h2 = parse_html(
-        '<a style="font-family: Monaco, &quot;Courier New&quot;, '
-        'monospace;" href="https://cis.ligo.org/channel/byname/'
-        'X1:TEST-CHANNEL" target="_blank" title="CIS entry for '
-        'X1:TEST-CHANNEL">X1:TEST-CHANNEL</a>'
-    )
-    assert h1 == h2
-
-
-def test_fancybox_img():
-    img = FancyPlot('test.png')
-    out = html.fancybox_img(img)
-    assert parse_html(out) == parse_html(
-        '<a class="fancybox" href="test.png" target="_blank" '
-        'data-fancybox-group="hveto-image" title="test.png">\n'
-        '<img class="img-responsive" alt="test.png" src="test.png" />'
-        '\n</a>'
-    )
-
-
-def test_scaffold_plots():
-    h1 = parse_html(html.scaffold_plots(
-        [FancyPlot('plot1.png'), FancyPlot('plot2.png')], nperrow=3))
-    h2 = parse_html(
-        '<div class="row">\n'
-        '<div class="col-sm-4">\n'
-        '<a class="fancybox" href="plot1.png" target="_blank" '
-            'data-fancybox-group="hveto-image" title="plot1.png">\n'
-        '<img class="img-responsive" alt="plot1.png" '
-            'src="plot1.png" />\n'
-        '</a>\n'
-        '</div>\n'
-        '<div class="col-sm-4">\n'
-        '<a class="fancybox" href="plot2.png" target="_blank" '
-        'data-fancybox-group="hveto-image" title="plot2.png">\n'
-        '<img class="img-responsive" alt="plot2.png" '
-            'src="plot2.png" />\n'
-        '</a>\n'
-        '</div>\n'
-        '</div>'
-    )
     assert h1 == h2
 
 
