@@ -28,16 +28,14 @@ from gwpy.io.cache import read_cache
 from .. import utils
 
 
-def test_write_lal_cache():
+def test_write_lal_cache(tmpdir):
     cache = [
         "/test/path/X-TEST-0-1.txt",
         "/test/path/X-TEST-2-3.txt",
     ]
-    with tempfile.NamedTemporaryFile() as tmp:
-        for target in (tmp, tmp.name):
-            utils.write_lal_cache(target, cache)
-            tmp.seek(0)  # rewind file for reading
-            assert read_cache(target) == cache
+    target = tmpdir.join("cache.lcf")
+    utils.write_lal_cache(str(target), cache)
+    assert read_cache(str(target)) == cache
 
 
 @pytest.mark.parametrize('n, out', [
