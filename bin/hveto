@@ -54,7 +54,7 @@ from gwpy.time import to_gps
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
-from gwdetchar.io.html import FancyPlot
+from gwdetchar.io.html import (FancyPlot, cis_link)
 
 from hveto import (__version__, log, config, core, plot, html, utils)
 from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, get_column_label)
@@ -705,7 +705,7 @@ if not rounds:
                % (winner.name, winner.significance))
     logger.critical(message)
     message = message.replace(
-        winner.name, html.cis_link(winner.name, class_='alert-link'))
+        winner.name, cis_link(winner.name, class_='alert-link'))
     message += '<br>[T<sub>win</sub>: %ss, SNR: %s]' % (
         winner.window, winner.snr)
     index = html.write_null_page(ifo, start, end, message, context='warning',
