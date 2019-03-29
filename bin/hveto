@@ -54,9 +54,10 @@ from gwpy.time import to_gps
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
+from gwdetchar import cli
 from gwdetchar.io.html import (FancyPlot, cis_link)
 
-from hveto import (__version__, log, config, core, plot, html, utils)
+from hveto import (__version__, config, core, plot, html, utils)
 from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, get_column_label)
 from hveto.segments import (write_ascii as write_ascii_segments,
                             read_veto_definer_file)
@@ -68,8 +69,8 @@ WDQ_BATCH = find_executable('gwdetchar-omega-batch')
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
-logger = log.Logger('hveto')
-
+# set up logger
+logger = cli.logger(name=os.path.basename(__file__))
 
 # -- parse command line -------------------------------------------------------
 

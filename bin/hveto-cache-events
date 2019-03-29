@@ -40,7 +40,9 @@ from gwpy.time import to_gps
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
-from hveto import (__version__, log, config)
+from gwdetchar import cli
+
+from hveto import (__version__, config)
 from hveto.triggers import (get_triggers, find_auxiliary_channels,
                             find_trigger_files)
 from hveto.utils import write_lal_cache
@@ -49,7 +51,8 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 IFO = os.getenv('IFO')
 
-logger = log.Logger('hveto-cache-events')
+# set up logger
+logger = cli.logger(name=os.path.basename(__file__))
 
 
 # -- parse command line -------------------------------------------------------

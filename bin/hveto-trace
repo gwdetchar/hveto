@@ -19,9 +19,10 @@
 # """Check if a trigger was vetoed by a specified hveto run.
 # """
 
-import sys, json, argparse, os, logging
-from hveto import log
+import (sys, json, argparse, os)
 from gwpy.segments import SegmentList
+
+from gwdetchar import cli
 
 # -- parse command line -------------------------------------------------------
 
@@ -36,14 +37,16 @@ parser.add_argument('-d', '--directory', required=True, type=abs_path,
                     help='path to hveto-generated folder containing '
                     'a summary-stats.json file')
 parser.add_argument('-v', '--verbose', help='Print more information',
-                    action='store_const', dest='loglevel', const=logging.DEBUG,
-                    default=logging.INFO)
+                    action='store_const', dest='loglevel', const='DEBUG',
+                    default='INFO')
 
 pout = parser.add_argument_group('Output options')
 
 args = parser.parse_args()
 directory = args.directory
-logger = log.Logger('hveto-trace', level=args.loglevel)
+
+# set up logger
+logger = cli.logger(name=os.path.basename(__file__), level=args.loglevel)
 logger.debug('Running in verbose mode')
 logger.debug('Search directory: %s' % directory)
 
