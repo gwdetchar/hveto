@@ -19,7 +19,11 @@
 # """Check if a trigger was vetoed by a specified hveto run.
 # """
 
-import (sys, json, argparse, os)
+import os
+import sys
+import json
+import argparse
+
 from gwpy.segments import SegmentList
 
 from gwdetchar import cli
