@@ -51,7 +51,6 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 IFO = os.getenv('IFO')
 
-# set up logger
 logger = cli.logger(name=os.path.basename(__file__))
 
 
@@ -60,20 +59,14 @@ logger = cli.logger(name=os.path.basename(__file__))
 def abs_path(p):
     return Path(p).expanduser().resolve()
 
-parser = argparse.ArgumentParser(description=__doc__)
-
-parser.add_argument('-V', '--version', action='version', version=__version__)
-parser.add_argument('gpsstart', type=to_gps, help='GPS start time of analysis')
-parser.add_argument('gpsend', type=to_gps, help='GPS end time of analysis')
+parser = cli.create_parser(description=__doc__, version=__version__)
+cli.add_gps_start_stop_arguments(parser)
+cli.add_ifo_option(parser, required=IFO is None, ifo=IFO)
 parser.add_argument('-f', '--config-file', action='append', default=[],
                     type=abs_path,
                     help='path to hveto configuration file, can be given '
                          'multiple times (files read in order)')
-parser.add_argument('-i', '--ifo', default=IFO, required=IFO is None,
-                    help='prefix of IFO to process, default: %(default)s')
-parser.add_argument('-j', '--nproc', type=int, default=1,
-                    help='number of cores to use for multiprocessing, '
-                         'default: %(default)s')
+cli.add_nproc_option(parser, default=1)
 parser.add_argument('-p', '--primary-cache', action='append', default=[],
                     type=abs_path,
                     help='path for cache containing primary channel files')

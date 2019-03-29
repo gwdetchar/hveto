@@ -28,13 +28,14 @@ from gwpy.segments import SegmentList
 
 from gwdetchar import cli
 
+from hveto import __version__
+
 # -- parse command line -------------------------------------------------------
 
 def abs_path(p):
     return os.path.abspath(os.path.expanduser(p))
 
-parser = argparse.ArgumentParser(description=__doc__)
-
+parser = cli.create_parser(description=__doc__, version=__version__)
 parser.add_argument('-t', '--trigger-time', required=True,
                     help='The time of the trigger in GPS time')
 parser.add_argument('-d', '--directory', required=True, type=abs_path,
@@ -49,7 +50,6 @@ pout = parser.add_argument_group('Output options')
 args = parser.parse_args()
 directory = args.directory
 
-# set up logger
 logger = cli.logger(name=os.path.basename(__file__), level=args.loglevel)
 logger.debug('Running in verbose mode')
 logger.debug('Search directory: %s' % directory)
