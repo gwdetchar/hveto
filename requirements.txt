@@ -1,6 +1,6 @@
 dqsegdb
 gitpython
-gwdetchar >= 0.3.2
+gwdetchar >= 0.4.0
 gwpy >= 0.14.0
 gwtrigfind
 jinja2
