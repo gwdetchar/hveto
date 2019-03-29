@@ -535,7 +535,7 @@ while True:
     logger.debug("Applied vetoes to auxiliary channels")
 
     # log results
-    logger.info("""Results for round %d
+    logger.info("""Results for round %d:\n\n
 winner :          %s
 significance :    %s
 mu :              %s
@@ -545,7 +545,7 @@ use_percentage :  %s
 efficiency :      %s
 deadtime :        %s
 cum. efficiency : %s
-cum. deadtime :   %s""" % (
+cum. deadtime :   %s\n\n""" % (
         round.n, round.winner.name, round.winner.significance, round.winner.mu,
         round.winner.snr, round.winner.window, round.use_percentage,
         round.efficiency, round.deadtime, round.cum_efficiency,
@@ -574,7 +574,7 @@ cum. deadtime :   %s""" % (
         N = len(vetoed)
         ind = random.sample(range(0, N), min(args.omega_scans, N))
         round.scans = vetoed[ind]
-        logger.debug("Collected %d events to omega scan\n%s"
+        logger.debug("Collected %d events to omega scan:\n\n%s\n\n"
                      % (len(round.scans), round.scans))
 
     # -- make some plots --
