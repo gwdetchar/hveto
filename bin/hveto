@@ -304,6 +304,10 @@ petg = cp.get('primary', 'trigger-generator')
 psnr = cp.getfloat('primary', 'snr-threshold')
 pfreq = cp.getfloats('primary', 'frequency-range')
 preadkw = cp.getparams('primary', 'read-')
+if pcache is not None:  # auto-detect the file format
+    logger.debug('Unsetting the primary trigger file format')
+    preadkw['format'] = None
+    preadkw['path'] = 'triggers'
 ptrigfindkw = cp.getparams('primary', 'trigfind-')
 primary = get_triggers(pchannel, petg, analysis.active, snr=psnr, frange=pfreq,
                        cache=pcache, nproc=args.nproc,
@@ -349,6 +353,10 @@ logger.info("Reading triggers for aux channels...")
 counter = multiprocessing.Value('i', 0)
 
 areadkw = cp.getparams('auxiliary', 'read-')
+if acache is not None:  # auto-detect the file format
+    logger.debug('Unsetting the auxiliary trigger file format')
+    areadkw['format'] = None
+    areadkw['path'] = 'triggers'
 atrigfindkw = cp.getparams('auxiliary', 'trigfind-')
 
 def _get_aux_triggers(channel):
