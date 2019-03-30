@@ -54,9 +54,10 @@ from gwpy.time import to_gps
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
+from gwdetchar import cli
 from gwdetchar.io.html import (FancyPlot, cis_link)
 
-from hveto import (__version__, log, config, core, plot, html, utils)
+from hveto import (__version__, config, core, plot, html, utils)
 from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, get_column_label)
 from hveto.segments import (write_ascii as write_ascii_segments,
                             read_veto_definer_file)
@@ -68,7 +69,7 @@ WDQ_BATCH = find_executable('gwdetchar-omega-batch')
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
-logger = log.Logger('hveto')
+logger = cli.logger(name=os.path.basename(__file__))
 
 
 # -- parse command line -------------------------------------------------------
@@ -76,20 +77,14 @@ logger = log.Logger('hveto')
 def abs_path(p):
     return os.path.abspath(os.path.expanduser(p))
 
-parser = argparse.ArgumentParser(description=__doc__)
-
-parser.add_argument('-V', '--version', action='version', version=__version__)
-parser.add_argument('gpsstart', type=to_gps, help='GPS start time of analysis')
-parser.add_argument('gpsend', type=to_gps, help='GPS end time of analysis')
+parser = cli.create_parser(description=__doc__, version=__version__)
+cli.add_gps_start_stop_arguments(parser)
+cli.add_ifo_option(parser, required=IFO is None, ifo=IFO)
 parser.add_argument('-f', '--config-file', action='append', default=[],
                     type=abs_path,
                     help='path to hveto configuration file, can be given '
                          'multiple times (files read in order)')
-parser.add_argument('-i', '--ifo', default=IFO, required=IFO is None,
-                    help='prefix of IFO to process, default: %(default)s')
-parser.add_argument('-j', '--nproc', type=int, default=1,
-                    help='number of cores to use for multiprocessing, '
-                         'default: %(default)s')
+cli.add_nproc_option(parser, default=1)
 parser.add_argument('-p', '--primary-cache', action='append', default=[],
                     type=abs_path,
                     help='path for cache containing primary channel files')
@@ -540,7 +535,7 @@ while True:
     logger.debug("Applied vetoes to auxiliary channels")
 
     # log results
-    logger.info("""Results for round %d
+    logger.info("""Results for round %d:\n\n
 winner :          %s
 significance :    %s
 mu :              %s
@@ -550,7 +545,7 @@ use_percentage :  %s
 efficiency :      %s
 deadtime :        %s
 cum. efficiency : %s
-cum. deadtime :   %s""" % (
+cum. deadtime :   %s\n\n""" % (
         round.n, round.winner.name, round.winner.significance, round.winner.mu,
         round.winner.snr, round.winner.window, round.use_percentage,
         round.efficiency, round.deadtime, round.cum_efficiency,
@@ -579,7 +574,7 @@ cum. deadtime :   %s""" % (
         N = len(vetoed)
         ind = random.sample(range(0, N), min(args.omega_scans, N))
         round.scans = vetoed[ind]
-        logger.debug("Collected %d events to omega scan\n%s"
+        logger.debug("Collected %d events to omega scan:\n\n%s\n\n"
                      % (len(round.scans), round.scans))
 
     # -- make some plots --
