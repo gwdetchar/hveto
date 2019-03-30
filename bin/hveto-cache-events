@@ -67,11 +67,9 @@ parser.add_argument('-f', '--config-file', action='append', default=[],
                     help='path to hveto configuration file, can be given '
                          'multiple times (files read in order)')
 cli.add_nproc_option(parser, default=1)
-parser.add_argument('-p', '--primary-cache', action='append', default=[],
-                    type=abs_path,
+parser.add_argument('-p', '--primary-cache', default=None, type=abs_path,
                     help='path for cache containing primary channel files')
-parser.add_argument('-a', '--auxiliary-cache', action='append', default=[],
-                    type=abs_path,
+parser.add_argument('-a', '--auxiliary-cache', default=None, type=abs_path,
                     help='path for cache containing auxiliary channel files, '
                          'files contained must be T050017-compliant with the '
                          'channel name as the leading name parts, e.g. '
@@ -228,7 +226,7 @@ def write_events(channel, tab, segments):
 pchannel = cp.get('primary', 'channel')
 
 # read auxiliary cache
-if args.auxiliary_cache:
+if args.auxiliary_cache is not None:
     acache = [e for c in args.auxiliary_cache for e in read_cache(str(c))]
 else:
     acache = None
@@ -281,7 +279,7 @@ logger.info("Identified %d auxiliary channels to process" % naux)
 logger.info("Reading events for primary channel...")
 
 # read primary cache
-if args.primary_cache:
+if args.primary_cache is not None:
     pcache = [e for c in args.primary_cache for e in read_cache(str(c))]
 else:
     pcache = None
