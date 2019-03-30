@@ -21,15 +21,8 @@
 
 from __future__ import division
 
-import sys
 import os.path
-import datetime
 from functools import wraps
-from getpass import getuser
-
-from pygments import highlight
-from pygments.lexers import get_lexer_by_name
-from pygments.formatters import HtmlFormatter
 
 from MarkupPy import markup
 
@@ -40,117 +33,11 @@ from ._version import get_versions
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda, Alex Urban'
 
-# -- set up default JS and CSS files
-
-JQUERY_JS = "//code.jquery.com/jquery-1.11.2.min.js"
-
-BOOTSTRAP_CSS = (
-    "//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css")
-BOOTSTRAP_JS = (
-    "//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js")
-
-FANCYBOX_CSS = (
-    "//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css")
-FANCYBOX_JS = (
-    "//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.js")
-
-CSS_FILES = [BOOTSTRAP_CSS, FANCYBOX_CSS]
-JS_FILES = [JQUERY_JS, BOOTSTRAP_JS, FANCYBOX_JS]
-
-HVETO_CSS = """
-html {
-		position: relative;
-		min-height: 100%;
-}
-body {
-		margin-bottom: 120px;
-		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-		-webkit-font-smoothing: antialiased;
-}
-.footer {
-		position: absolute;
-		bottom: 0;
-		width: 100%;
-		height: 100px;
-		background-color: #f5f5f5;
-		padding-top: 20px;
-		padding-bottom: 20px;
-}
-.fancybox-skin {
-		background: white;
-}
-"""
-
-HVETO_JS = """
-$(document).ready(function() {
-	$(\".fancybox\").fancybox({
-		nextEffect: 'none',
-		prevEffect: 'none',
-		helpers: {title: {type: 'inside'}}
-	});
-});
-"""
-
 
 # -- HTML construction --------------------------------------------------------
 
-def write_static_files(static):
-    """Write static CSS and javascript files into the given directory
-
-    Parameters
-    ----------
-    static : `str`
-        the target directory for the static files, will be created if
-        necessary
-
-    Returns
-    -------
-    `<statc>/hveto.css`
-    `<static>/hveto.js`
-        the paths of the two files written by this method, which will be
-        `hveto.css` and `hveto.js` inside `static`
-
-    Notes
-    -----
-    This method modifies the module-level variables ``CSS_FILES` and
-    ``JS_FILES`` to guarantee that the static files are actually only
-    written once per process.
-    """
-    if not os.path.isdir(static):
-        os.makedirs(static)
-    hvetocss = os.path.join(static, 'hveto.css')
-    if hvetocss not in CSS_FILES:
-        with open(hvetocss, 'w') as f:
-            f.write(HVETO_CSS)
-        CSS_FILES.append(hvetocss)
-    hvetojs = os.path.join(static, 'hveto.js')
-    if hvetojs not in JS_FILES:
-        with open(hvetojs, 'w') as f:
-            f.write(HVETO_JS)
-        JS_FILES.append(hvetojs)
-    return hvetocss, hvetojs
-
-
-def init_page(ifo, start, end, css=[], script=[], base=os.path.curdir,
-              **kwargs):
-    """Initialise a new `markup.page`
-
-    This method constructs an HTML page with the following structure
-
-    .. code-block:: html
-
-        <html>
-        <head>
-            <!-- some stuff -->
-        </head>
-        <body>
-        <div class="container">
-        <div class="page-header">
-        <h1>IFO</h1>
-        <h3>START-END</h3>
-        </div>
-        </div>
-        <div class="container">
+def banner(ifo, start, end):
+    """Initialise a new markup banner
 
     Parameters
     ----------
@@ -160,50 +47,14 @@ def init_page(ifo, start, end, css=[], script=[], base=os.path.curdir,
         the GPS start time of the analysis
     end : `int`
         the GPS end time of the analysis
-    css : `list`, optional
-        the list of stylesheets to link in the `<head>`
-    script : `list`, optional
-        the list of javascript files to link in the `<head>`
-    base : `str`, optional, default '.'
-        the path for the `<base>` tag to link in the `<head>`
 
     Returns
     -------
     page : `markup.page`
         the structured markup to open an HTML document
     """
-    # write CSS to static dir
-    staticdir = os.path.join(os.path.curdir, 'static')
-    write_static_files(staticdir)
     # create page
     page = markup.page()
-    page.header.append('<!DOCTYPE HTML>')
-    page.html(lang='en')
-    page.head()
-    page.base(href=base)
-    page._full = True
-    # link stylesheets (appending bootstrap if needed)
-    css = css[:]
-    for cssf in CSS_FILES[::-1]:
-        b = os.path.basename(cssf)
-        if not any(f.endswith(b) for f in css):
-            css.insert(0, cssf)
-    for f in css:
-        page.link(href=f, rel='stylesheet', type='text/css', media='all')
-    # link javascript
-    script = script[:]
-    for jsf in JS_FILES[::-1]:
-        b = os.path.basename(jsf)
-        if not any(f.endswith(b) for f in script):
-            script.insert(0, jsf)
-    for f in script:
-        page.script('', src=f, type='text/javascript')
-    # add other attributes
-    for key in kwargs:
-        getattr(page, key)(kwargs[key])
-    # finalize header
-    page.head.close()
-    page.body()
     # write banner
     page.div(class_='container')
     page.div(class_='page-header', role='banner')
@@ -211,47 +62,7 @@ def init_page(ifo, start, end, css=[], script=[], base=os.path.curdir,
     page.h3("%d-%d" % (start, end))
     page.div.close()
     page.div.close()  # container
-
-    # open container
-    page.div(class_='container')
-    return page
-
-
-def close_page(page, target, about=None, date=None):
-    """Close an HTML document with markup then write to disk
-
-    This method writes the closing markup to complement the opening
-    written by `init_page`, something like:
-
-    .. code-block:: html
-
-       </div>
-       <footer>
-           <!-- some stuff -->
-       </footer>
-       </body>
-       </html>
-
-    Parameters
-    ----------
-    page : `markup.page`
-        the markup object to close
-    target : `str`
-        the output filename for HTML
-    about : `str`, optional
-        the path of the 'about' page to link in the footer
-    date : `datetime.datetime`, optional
-        the timestamp to place in the footer, defaults to
-        `~datetime.datetime.now`
-    """
-    page.div.close()  # container
-    page.add(str(write_footer(about=about, date=date)))
-    if not page._full:
-        page.body.close()
-        page.html.close()
-    with open(target, 'w') as f:
-        f.write(page())
-    return page
+    return page()
 
 
 def wrap_html(func):
@@ -289,7 +100,8 @@ def wrap_html(func):
             if os.path.basename(about) == 'index.html':
                 about = about[:-10]
         # open page
-        page = init_page(ifo, start, end, **initargs)
+        header = banner(ifo, start, end)
+        page = gwhtml.new_bootstrap_page(navbar=header, **initargs)
         # write content
         contentf = os.path.join(outdir, '_inner.html')
         with open(contentf, 'w') as f:
@@ -297,9 +109,19 @@ def wrap_html(func):
         # embed content
         page.div('', id_='content')
         page.script("$('#content').load('%s');" % contentf)
-        # close page
+        # close page with custom footer
         index = os.path.join(outdir, 'index.html')
-        close_page(page, index, about=about)
+        version = get_versions()['version']
+        commit = get_versions()['full-revisionid']
+        url = 'https://github.com/gwdetchar/hveto/tree/{}'.format(commit)
+        link = markup.oneliner.a(
+            'View hveto-{} on GitHub'.format(version), href=url,
+            target='_blank', style='color:#eee;')
+        report = 'https://github.com/gwdetchar/hveto/issues'
+        issues = markup.oneliner.a(
+            'Report an issue', href=report, target='_blank',
+            style='color:#eee;')
+        gwhtml.close_page(page, index, about=about, link=link, issues=issues)
         return index
     return decorated_func
 
@@ -323,44 +145,6 @@ def bold_param(key, value, **attrs):
     html : `str`
     """
     return markup.oneliner.p('<b>%s</b>: %s' % (key, value), **attrs)
-
-
-def write_footer(about=None, date=None):
-    """Write a <footer> for an Hveto page
-
-    Parameters
-    ----------
-    about : `str`, optional
-        path of about page to link
-    date : `datetime.datetime`, optional
-        the datetime representing when this analysis was generated, defaults
-        to `~datetime.datetime.now`
-
-    Returns
-    -------
-    page : `~MarkupPy.markup.page`
-        the markup object containing the footer HTML
-    """
-    page = markup.page()
-    page.twotags.append('footer')
-    markup.element('footer', case=page.case, parent=page)(class_='footer')
-    page.div(class_='container')
-    # write user/time for analysis
-    if date is None:
-        date = datetime.datetime.now().replace(second=0, microsecond=0)
-    version = get_versions()['version']
-    commit = get_versions()['full-revisionid']
-    url = 'https://github.com/gwdetchar/hveto/tree/%s' % commit
-    link = markup.oneliner.a('hveto version %s' % version, href=url,
-                             target='_blank')
-    page.p('These results were obtained using {link} by {user} at '
-           '{date}.'.format(link=link, user=getuser(), date=date))
-    # link to 'about'
-    if about is not None:
-        page.a('How was this page generated?', href=about)
-    page.div.close()  # container
-    markup.element('footer', case=page.case, parent=page).close()
-    return page
 
 
 # -- Hveto HTML ---------------------------------------------------------------
@@ -617,24 +401,20 @@ def write_about_page(configfile):
     index : `str`
         the path of the HTML written for this analysis
     """
-    # configure syntax highlighting
-    blexer = get_lexer_by_name('bash', stripall=True)
-    ilexer = get_lexer_by_name('ini', stripall=True)
-    formatter = HtmlFormatter(noclasses=True)
     # set up page
     page = markup.page()
 
     # command line
     page.h2('On the command line')
     page.p('This page was generated with the command line call shown below.')
-    commandline = highlight(' '.join(sys.argv), blexer, formatter)
+    commandline = gwhtml.get_command_line()
     page.add(commandline)
 
     # configuration file
     page.h2('Configuration')
     with open(configfile, 'r') as fobj:
         inifile = fobj.read()
-    contents = highlight(inifile, ilexer, formatter)
+    contents = gwhtml.render_code(inifile, 'ini')
     page.add(contents)
 
     # runtime environment

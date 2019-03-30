@@ -27,13 +27,6 @@ from math import ceil
 
 from gwdatafind.utils import filename_metadata
 
-try:  # python 3.x
-    from io import StringIO
-    from html.parser import HTMLParser
-except:  # python 2.7
-    from cStringIO import StringIO
-    from HTMLParser import HTMLParser
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
@@ -53,44 +46,7 @@ def write_lal_cache(target, paths):
     return target
 
 
-# -- class for HTML parsing ---------------------------------------------------
-
-class HvetoHTMLParser(HTMLParser):
-    """See https://docs.python.org/3/library/html.parser.html.
-    """
-    def handle_starttag(self, tag, attrs):
-        print("Start tag:", tag)
-        attrs.sort()
-        for attr in attrs:
-            print("attr:", attr)
-
-    def handle_endtag(self, tag):
-        print("End tag:", tag)
-
-    def handle_data(self, data):
-        print("Data:", data)
-
-    def handle_decl(self, data):
-        print("Decl:", data)
-
-parser = HvetoHTMLParser()
-
-
 # -- utilities ----------------------------------------------------------------
-
-def parse_html(html):
-    """Parse a string containing raw HTML code
-    """
-    stdout = sys.stdout
-    sys.stdout = StringIO()
-    if sys.version_info.major < 3:
-        parser.feed(html.decode('utf-8', 'ignore'))
-    else:
-        parser.feed(html)
-    output = sys.stdout.getvalue()
-    sys.stdout = stdout
-    return output
-
 
 def channel_groups(channellist, ngroups):
     """Separate a list of channels into a number of equally-sized groups
