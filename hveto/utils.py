@@ -41,7 +41,7 @@ def write_lal_cache(target, paths):
     # write to file
     for path in paths:
         obs, tag, segment = filename_metadata(path)
-        print(obs[0], tag, segment[0], abs(segment), path, file=target)
+        print(obs, tag, segment[0], abs(segment), path, file=target)
 
     return target
 
