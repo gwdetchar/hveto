@@ -59,5 +59,5 @@ proposing additions/changes.
    :target: https://pypi.org/project/hveto/
 .. |Build Status| image:: https://travis-ci.org/gwdetchar/hveto.svg?branch=master
    :target: https://travis-ci.org/gwdetchar/hveto
-.. |Coverage Status| image:: https://coveralls.io/repos/github/gwdetchar/hveto/badge.svg?branch=master
-   :target: https://coveralls.io/github/gwdetchar/hveto?branch=master
+.. |Coverage Status| image:: https://codecov.io/gh/gwdetchar/hveto/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/gwdetchar/hveto
