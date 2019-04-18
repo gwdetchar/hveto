@@ -28,12 +28,62 @@ from gwdetchar.utils import parse_html
 
 from .. import html
 
-BANNER = """<div class="container">
-<div class="page-header" role="banner">
+BANNER = """<div class="page-header" role="banner">
 <h1>L1 HierarchicalVeto</h1>
 <h3>0-100</h3>
-</div>
 </div>"""
+
+NAVBAR = """<header class="navbar navbar-fixed-top navbar-h1">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle" data-toggle="collapse" type="button" data-target=".navbar-collapse">
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<div class="navbar-brand">H1</div>
+<div class="navbar-brand">Hveto</div>
+<div class="btn-group pull-right ifo-links">
+<a class="navbar-brand dropdown-toggle" href="#" data-toggle="dropdown">
+Links
+<b class="caret"></b>
+</a>
+<ul class="dropdown-menu">
+<li class="dropdown-header">Internal</li>
+<li>
+<a href="about">About this page</a>
+</li>
+<li class="divider"></li>
+<li class="dropdown-header">External</li>
+<li>
+<a href="https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day/19800106" target="_blank">LHO Summary Pages</a>
+</li>
+<li>
+<a href="https://alog.ligo-wa.caltech.edu/aLOG" target="_blank">LHO Logbook</a>
+</li>
+</ul>
+</div>
+</div>
+<nav class="collapse navbar-collapse">
+<ul class="nav navbar-nav">
+<li>
+<a href="#">Summary</a>
+</li>
+<li class="dropdown">
+<a href="#" class="dropdown-toggle" data-toggle="dropdown">
+Rounds
+<b class="caret"></b>
+</a>
+<ul class="dropdown-menu">
+<li>
+<a href="#hveto-round-1">1: H1:TEST-STRAIN</a>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</div>
+</header>"""  # noqa: E501
 
 
 # -- unit tests ---------------------------------------------------------------
@@ -42,6 +92,12 @@ def test_banner():
     # test simple content
     out = html.banner('L1', 0, 100)
     assert parse_html(str(out)) == parse_html(BANNER)
+
+
+def test_navbar():
+    # test simple content
+    out = html.navbar('H1', 0, ['H1:TEST-STRAIN'])
+    assert parse_html(str(out)) == parse_html(NAVBAR)
 
 
 @pytest.mark.parametrize('args, kwargs, result', [
