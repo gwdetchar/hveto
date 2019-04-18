@@ -142,11 +142,10 @@ def wrap_html(func):
         url = 'https://github.com/gwdetchar/hveto/tree/{}'.format(commit)
         link = markup.oneliner.a(
             'View hveto-{} on GitHub'.format(version), href=url,
-            target='_blank')#, style='color:#eee;')
+            target='_blank')
         report = 'https://github.com/gwdetchar/hveto/issues'
         issues = markup.oneliner.a(
-            'Report an issue', href=report, target='_blank')#,
-            #style='color:#eee;')
+            'Report an issue', href=report, target='_blank')
         gwhtml.close_page(page, index, about=about, link=link, issues=issues)
         return index
     return decorated_func
