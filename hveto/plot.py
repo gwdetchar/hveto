@@ -365,7 +365,8 @@ def _finalize_plot(plot, ax, outfile, bbox_inches=None, close=True, **axargs):
         plot.close()
 
 
-def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
+def significance_drop(outfile, old, new, show_channel_names=None,
+                      bbox_inches='tight', **kwargs):
     """Plot the signifiance drop for each channel
     """
     channels = sorted(old.keys())
@@ -451,7 +452,7 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
             tooltips[-1].set_gid('tooltip-%d' % i)
 
         f = BytesIO()
-        plot.savefig(f, format='svg')
+        plot.savefig(f, bbox_inches=bbox_inches, format='svg')
         tree, xmlid = etree.XMLID(f.getvalue())
         tree.set('onload', 'init(evt)')
         for i in range(len(tooltips)):
@@ -469,7 +470,7 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
         etree.ElementTree(tree).write(outfile)
         plot.close()
     else:
-        _finalize_plot(plot, ax, outfile, **kwargs)
+        _finalize_plot(plot, ax, outfile, bbox_inches=bbox_inches, **kwargs)
 
 
 def hveto_roc(outfile, rounds, figsize=[9, 6], constants=[1, 5, 10, 20],
