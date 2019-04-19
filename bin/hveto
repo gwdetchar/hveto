@@ -594,9 +594,9 @@ cum. deadtime :   %s\n\n""" % (
         wname = round.winner.name
     beforel = 'Before\n[%d]' % len(before)
     afterl = 'After\n[%d]' % len(primary)
-    vetoedl = 'Vetoed (primary)\n[%d]' % len(vetoed)
+    vetoedl = 'Vetoed\n(primary)\n[%d]' % len(vetoed)
     beforeauxl = 'All\n[%d]' % len(beforeaux)
-    usedl = 'Used (aux)\n[%d]' % len(winner.events)
+    usedl = 'Used\n(aux)\n[%d]' % len(winner.events)
     coincl = 'Coinc.\n[%d]' % len(coincs)
     title = '%s Hveto round %d' % (ifo, round.n)
     ptitle = '%s: primary impact' % title
