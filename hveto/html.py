@@ -36,6 +36,37 @@ __credits__ = 'Josh Smith, Joe Areeda, Alex Urban'
 
 # -- HTML construction --------------------------------------------------------
 
+def navbar(ifo, gpstime, winners=[]):
+    """Initialise a new `markup.page`
+
+    Parameters
+    ----------
+    ifo : `str`
+        the interferometer prefix
+
+    gpstime : `float`
+        the central GPS time of the analysis
+
+    winners : `list`
+        list of round winners for navbar table of contents
+
+    Returns
+    -------
+    page : `markup.page`
+        the structured markup to open an HTML document
+    """
+    (brand, class_) = gwhtml.get_brand(ifo, 'Hveto', gpstime, about='about')
+    # channel navigation
+    links = [['Summary', '#']]
+    if not winners:
+        links.append(['Rounds', '#rounds'])
+    else:
+        winners = [['%d: %s' % (i + 1, channel), '#hveto-round-%s' % (i + 1)]
+                   for i, channel in enumerate(winners)]
+        links.append(['Rounds', winners])
+    return gwhtml.navbar(links, brand=brand, class_=class_)
+
+
 def banner(ifo, start, end):
     """Initialise a new markup banner
 
@@ -56,12 +87,10 @@ def banner(ifo, start, end):
     # create page
     page = markup.page()
     # write banner
-    page.div(class_='container')
     page.div(class_='page-header', role='banner')
     page.h1("%s HierarchicalVeto" % ifo)
     page.h3("%d-%d" % (start, end))
     page.div.close()
-    page.div.close()  # container
     return page()
 
 
@@ -83,6 +112,7 @@ def wrap_html(func):
                 initargs[key] = kwargs.pop(key)
         # find outdir
         outdir = kwargs.pop('outdir', initargs['base'])
+        winners = kwargs.pop('winners', [])
         if not os.path.isdir(outdir):
             os.makedirs(outdir)
         # write about page
@@ -100,15 +130,11 @@ def wrap_html(func):
             if os.path.basename(about) == 'index.html':
                 about = about[:-10]
         # open page
-        header = banner(ifo, start, end)
-        page = gwhtml.new_bootstrap_page(navbar=header, **initargs)
+        nav = navbar(ifo, start, winners)
+        page = gwhtml.new_bootstrap_page(navbar=nav, **initargs)
+        page.add(banner(ifo, start, end))
         # write content
-        contentf = os.path.join(outdir, '_inner.html')
-        with open(contentf, 'w') as f:
-            f.write(str(func(*args, **kwargs)))
-        # embed content
-        page.div('', id_='content')
-        page.script("$('#content').load('%s');" % contentf)
+        page.add(str(func(*args, **kwargs)))
         # close page with custom footer
         index = os.path.join(outdir, 'index.html')
         version = get_versions()['version']
@@ -116,11 +142,10 @@ def wrap_html(func):
         url = 'https://github.com/gwdetchar/hveto/tree/{}'.format(commit)
         link = markup.oneliner.a(
             'View hveto-{} on GitHub'.format(version), href=url,
-            target='_blank', style='color:#eee;')
+            target='_blank')
         report = 'https://github.com/gwdetchar/hveto/issues'
         issues = markup.oneliner.a(
-            'Report an issue', href=report, target='_blank',
-            style='color:#eee;')
+            'Report an issue', href=report, target='_blank')
         gwhtml.close_page(page, index, about=about, link=link, issues=issues)
         return index
     return decorated_func
@@ -223,7 +248,7 @@ def write_summary(
     return page()
 
 
-def write_round(round):
+def write_round(round, context='info'):
     """Write the HTML summary for a specific round
 
     Parameters
@@ -231,13 +256,16 @@ def write_round(round):
     round : `HvetoRound`
         the analysis round object
 
+    context : `str`
+        context for bootstrap objects, default: info
+
     Returns
     -------
     page : `~MarkupPy.markup.page`
         the formatted HTML for this round
     """
     page = markup.page()
-    page.div(class_='panel panel-info', id_='hveto-round-%d' % round.n)
+    page.div(class_='panel well panel-%s' % context)
     # -- make heading
     page.div(class_='panel-heading clearfix')
     # link to top of page
@@ -247,11 +275,14 @@ def write_round(round):
     # heading
     page.h3('Round %d, Winner = %s, window = %s, SNR thresh = %s'
             % (round.n, round.winner.name, round.winner.window,
-               round.winner.snr), class_='panel-title')
+               round.winner.snr),
+            class_='panel-title', id_='hveto-round-%d' % round.n)
     page.div.close()  # panel-heading
 
     # -- make body
     page.div(class_='panel-body')
+    page.ul(class_='list-group')
+    page.li(class_='list-group-item')
     page.div(class_='row')
     # summary information
     page.div(class_='col-md-3', id_='hveto-round-%d-summary' % round.n)
@@ -303,6 +334,8 @@ def write_round(round):
     page.div.close()  # col-md-8
 
     page.div.close()  # row
+    page.li.close()  # list-group-item
+    page.ul.close()  # list-group
     # close and return
     page.div.close()  # panel-body
     page.div.close()  # panel
@@ -315,7 +348,7 @@ def write_round(round):
 # that for you.
 
 @wrap_html
-def write_hveto_page(rounds, plots):
+def write_hveto_page(rounds, plots, context='default'):
     """Write the Hveto results to HTML
 
     Parameters
@@ -332,6 +365,11 @@ def write_hveto_page(rounds, plots):
         the `list` of summary plots
     outdir : `str`, optional
         the output directory for the HTML
+    winners : `list` of `str`, optional
+        list of channels that won each round
+    context : `str`, optional
+        the bootstrap context class for this result, see the bootstrap
+        docs for more details
 
     Returns
     -------
@@ -340,9 +378,9 @@ def write_hveto_page(rounds, plots):
     """
     page = markup.page()
     page.add(write_summary(rounds, plots))
-    page.h2('Round details')
+    page.h2('Round details', id_='rounds')
     for r in rounds:
-        page.add(write_round(r))
+        page.add(write_round(r, context=context))
     return page
 
 
@@ -402,22 +440,5 @@ def write_about_page(configfile):
         the path of the HTML written for this analysis
     """
     # set up page
-    page = markup.page()
-
-    # command line
-    page.h2('On the command line')
-    page.p('This page was generated with the command line call shown below.')
-    commandline = gwhtml.get_command_line()
-    page.add(commandline)
-
-    # configuration file
-    page.h2('Configuration')
-    with open(configfile, 'r') as fobj:
-        inifile = fobj.read()
-    contents = gwhtml.render_code(inifile, 'ini')
-    page.add(contents)
-
-    # runtime environment
-    page.add(gwhtml.package_table())
-
+    page = gwhtml.about_this_page(configfile)
     return page

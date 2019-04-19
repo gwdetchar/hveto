@@ -55,7 +55,7 @@ from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
 from gwdetchar import cli
-from gwdetchar.io.html import (FancyPlot, cis_link)
+from gwdetchar.io.html import (OBSERVATORY_MAP, FancyPlot, cis_link)
 
 from hveto import (__version__, config, core, plot, html, utils)
 from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, get_column_label)
@@ -152,6 +152,7 @@ for d in [segdir, plotdir, trigdir, omegadir]:
 htmlv = {
     'title': '%s Hveto | %d-%d' % (ifo, start, end),
     'config': None,
+    'context': OBSERVATORY_MAP[ifo]['context'],
 }
 
 # get segments
@@ -840,7 +841,9 @@ if args.omega_scans:
 
 # -- write HTML and finish
 
-index = html.write_hveto_page(ifo, start, end, rounds, plots,  **htmlv)
+index = html.write_hveto_page(
+    ifo, start, end, rounds, plots,
+    winners=[r.winner.name for r in rounds], **htmlv)
 logger.debug("HTML written to %s" % index)
 logger.debug("Analysis completed in %d seconds" % (time.time() - jobstart))
 logger.info("-- Hveto complete --")
