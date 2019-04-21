@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 #
-# Hveto documentation build configuration file, created by
-# sphinx-quickstart on Wed Oct 28 15:22:25 2015.
-#
 # This file is execfile()d with the current directory set to its
 # containing dir.
 #
