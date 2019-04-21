@@ -3,7 +3,7 @@ Hierarchical Veto
 =================
 
 Hveto is a python implementation of the HierarchicalVeto algorithm. It is
-a package designed for for gravitational-wave detector characterisation and
+a package designed for gravitational-wave detector characterisation and
 data quality.
 
 The Hveto algorithm is fully described in `Smith et al. 2011`_
