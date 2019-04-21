@@ -343,6 +343,7 @@ def _finalize_plot(plot, ax, outfile, bbox_inches=None, close=True, **axargs):
     # format axes
     for key in axargs:
         getattr(ax, 'set_%s' % key)(axargs[key])
+    # format subtitle first
     if subtitle:
         pos = list(ax.title.get_position())
         pos[1] += 0.05
@@ -365,15 +366,14 @@ def _finalize_plot(plot, ax, outfile, bbox_inches=None, close=True, **axargs):
         plot.close()
 
 
-def significance_drop(outfile, old, new, show_channel_names=None,
-                      bbox_inches='tight', **kwargs):
+def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
     """Plot the signifiance drop for each channel
     """
     channels = sorted(old.keys())
     if show_channel_names is None:
         show_channel_names = len(channels) <= 50
 
-    plot = Plot(figsize=(18, 6))
+    plot = Plot(figsize=(20, 5))
     plot.subplots_adjust(left=.07, right=.93)
     ax = plot.gca()
     if show_channel_names:
@@ -452,7 +452,7 @@ def significance_drop(outfile, old, new, show_channel_names=None,
             tooltips[-1].set_gid('tooltip-%d' % i)
 
         f = BytesIO()
-        plot.savefig(f, bbox_inches=bbox_inches, format='svg')
+        plot.savefig(f, format='svg')
         tree, xmlid = etree.XMLID(f.getvalue())
         tree.set('onload', 'init(evt)')
         for i in range(len(tooltips)):
@@ -470,7 +470,7 @@ def significance_drop(outfile, old, new, show_channel_names=None,
         etree.ElementTree(tree).write(outfile)
         plot.close()
     else:
-        _finalize_plot(plot, ax, outfile, bbox_inches=bbox_inches, **kwargs)
+        _finalize_plot(plot, ax, outfile, **kwargs)
 
 
 def hveto_roc(outfile, rounds, figsize=[9, 6], constants=[1, 5, 10, 20],
