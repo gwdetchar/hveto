@@ -11,7 +11,10 @@
 
 # documentation products
 /docs/_build/
-/docs/api/
+/docs/_templates/
+/docs/_static/
+/docs/api/modules.rst
+/docs/api/hveto.*
 
 # test products
 /.cache/
