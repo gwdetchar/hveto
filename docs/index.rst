@@ -72,6 +72,7 @@ Package documentation
 
    command-line/index
    api/hveto.config
+   api/index
 
 =======
 Sitemap
