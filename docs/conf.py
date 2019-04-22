@@ -272,6 +272,7 @@ intersphinx_mapping = {
     'matplotlib': ('http://matplotlib.sourceforge.net/', None),
     'astropy': ('http://docs.astropy.org/en/stable/', None),
     'gwpy': ('http://gwpy.github.io/docs/stable/', None),
+    'gwdetchar': ('http://gwdetchar.readthedocs.io/en/stable', None),
 }
 
 # -- autosummary
