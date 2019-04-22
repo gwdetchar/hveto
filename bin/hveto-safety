@@ -1,0 +1,471 @@
+#!/usr/bin/env python
+# vim: nu:ai:ts=4:sw=4
+
+#
+#  Copyright (C) 2019 Joseph Areeda <joseph.areeda@ligo.org>
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+"""Main program to run safety studies."""
+
+from __future__ import (division, print_function)
+
+import collections
+import os
+import subprocess
+import time
+
+try:
+    import configparser
+except ImportError:  # python 2.x
+    import ConfigParser as configparser
+
+from astropy.table import vstack as vstack_tables
+from astropy.time import Time
+from numpy import unique
+
+from gwpy.segments import (Segment, SegmentList,
+                           DataQualityFlag, DataQualityDict)
+from gwpy.time import tconvert
+
+from gwdetchar import cli
+
+from hveto.core import (coinc_significance, find_all_coincidences,
+                        HvetoWinner, significance, find_coincidences,
+                        HvetoRound, veto)
+from hveto import (__version__, config, core, plot, html, utils)
+from hveto.triggers import (get_triggers, find_auxiliary_channels)
+from hveto.safety_html import (write_hveto_safety_page, write_safety_round)
+from hveto.safety_reader import safety_h5_read
+
+
+__author__ = 'joseph areeda <joseph.areeda@ligo.org>'
+__version__ = '0.1.0'
+__process_name__ = os.path.basename(__file__)
+
+__credits__ = 'Joshua Smith <joshua.smith@ligo.org>, ' \
+              'Duncan Macleod <duncan.macleod@ligo.org>, ' \
+              'Alexander Urban <alexander.urban@ligo.org>'
+
+# Global variables
+primary = dict()
+auxiliary = dict()
+
+
+def safety_calc(cp, logger, outdir, inifile,
+                ifo, start, end,  jobstart):
+    """
+    Calculate significance for each channel
+    :param cp: configuration parameters
+    :param logger: logging object
+
+    :param outdir: html, configs ...
+
+    :param ifo:
+    :param start:
+    :param end:
+    :param jobstart: start time for reporting
+    :return: stat [true if successful]
+    """
+
+    stat = False
+    # >= cutoff -> unsafe
+    safety_cutoff = cp.getfloat('safety', 'safety_cutoff')
+    # plot if significance >= min
+    safety_min = cp.getfloat('safety', 'safety_min')
+
+    logger.debug('Safety params: safety_cutoff: %.2f, safety_min: %d' %
+                 (safety_cutoff, safety_min))
+
+    analysis = ifo + ':INJECTION'
+
+    auxchannels = auxiliary.keys()
+
+    # labels for event table columns used by plotting routines
+    slabel = r"Signal-to-noise ratio (SNR)"
+    flabel = r"Frequency [Hz]"
+    auxslabel = slabel
+    auxflabel = flabel
+
+    # column numbers
+    tcol = 1
+    fcol = 2
+    scol = 3
+
+    auxtcol = tcol
+    auxfcol = fcol
+    auxscol = scol
+
+    # get what we need from the config parameters
+    petg = cp.get('primary', 'trigger-generator')
+    psnr = cp.getfloat('primary', 'snr-threshold')
+    pfreq = cp.getfloats('primary', 'frequency-range')
+    channel = cp.get('primary', 'channel')
+
+    snrs = cp.getfloats('hveto', 'snr-thresholds')
+    minsnr = min(snrs)
+    windows = cp.getfloats('hveto', 'time-windows')
+
+    _unsafe = cp.get('safety', 'unsafe-channels')
+    unsafe = set(_unsafe.strip('\n').split('\n'))
+
+    safety_cutoff = cp.get('primary', 'snr-threshold')
+
+    live_time = end - start
+    chan_num = 0
+
+    rec = vstack_tables(list(primary.values()), list(auxiliary.values()))
+    coincs = find_all_coincidences(rec, channel, snrs, windows)
+
+    chan_stats = []
+    rounds = []
+    duration = end - start
+
+    plotdir = os.path.join(outdir, 'plots')
+
+    sigs = dict((c, 0) for c in auxiliary)
+    for p, cdict in coincs.items():
+        dt, snr = p
+        for chan in cdict:
+            mu = (len(primary) * (auxiliary[chan]['snr'] >= snr).sum() *
+                  dt / live_time)
+            # NOTE: coincs[p][chan] counts the number of primary channel
+            # triggers coincident with a 'chan' trigger
+            try:
+                allaux = auxiliary[chan][auxiliary[chan][scol] >= snr]
+                coinc1 = allaux[find_coincidences(allaux['time'],
+                                                  primary['time'], dt=dt)]
+
+                trig_cnt = len(coinc1)
+                sig = significance(trig_cnt, mu)
+            except KeyError:
+                sig == 0
+
+            if trig_cnt > 0:
+                # save vals for every channel. here everyone is a winner
+                chan_stat = HvetoWinner(name=chan)
+
+                chan_stat.snr = snr
+                chan_stat.window = dt
+                chan_stat.significance = sig
+                chan_stat.mu = mu
+                chan_stat.ncoinc = trig_cnt
+
+                chan_stats.append(chan_stat)
+
+    # sort by significance
+    chan_stats = sorted(chan_stats, key=lambda x: x.significance, reverse=True)
+
+    # ascii results
+    sum_file = outdir + "/safety_summary.csv"
+
+    with open(sum_file, 'w') as f:
+        # CSV column name
+        vals = 'chan, significance, N-coinc, N-expected, '
+        vals += 'N-aux, N-coinc/N-expected, SNR, dT '
+        print(vals, file=f)
+
+        for cs in chan_stats:
+            name = cs.name
+            allaux = auxiliary[name][auxiliary[name][scol] >= cs.snr]
+            coincs = allaux[find_coincidences(allaux['time'],
+                                              primary['time'], dt=dt)]
+
+            # recalc because of bug(?) in find_all_coincidences
+            try:
+                trig_cnt = len(coincs)
+                sig = significance(trig_cnt, cs.mu)
+            except KeyError:
+                sig == 0
+
+            if sig > safety_min:
+                cs.ncoinc = trig_cnt
+                cs.significance = sig
+                chan_num += 1
+
+                dups = [item for item, count in collections.Counter(
+                        coincs['time']).items() if count > 1]
+
+                dup_str = ''
+                if len(dups) > 0:
+                    dup_str = ','.join(map(str, coincs['gpstime']))
+
+                vals = '%s,%.3f,%d,%.3f,%.0f,%.4f,%.1f,%.2f,%s' %\
+                       (name, cs.significance, cs.ncoinc, cs.mu,
+                        len(allaux), cs.ncoinc / cs.mu, cs.snr,
+                        cs.window, dup_str)
+                print(vals, file=f)
+
+                # process as if it were a round winner
+                if cs.significance > safety_min:
+                    round = HvetoRound(chan_num, primary)
+                    round.segments = analysis.active
+                    # work out the vetoes for this round
+
+                    cs.events = allaux
+                    round.vetoes = cs.get_segments(allaux['time'])
+                    flag = DataQualityFlag('%s:HVT-CHAN_%d:1' % (ifo, round.n),
+                                           active=round.vetoes,
+                                           known=round.segments,
+                                           description=f'winner={cs.name}, '
+                                           f'window={cs.window}, snr={cs.snr}')
+                    before = primary
+                    beforeaux = auxiliary[cs.name]
+
+                    # apply vetoes to primary
+                    primary_vetoed, vetoed = veto(primary, round.vetoes)
+
+                    aux_vetoed, avetoed = veto(beforeaux, round.vetoes)
+
+                    round.winner = cs
+                    round.efficiency = (len(vetoed), len(primary_vetoed) +
+                                        len(vetoed))
+                    round.use_percentage = (len(coincs), len(cs.events))
+                    round.cum_efficiency = round.efficiency
+                    round.cum_deadtime = round.deadtime
+
+                    logger.debug('%4d. %s ' % (round.n, cs.name))
+                    # log results
+                    logger.info("""Results for round %d
+winner :          %s
+significance :    %s
+mu :              %s
+snr :             %s
+dt :              %s
+use_percentage :  %s
+efficiency :      %s
+deadtime :        %s
+cum. efficiency : %s
+cum. deadtime :   %s""" % (
+                        round.n, round.winner.name, round.winner.significance,
+                        round.winner.mu, round.winner.snr, round.winner.window,
+                        round.use_percentage, round.efficiency, round.deadtime,
+                        round.cum_efficiency, round.cum_deadtime))
+
+                    pngname = os.path.join(plotdir, '%s-HVETO_%%s_SAFETY_'
+                                                    'ROUND_%03d-%d-%d.png' %
+                                           (ifo, round.n, start, duration))
+                    if plot.rcParams['text.usetex']:
+                        wname = round.winner.name.replace('_', r'\_')
+                    else:
+                        wname = round.winner.name
+                    beforel = 'Before\n[%d]' % len(before)
+                    afterl = 'After\n[%d]' % len(primary_vetoed)
+                    vetoedl = 'Vetoed\n[%d]' % len(vetoed)
+                    beforeauxl = 'All\n[%d]' % len(beforeaux)
+                    usedl = 'Used\n[%d]' % len(cs.events)
+                    coincl = 'Coinc.\n[%d]' % len(coincs)
+                    title = '%s Hveto round %d, significance %.1f' % (
+                        ifo, round.n, round.winner.significance)
+                    ptitle = '%s: primary impact' % title
+                    atitle = '%s: auxiliary use' % title
+                    subtitle = '[%d-%d] | winner: %s' % (start, end, wname)
+
+                    # before/after histogram
+                    png = pngname % 'HISTOGRAM'
+                    if not os.path.isfile(png):
+                        plot.before_after_histogram(
+                            png, before[scol], primary[scol],
+                            label1=beforel, label2=afterl, xlabel=slabel,
+                            title=ptitle, subtitle=subtitle)
+                        logger.debug("Figure written to %s" % png)
+                    round.plots.append(png)
+
+                    # snr versus time
+                    png = pngname % 'SNR_TIME'
+                    if not os.path.isfile(png):
+                        plot.veto_scatter(png, before, vetoed, x='time',
+                                          y=scol, label1=beforel,
+                                          label2=vetoedl, epoch=start,
+                                          xlim=[start, end],
+                                          ylabel=slabel, title=ptitle,
+                                          subtitle=subtitle,
+                                          legend_title="Primary:")
+                        logger.debug("Figure written to %s" % png)
+                    round.plots.append(png)
+
+                    # snr versus frequency
+                    png = pngname % 'SNR_%s' % fcol.upper()
+                    if not os.path.isfile(png):
+                        plot.veto_scatter(png, before, vetoed, x=fcol, y=scol,
+                                          label1=beforel, label2=vetoedl,
+                                          xlabel=flabel, ylabel=slabel,
+                                          xlim=pfreq, title=ptitle,
+                                          subtitle=subtitle,
+                                          legend_title="Primary:")
+                        logger.debug("Figure written to %s" % png)
+                    round.plots.append(png)
+
+                    # frequency versus time coloured by SNR
+                    png = pngname % '%s_TIME' % fcol.upper()
+                    if not os.path.isfile(png):
+                        plot.veto_scatter(
+                            png, before, vetoed, x='time', y=fcol, color=scol,
+                            label1=None, label2=None, ylabel=flabel,
+                            clabel=slabel, clim=[3, 100], cmap='YlGnBu',
+                            epoch=start, xlim=[start, end], ylim=pfreq,
+                            title=ptitle, subtitle=subtitle)
+                        logger.debug("Figure written to %s" % png)
+                    round.plots.append(png)
+
+                    # aux used versus frequency
+                    png = pngname % 'USED_SNR_TIME'
+                    if not os.path.isfile(png):
+                        plot.veto_scatter(png, cs.events, vetoed, x='time',
+                                          y=[auxscol, scol], label1=usedl,
+                                          label2=vetoedl, ylabel=slabel,
+                                          epoch=start, xlim=[start, end],
+                                          title=atitle, subtitle=subtitle)
+                        logger.debug("Figure written to %s" % png)
+                    round.plots.append(png)
+
+                    # snr versus time
+                    png = pngname % 'AUX_SNR_TIME'
+                    if not os.path.isfile(png):
+                        plot.veto_scatter(
+                                png, beforeaux, (cs.events, coincs), x='time',
+                                y=auxscol, label1=beforeauxl,
+                                label2=(usedl, coincl), epoch=start,
+                                xlim=[start, end], ylabel=auxslabel,
+                                title=atitle, subtitle=subtitle)
+                        logger.debug("Figure written to %s" % png)
+                    round.plots.append(png)
+
+                    # snr versus frequency
+                    png = pngname % 'AUX_SNR_FREQUENCY'
+                    if not os.path.isfile(png):
+                        plot.veto_scatter(
+                                png, beforeaux, (cs.events, coincs), x=auxfcol,
+                                y=auxscol, label1=beforeauxl,
+                                label2=(usedl, coincl), xlabel=auxflabel,
+                                ylabel=auxslabel, title=atitle,
+                                subtitle=subtitle, legend_title="Aux:")
+                        logger.debug("Figure written to %s" % png)
+                    round.plots.append(png)
+
+                    # frequency versus time coloured by SNR
+                    png = pngname % 'AUX_FREQUENCY_TIME'
+                    if not os.path.isfile(png):
+                        plot.veto_scatter(
+                                png, beforeaux, (cs.events, coincs), x='time',
+                                y=auxfcol, color=auxscol, label1=None,
+                                label2=[None, None], ylabel=auxflabel,
+                                clabel=auxslabel, clim=[3, 100], cmap='YlGnBu',
+                                epoch=start,
+                                xlim=[start, end], title=atitle,
+                                subtitle=subtitle)
+                        logger.debug("Figure written to %s" % png)
+                    round.plots.append(png)
+
+                    round.unsafe = round.winner.name in unsafe
+
+                    rounds.append(round)
+
+    # -- write HTML
+    # prepare html variables
+    startUTC = tconvert(start)
+    endUTC = tconvert(end)
+    timeStr = '%s - %s'.format(str(startUTC), str(endUTC))
+
+    title_txt = '%s Hveto Safety  %d-%d (%s)' % (ifo, start, end, timeStr)
+
+    htmlv = {
+        'title': title_txt,
+        'config': None,
+    }
+    if isinstance(inifile, list):
+        htmlv['config'] = inifile[0]
+    else:
+        htmlv['config'] = inifile
+
+    index = write_hveto_safety_page(ifo, start, end, rounds,
+                                    safety_cutoff, **htmlv)
+    logger.debug("HTML written to %s" % index)
+
+    htmlv['write_about_file'] = False
+    for r in rounds:
+        if r.winner.significance >= safety_min:
+            htmlv['base'] = os.path.curdir
+            htmlv['html_file'] = 'hveto-round-%04d-summary.html' % r.n
+            write_safety_round(ifo, start, end, r, safety_cutoff, **htmlv)
+            logger.info('Round %d html written' % r.n)
+
+    run_time = time.time() - jobstart
+    logger.info('Safety runtime  %.1f sec' % run_time)
+
+    return stat
+
+
+def abs_path(p):
+    return os.path.abspath(os.path.expanduser(p))
+
+
+if __name__ == "__main__":
+    IFO = os.getenv('IFO')
+
+    logger = cli.logger(__process_name__)
+    start_time = time.time()
+    parser = cli.create_parser(description=__doc__, version=__version__)
+    cli.add_ifo_option(parser, required=IFO is None, ifo=IFO)
+
+    parser.add_argument('-v', '--verbose', action='count', default=1,
+                        help='increase verbose output')
+    parser.add_argument('-q', '--quiet', default=False, action='store_true',
+                        help='show only fatal errors')
+
+    cin = parser.add_argument_group('Control options')
+
+    cin.add_argument('-f', '--config-file', action='append', default=[],
+                     type=abs_path,
+                     help='path to hveto configuration file(s), can be given '
+                          'multiple times (files read in order)')
+    cli.add_gps_start_stop_arguments(cin)
+
+    pin = parser.add_argument_group('Input options')
+    parser.add_argument('-S', '--segment', default=None, type=abs_path,
+                        help='path to segment covering analysis in xml file')
+    parser.add_argument('-p', '--primary', default=None, type=abs_path,
+                        help='path to primary channel in an hdf5 file')
+    parser.add_argument('-a', '--auxiliary', default=None, type=abs_path,
+                        help='path to hdf5 file containing all '
+                             'auxiliary channel triggers. ')
+
+    pout = parser.add_argument_group('Output options')
+    pout.add_argument('-o', '--output-directory',
+                      default=os.path.abspath(os.curdir),
+                      help='path of output directory, default: %(default)s')
+
+    args = parser.parse_args()
+
+    # read configuration
+    cp = config.HvetoConfigParser(ifo=args.ifo)
+    cp.read(args.config_file)
+    logger.info("Parsed configuration file(s)")
+
+    primary = safety_h5_read(args.primary)
+    auxiliary = safety_h5_read(args.auxiliary)
+
+    outdir = args.output_directory
+    if os.path.exists(outdir):
+        if not os.path.isdir(outdir):
+            logger.error('Output directory specified {:s} exists but is not'
+                         ' a directory.'.format(os.path.abspath(outdir)))
+            raise TypeError('Not a directory')
+    else:
+        os.makedirs(outdir)
+
+    safety_calc(cp, logger, outdir, args.config_file, args.ifo,
+                args.gpsstart, args.gpsend, start_time)
+
