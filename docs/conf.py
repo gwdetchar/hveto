@@ -273,6 +273,7 @@ intersphinx_mapping = {
     'astropy': ('http://docs.astropy.org/en/stable/', None),
     'gwpy': ('http://gwpy.github.io/docs/stable/', None),
     'gwdetchar': ('http://gwdetchar.readthedocs.io/en/stable', None),
+    'gwsumm': ('http://gwsumm.readthedocs.io/en/stable', None),
 }
 
 # -- autosummary
