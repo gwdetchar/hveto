@@ -61,24 +61,13 @@ License
 
 Hveto is distributed under the `GNU General Public License`_.
 
-=====================
-Package documentation
-=====================
-
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
    command-line/index
    api/hveto.config
    api/index
-
-=======
-Sitemap
-=======
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
 .. _PEP 0008: https://www.python.org/dev/peps/pep-0008/
 .. _pep8: https://pypi.python.org/pypi/pep8
