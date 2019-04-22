@@ -15,7 +15,7 @@ for transient gravitational-wave signals, and was used, for example, during the
 detection of the binary black hole signal
 `GW150914 <https://www.ligo.caltech.edu/detection>`_.
 
-For full details please refer to `Smith et al. 2011`_
+For full details about the algorithm, please refer to `Smith et al. 2011`_
 (Classical and Quantum Gravity).
 
 To get started, simply import the core module:
@@ -39,6 +39,11 @@ but can also be installed with `pip`_:
 .. code:: bash
 
    python -m pip install hveto
+
+Note, users with `LIGO.ORG` credentials have access to a software
+container with a regularly-updated build of Hveto. For more
+information please refer to the
+`LSCSoft Conda <https://docs.ligo.org/lscsoft/conda/>`_ documentation.
 
 ------------
 Contributing
