@@ -6,8 +6,6 @@ Hierarchical Veto
 
 |DOI| |License| |Supported Python versions|
 
-|Build Status| |Coverage Status| |Documentation Status|
-
 Hveto is a package designed for gravitational-wave detector characterisation
 and data quality. The algorithm identifies statistically significant
 correlations between transient noise events (triggers) in instrumental or
@@ -100,9 +98,3 @@ Sitemap
    :target: https://choosealicense.com/licenses/gpl-3.0/
 .. |Supported Python versions| image:: https://img.shields.io/pypi/pyversions/hveto.svg
    :target: https://pypi.org/project/hveto/
-.. |Build Status| image:: https://travis-ci.org/gwdetchar/hveto.svg?branch=master
-   :target: https://travis-ci.org/gwdetchar/hveto
-.. |Coverage Status| image:: https://codecov.io/gh/gwdetchar/hveto/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/gwdetchar/hveto
-.. |Documentation Status| image:: https://readthedocs.org/projects/hveto/badge/?version=stable
-   :target: https://hveto.readthedocs.io/en/stable/?badge=stable
