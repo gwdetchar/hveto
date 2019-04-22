@@ -1,24 +1,27 @@
-HVeto is a python implementation of the HierarchicalVeto algorithm. It is
-a package designed for for gravitational-wave detector characterisation and
+=================
+Hierarchical Veto
+=================
+
+Hveto is a python implementation of the HierarchicalVeto algorithm. It is
+a package designed for gravitational-wave detector characterisation and
 data quality.
 
-|PyPI version| |DOI| |License| |Supported Python versions|
+The Hveto algorithm is fully described in `Smith et al. 2011`_
+(Classical and Quantum Gravity).
 
-|Build Status| |Coverage Status|
+|PyPI version| |Conda version|
 
-------
-Method
-------
+|DOI| |License| |Supported Python versions|
 
-The HVeto algorithm is fully described in `Smith et al. 2011`_
-(Classical and Quantum Gravity). `Documentation`_ for running HVeto
-is also available, but requires LIGO.ORG credentials.
+|Build Status| |Coverage Status| |Documentation Status|
+
+https://hveto.readthedocs.io
 
 ------------
 Installation
 ------------
 
-HVeto is best installed with `conda`_:
+Hveto is best installed with `conda`_:
 
 .. code:: bash
 
@@ -47,10 +50,11 @@ proposing additions/changes.
 .. _conda: https://conda.io
 .. _pip: https://pip.pypa.io/en/stable/
 .. _Smith et al. 2011: //dx.doi.org/10.1088/0264-9381/28/23/235005
-.. _Documentation: https://ldas-jobs.ligo.caltech.edu/~duncan.macleod/hveto/latest/
 
 .. |PyPI version| image:: https://badge.fury.io/py/hveto.svg
    :target: http://badge.fury.io/py/hveto
+.. |Conda version| image:: https://img.shields.io/conda/vn/conda-forge/hveto.svg
+   :target: https://anaconda.org/conda-forge/hveto/
 .. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/2584615.svg
    :target: https://doi.org/10.5281/zenodo.2584615
 .. |License| image:: https://img.shields.io/pypi/l/hveto.svg
@@ -61,3 +65,5 @@ proposing additions/changes.
    :target: https://travis-ci.org/gwdetchar/hveto
 .. |Coverage Status| image:: https://codecov.io/gh/gwdetchar/hveto/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/gwdetchar/hveto
+.. |Documentation Status| image:: https://readthedocs.org/projects/hveto/badge/?version=stable
+   :target: https://hveto.readthedocs.io/en/stable/?badge=stable

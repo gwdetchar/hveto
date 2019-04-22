@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with hveto.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Create a (temporary) cache of event triggers for analysis by `hveto` later
+"""Create a (temporary) cache of event triggers for analysis by `hveto`
 
 This method will apply the minimal SNR thresholds and any frequency cuts
 as given in the configuration files

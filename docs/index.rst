@@ -1,60 +1,94 @@
-.. Hveto documentation master file, created by
-   sphinx-quickstart on Thu Apr 21 14:05:08 2016.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+=================
+Hierarchical Veto
+=================
 
-Welcome to Hveto's documentation!
-=================================
+|PyPI version| |Conda version|
 
-The HierarchichalVeto is an algorithm to identify statistically-significant correlations between transient noise events (triggers) in instrumental or environment data channels and those in the main calibrated gravitational-wave strain output for a ground-based laser interferometer gravitational-wave detector.
-It is a key tool in reducing the noise background in searches for transient gravitational-wave signals, and was used during the detection of the binary black hole signal `GW150914 <https://www.ligo.caltech.edu/detection>`_.
+|DOI| |License| |Supported Python versions|
 
-For full details see `Smith et al. (Classical and Quantum Gravity, 2011) <https://iopscience.iop.org/article/10.1088/0264-9381/28/23/235005>`_
+Hveto is a package designed for gravitational-wave detector characterisation
+and data quality. The algorithm identifies statistically significant
+correlations between transient noise events (triggers) in instrumental or
+environmental data channels, and those in the calibrated gravitational-wave
+strain output. Hveto is a key tool in reducing the noise background in searches
+for transient gravitational-wave signals, and was used, for example, during the
+detection of the binary black hole signal
+`GW150914 <https://www.ligo.caltech.edu/detection>`_.
 
-Installing Hveto
-----------------
+For full details about the algorithm, please refer to `Smith et al. 2011`_
+(Classical and Quantum Gravity).
 
-The easiest method to install hveto is using `pip <https://pip.pypa.io/en/stable/>`_ directly from the `GitHub repository <https://github.com/gwdetchar/hveto.git>`_:
+To get started, simply import the core module:
 
-.. code-block:: bash
+.. code:: python
 
-   $ pip install git+https://github.com/gwdetchar/hveto.git
+   import hveto
 
-How to run Hveto
-----------------
+------------
+Installation
+------------
 
-The main product of this package is the command-line executable `hveto`, which runs an end-to-end search for statistical coincidences, and produces a list of viable data-quality flags that can be used as vetoes in a search, as well as an HTML summary.
+Hveto is best installed with `conda`_:
 
-To run an analysis:
+.. code:: bash
 
-.. code-block:: bash
+   conda install -c conda-forge hveto
 
-   $ hveto <gpsstart> <gpsend> --config-file ./my-config-file.ini
+but can also be installed with `pip`_:
 
-where ``<gpsstart>`` and ``<gpsend>`` are the start and stop GPS times of the analysis period, and ``./my-config-file.ini`` is the path of your configuration file. Strictly speaking the configuration file is optional, but is highly recommend if you want to have any control over your analysis.
+.. code:: bash
 
-For a full list of command-line argument and options, run
+   python -m pip install hveto
 
-.. code-block:: bash
+Note, users with `LIGO.ORG` credentials have access to a software
+container with a regularly-updated build of Hveto. For more
+information please refer to the
+`LSCSoft Conda <https://docs.ligo.org/lscsoft/conda/>`_ documentation.
 
-   $ hveto --help
+------------
+Contributing
+------------
 
-For more details see :ref:`command-line`.
+All code should follow the Python Style Guide outlined in `PEP 0008`_;
+users can use the `pep8`_ package to check their code for style issues
+before submitting.
 
-Package documentation
----------------------
+See `the contributions guide`_ for the recommended procedure for
+proposing additions/changes.
 
-Please consult these pages for more details on using Hveto:
+The Hveto project is hosted on GitHub:
+
+* Issue tickets: https://github.com/gwdetchar/hveto/issues
+* Source code: https://github.com/gwdetchar/hveto
+
+License
+-------
+
+Hveto is distributed under the `GNU General Public License`_.
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
    command-line/index
    api/hveto.config
+   api/index
 
-Indices and tables
-==================
+.. _PEP 0008: https://www.python.org/dev/peps/pep-0008/
+.. _pep8: https://pypi.python.org/pypi/pep8
+.. _the contributions guide: https://github.com/gwdetchar/hveto/blob/master/CONTRIBUTING.md
+.. _conda: https://conda.io
+.. _pip: https://pip.pypa.io/en/stable/
+.. _Smith et al. 2011: //dx.doi.org/10.1088/0264-9381/28/23/235005
+.. _GNU General Public License: https://github.com/gwdetchar/hveto/blob/master/LICENSE
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. |PyPI version| image:: https://badge.fury.io/py/hveto.svg
+   :target: http://badge.fury.io/py/hveto
+.. |Conda version| image:: https://img.shields.io/conda/vn/conda-forge/hveto.svg
+   :target: https://anaconda.org/conda-forge/hveto/
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/2584615.svg
+   :target: https://doi.org/10.5281/zenodo.2584615
+.. |License| image:: https://img.shields.io/pypi/l/hveto.svg
+   :target: https://choosealicense.com/licenses/gpl-3.0/
+.. |Supported Python versions| image:: https://img.shields.io/pypi/pyversions/hveto.svg
+   :target: https://pypi.org/project/hveto/
