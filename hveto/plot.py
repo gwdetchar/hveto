@@ -343,6 +343,7 @@ def _finalize_plot(plot, ax, outfile, bbox_inches=None, close=True, **axargs):
     # format axes
     for key in axargs:
         getattr(ax, 'set_%s' % key)(axargs[key])
+    # format subtitle first
     if subtitle:
         pos = list(ax.title.get_position())
         pos[1] += 0.05
@@ -372,7 +373,7 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
     if show_channel_names is None:
         show_channel_names = len(channels) <= 50
 
-    plot = Plot(figsize=(18, 6))
+    plot = Plot(figsize=(20, 5))
     plot.subplots_adjust(left=.07, right=.93)
     ax = plot.gca()
     if show_channel_names:

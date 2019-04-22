@@ -469,8 +469,9 @@ while True:
     #   drop
     if round.n > 1:
         png = (pngname % 'SIG_DROP').replace('.png', '.svg')
-        plot.significance_drop(png, oldsignificances, newsignificances,
-                               title=title, subtitle=subtitle)
+        plot.significance_drop(
+            png, oldsignificances, newsignificances,
+            title=' | '.join([title, subtitle]), bbox_inches='tight')
         logger.debug("Figure written to %s" % png)
         png = FancyPlot(png, caption=ROUND_CAPTION['SIG_DROP'])
         rounds[-1].plots.append(png)
@@ -594,14 +595,14 @@ cum. deadtime :   %s\n\n""" % (
         wname = round.winner.name
     beforel = 'Before\n[%d]' % len(before)
     afterl = 'After\n[%d]' % len(primary)
-    vetoedl = 'Vetoed\n[%d]' % len(vetoed)
+    vetoedl = 'Vetoed\n(primary)\n[%d]' % len(vetoed)
     beforeauxl = 'All\n[%d]' % len(beforeaux)
-    usedl = 'Used\n[%d]' % len(winner.events)
+    usedl = 'Used\n(aux)\n[%d]' % len(winner.events)
     coincl = 'Coinc.\n[%d]' % len(coincs)
     title = '%s Hveto round %d' % (ifo, round.n)
     ptitle = '%s: primary impact' % title
     atitle = '%s: auxiliary use' % title
-    subtitle = '[%d-%d] | winner: %s' % (start, end, wname)
+    subtitle = 'winner: %s [%d-%d]' % (wname, start, end)
 
     # before/after histogram
     png = pngname % 'HISTOGRAM'
