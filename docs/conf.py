@@ -57,7 +57,7 @@ author = 'Josh Smith, Duncan Macleod, Alex Urban'
 # built documents.
 #
 # The short X.Y version.
-version = '{0}.{1}'.format(*hveto_version.split('.'))
+version = hveto_version
 # The full version, including alpha/beta/rc tags.
 release = hveto_version
 
