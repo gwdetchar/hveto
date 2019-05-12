@@ -20,8 +20,6 @@
 """Run the HierarchichalVeto (hveto) algorithm over some data
 """
 
-from __future__ import (division, print_function)
-
 import time
 jobstart = time.time()
 
@@ -39,11 +37,7 @@ from getpass import getuser
 from distutils.spawn import find_executable
 from pathlib import Path
 
-try:
-    import configparser
-except ImportError:  # python 2.x
-    import ConfigParser as configparser
-
+import configparser
 import numpy
 
 from matplotlib import use
