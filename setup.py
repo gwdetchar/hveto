@@ -25,8 +25,9 @@ from setuptools import setup
 
 import versioneer
 
-if sys.version < '3.4':
-    raise ImportError("Python versions older than 3.4 are not supported.")
+# enforce python version
+if sys.version < '3.5':
+    raise ImportError("Python versions older than 3.5 are not supported.")
 
 # versioneer
 version = versioneer.get_version()
