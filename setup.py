@@ -20,6 +20,7 @@
 """Setup the Hveto package
 """
 
+import sys
 from setuptools import setup
 
 import versioneer
