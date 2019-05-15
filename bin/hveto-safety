@@ -21,6 +21,8 @@
 """Main program to run safety studies."""
 
 from __future__ import (division, print_function)
+import matplotlib
+matplotlib.use('Agg')
 
 import collections
 import os
@@ -48,7 +50,11 @@ from hveto.core import (coinc_significance, find_all_coincidences,
 from hveto import (__version__, config, core, plot, html, utils)
 from hveto.triggers import (get_triggers, find_auxiliary_channels)
 from hveto.safety_html import (write_hveto_safety_page, write_safety_round)
+
+
 from hveto.safety_reader import safety_h5_read
+from gwdetchar.io.html import (OBSERVATORY_MAP, FancyPlot, cis_link)
+from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, get_column_label)
 
 
 __author__ = 'joseph areeda <joseph.areeda@ligo.org>'
@@ -86,8 +92,8 @@ def safety_calc(cp, logger, outdir, inifile,
     # plot if significance >= min
     safety_min = cp.getfloat('safety', 'safety_min')
 
-    logger.debug('Safety params: safety_cutoff: %.2f, safety_min: %d' %
-                 (safety_cutoff, safety_min))
+    logger.debug('Safety params: safety_cutoff: {:.2f}, safety_min: {:.2f}'.
+                 format(safety_cutoff, safety_min))
 
     analysis = ifo + ':INJECTION'
 
@@ -99,10 +105,10 @@ def safety_calc(cp, logger, outdir, inifile,
     auxslabel = slabel
     auxflabel = flabel
 
-    # column numbers
-    tcol = 1
-    fcol = 2
-    scol = 3
+    # column names
+    tcol = 'time'
+    fcol = 'frequency'
+    scol = 'snr'
 
     auxtcol = tcol
     auxfcol = fcol
@@ -119,39 +125,64 @@ def safety_calc(cp, logger, outdir, inifile,
     windows = cp.getfloats('hveto', 'time-windows')
 
     _unsafe = cp.get('safety', 'unsafe-channels')
+    _unsafe = _unsafe.replace('-', '_')
     unsafe = set(_unsafe.strip('\n').split('\n'))
 
-    safety_cutoff = cp.get('primary', 'snr-threshold')
+    safety_cutoff = cp.getfloat('primary', 'snr-threshold')
+    safety_max_rounds = cp.getfloat('safety', 'safety_max_rounds')
+    live_time = float(end - start)
 
-    live_time = end - start
     chan_num = 0
 
-    rec = vstack_tables(list(primary.values()), list(auxiliary.values()))
+    # Convert dictionaries of event tables to 1 table
+    # NB: channe name is one column
+    pri_list = list(primary.values())
+    aux_list = list(auxiliary.values())
+    rec = vstack_tables(pri_list+aux_list)
     coincs = find_all_coincidences(rec, channel, snrs, windows)
 
     chan_stats = []
     rounds = []
     duration = end - start
+    aux_stack = vstack_tables(aux_list)
+    for k in primary.keys():    # there's only 1 but
+        prim_as_tbl = primary[k]
 
-    plotdir = os.path.join(outdir, 'plots')
+    qcdir = os.path.join(outdir, 'qcplots')
+    os.makedirs(qcdir, exist_ok=True)
+
+    tlim = [min(prim_as_tbl['time']), max(prim_as_tbl['time'])]
+    prim_qcplot = plot_table(prim_as_tbl, k, '.', tlim)
+
+    if args.qcplot:
+        for k in auxiliary.keys():
+            plot_table(auxiliary[k], k, qcdir, tlim)
+
+    plotdir = os.path.join('.', 'plots') # results
+    os.makedirs(plotdir, exist_ok=True)
+
+    coincdir = os.path.join(outdir, 'coinc') # any coincident
+    os.makedirs(coincdir, exist_ok=True)
 
     sigs = dict((c, 0) for c in auxiliary)
     for p, cdict in coincs.items():
         dt, snr = p
         for chan in cdict:
-            mu = (len(primary) * (auxiliary[chan]['snr'] >= snr).sum() *
+            mu = (len(prim_as_tbl) * (auxiliary[chan]['snr'] >= snr).sum() *
                   dt / live_time)
             # NOTE: coincs[p][chan] counts the number of primary channel
             # triggers coincident with a 'chan' trigger
             try:
-                allaux = auxiliary[chan][auxiliary[chan][scol] >= snr]
+                this_chan = aux_stack[aux_stack['channel']==chan]
+                allaux = this_chan[this_chan['snr'] >= snr]
                 coinc1 = allaux[find_coincidences(allaux['time'],
-                                                  primary['time'], dt=dt)]
+                                                  prim_as_tbl['time'], dt=dt)]
 
                 trig_cnt = len(coinc1)
                 sig = significance(trig_cnt, mu)
             except KeyError:
-                sig == 0
+                sig = 0
+                trig_cnt = 0
 
             if trig_cnt > 0:
                 # save vals for every channel. here everyone is a winner
@@ -177,41 +208,45 @@ def safety_calc(cp, logger, outdir, inifile,
         vals += 'N-aux, N-coinc/N-expected, SNR, dT '
         print(vals, file=f)
 
+        old_names = set()
         for cs in chan_stats:
             name = cs.name
-            allaux = auxiliary[name][auxiliary[name][scol] >= cs.snr]
-            coincs = allaux[find_coincidences(allaux['time'],
-                                              primary['time'], dt=dt)]
+            if not name in old_names:
+                # may have duplicate names with different time windows, snr
+                # we are sorted by significanceso the one we want comes first
+                old_names.add(name)
+                allaux = auxiliary[name][auxiliary[name]['snr'] >= cs.snr]
+                coincs = allaux[find_coincidences(allaux['time'],
+                                                  prim_as_tbl['time'], dt=dt)]
 
-            # recalc because of bug(?) in find_all_coincidences
-            try:
-                trig_cnt = len(coincs)
-                sig = significance(trig_cnt, cs.mu)
-            except KeyError:
-                sig == 0
+                # recalc because of bug(?) in find_all_coincidences
+                try:
+                    trig_cnt = len(coincs)
+                    sig = significance(trig_cnt, cs.mu)
+                except KeyError:
+                    sig == 0
 
-            if sig > safety_min:
-                cs.ncoinc = trig_cnt
-                cs.significance = sig
-                chan_num += 1
+                if sig > safety_min and chan_num <= safety_max_rounds :
+                    cs.ncoinc = trig_cnt
+                    cs.significance = sig
+                    chan_num += 1
 
-                dups = [item for item, count in collections.Counter(
-                        coincs['time']).items() if count > 1]
+                    dups = [item for item, count in collections.Counter(
+                            coincs['time']).items() if count > 1]
 
-                dup_str = ''
-                if len(dups) > 0:
-                    dup_str = ','.join(map(str, coincs['gpstime']))
+                    dup_str = ''
+                    if len(dups) > 0:
+                        dup_str = ','.join(map(str, coincs['gpstime']))
 
-                vals = '%s,%.3f,%d,%.3f,%.0f,%.4f,%.1f,%.2f,%s' %\
-                       (name, cs.significance, cs.ncoinc, cs.mu,
-                        len(allaux), cs.ncoinc / cs.mu, cs.snr,
-                        cs.window, dup_str)
-                print(vals, file=f)
+                    vals = '%s,%.3f,%d,%.3f,%.0f,%.4f,%.1f,%.2f,%s' %\
+                           (name, cs.significance, cs.ncoinc, cs.mu,
+                            len(allaux), cs.ncoinc / cs.mu, cs.snr,
+                            cs.window, dup_str)
+                    print(vals, file=f)
 
-                # process as if it were a round winner
-                if cs.significance > safety_min:
-                    round = HvetoRound(chan_num, primary)
-                    round.segments = analysis.active
+                    # process as if it were a round winner
+                    round = HvetoRound(chan_num, prim_as_tbl)
+                    round.segments = analysis_seg.active
                     # work out the vetoes for this round
 
                     cs.events = allaux
@@ -221,11 +256,11 @@ def safety_calc(cp, logger, outdir, inifile,
                                            known=round.segments,
                                            description=f'winner={cs.name}, '
                                            f'window={cs.window}, snr={cs.snr}')
-                    before = primary
+                    before = prim_as_tbl
                     beforeaux = auxiliary[cs.name]
 
-                    # apply vetoes to primary
-                    primary_vetoed, vetoed = veto(primary, round.vetoes)
+                    # we don't apply vetoes to primary
+                    primary_vetoed, vetoed = veto(prim_as_tbl, round.vetoes)
 
                     aux_vetoed, avetoed = veto(beforeaux, round.vetoes)
 
@@ -239,16 +274,17 @@ def safety_calc(cp, logger, outdir, inifile,
                     logger.debug('%4d. %s ' % (round.n, cs.name))
                     # log results
                     logger.info("""Results for round %d
-winner :          %s
-significance :    %s
-mu :              %s
-snr :             %s
-dt :              %s
-use_percentage :  %s
-efficiency :      %s
-deadtime :        %s
-cum. efficiency : %s
-cum. deadtime :   %s""" % (
+    winner :          %s
+    significance :    %s
+    mu :              %s
+    snr :             %s
+    dt :              %s
+    use_percentage :  %s
+    efficiency :      %s
+    deadtime :        %s
+    cum. efficiency : %s
+    cum. deadtime :   %s""" %
+                        (
                         round.n, round.winner.name, round.winner.significance,
                         round.winner.mu, round.winner.snr, round.winner.window,
                         round.use_percentage, round.efficiency, round.deadtime,
@@ -277,10 +313,11 @@ cum. deadtime :   %s""" % (
                     png = pngname % 'HISTOGRAM'
                     if not os.path.isfile(png):
                         plot.before_after_histogram(
-                            png, before[scol], primary[scol],
+                            png, before[scol], prim_as_tbl[scol],
                             label1=beforel, label2=afterl, xlabel=slabel,
                             title=ptitle, subtitle=subtitle)
                         logger.debug("Figure written to %s" % png)
+                    png = FancyPlot(png, caption=ROUND_CAPTION['HISTOGRAM'])
                     round.plots.append(png)
 
                     # snr versus time
@@ -294,6 +331,7 @@ cum. deadtime :   %s""" % (
                                           subtitle=subtitle,
                                           legend_title="Primary:")
                         logger.debug("Figure written to %s" % png)
+                    png = FancyPlot(png, caption=ROUND_CAPTION['SNR_TIME'])
                     round.plots.append(png)
 
                     # snr versus frequency
@@ -306,6 +344,7 @@ cum. deadtime :   %s""" % (
                                           subtitle=subtitle,
                                           legend_title="Primary:")
                         logger.debug("Figure written to %s" % png)
+                    png = FancyPlot(png, caption=ROUND_CAPTION['SNR'])
                     round.plots.append(png)
 
                     # frequency versus time coloured by SNR
@@ -318,6 +357,7 @@ cum. deadtime :   %s""" % (
                             epoch=start, xlim=[start, end], ylim=pfreq,
                             title=ptitle, subtitle=subtitle)
                         logger.debug("Figure written to %s" % png)
+                    png = FancyPlot(png, caption=ROUND_CAPTION['TIME'])
                     round.plots.append(png)
 
                     # aux used versus frequency
@@ -329,6 +369,7 @@ cum. deadtime :   %s""" % (
                                           epoch=start, xlim=[start, end],
                                           title=atitle, subtitle=subtitle)
                         logger.debug("Figure written to %s" % png)
+                    png = FancyPlot(png, caption=ROUND_CAPTION['USED_SNR_TIME'])
                     round.plots.append(png)
 
                     # snr versus time
@@ -341,6 +382,7 @@ cum. deadtime :   %s""" % (
                                 xlim=[start, end], ylabel=auxslabel,
                                 title=atitle, subtitle=subtitle)
                         logger.debug("Figure written to %s" % png)
+                    png = FancyPlot(png, caption=ROUND_CAPTION['AUX_SNR_TIME'])
                     round.plots.append(png)
 
                     # snr versus frequency
@@ -353,6 +395,8 @@ cum. deadtime :   %s""" % (
                                 ylabel=auxslabel, title=atitle,
                                 subtitle=subtitle, legend_title="Aux:")
                         logger.debug("Figure written to %s" % png)
+                    png = FancyPlot(png,
+                                    caption=ROUND_CAPTION['AUX_SNR_FREQUENCY'])
                     round.plots.append(png)
 
                     # frequency versus time coloured by SNR
@@ -367,9 +411,11 @@ cum. deadtime :   %s""" % (
                                 xlim=[start, end], title=atitle,
                                 subtitle=subtitle)
                         logger.debug("Figure written to %s" % png)
+                    png = FancyPlot(png,
+                                    caption=ROUND_CAPTION['AUX_FREQUENCY_TIME'])
                     round.plots.append(png)
 
-                    round.unsafe = round.winner.name in unsafe
+                    round.unsafe = ifo + ':' + round.winner.name in unsafe
 
                     rounds.append(round)
 
@@ -377,7 +423,7 @@ cum. deadtime :   %s""" % (
     # prepare html variables
     startUTC = tconvert(start)
     endUTC = tconvert(end)
-    timeStr = '%s - %s'.format(str(startUTC), str(endUTC))
+    timeStr = '{:s} - {:s}'.format(str(startUTC), str(endUTC))
 
     title_txt = '%s Hveto Safety  %d-%d (%s)' % (ifo, start, end, timeStr)
 
@@ -390,8 +436,11 @@ cum. deadtime :   %s""" % (
     else:
         htmlv['config'] = inifile
 
+    htmlv['inj_img'] = prim_qcplot
+
     index = write_hveto_safety_page(ifo, start, end, rounds,
                                     safety_cutoff, **htmlv)
+    htmlv.pop('inj_img')
     logger.debug("HTML written to %s" % index)
 
     htmlv['write_about_file'] = False
@@ -411,6 +460,20 @@ cum. deadtime :   %s""" % (
 def abs_path(p):
     return os.path.abspath(os.path.expanduser(p))
 
+def plot_table(tbl, name, qcpath, tlim):
+    qcplot = tbl.scatter('time', 'frequency', color='snr', vmin=0, vmax=75)
+    ax = qcplot.gca()
+    qcplot.suptitle(name, fontsize=18)
+    ax.grid(b=True, which='major', color='k', linestyle='solid')
+    ax.grid(b=True, which='minor', color='0.06', linestyle='dotted')
+    ax.colorbar(label='SNR')
+    ax.set_xlim(tlim[0], tlim[1])
+    ax.set_ylim(0, 2048)
+
+    fname = name.replace(':', '-') + '.png'
+    outfile = os.path.join(qcpath, fname)
+    qcplot.savefig(outfile, edgecolor='white', bbox_inches='tight')
+    return outfile
 
 if __name__ == "__main__":
     IFO = os.getenv('IFO')
@@ -432,9 +495,12 @@ if __name__ == "__main__":
                      help='path to hveto configuration file(s), can be given '
                           'multiple times (files read in order)')
     cli.add_gps_start_stop_arguments(cin)
+    cin.add_argument('-Q', '--qcplot', action='store_true',
+                     help='Plot triggers for all input channels')
 
     pin = parser.add_argument_group('Input options')
     parser.add_argument('-S', '--segment', default=None, type=abs_path,
+                        required=True,
                         help='path to segment covering analysis in xml file')
     parser.add_argument('-p', '--primary', default=None, type=abs_path,
                         help='path to primary channel in an hdf5 file')
@@ -466,6 +532,11 @@ if __name__ == "__main__":
     else:
         os.makedirs(outdir)
 
+    olddir = os.getcwd()
+    os.chdir(outdir)
+
+    analysis_seg = DataQualityFlag.read(args.segment)
     safety_calc(cp, logger, outdir, args.config_file, args.ifo,
                 args.gpsstart, args.gpsend, start_time)
 
+    os.chdir(olddir)

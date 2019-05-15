@@ -29,11 +29,16 @@ from functools import wraps
 from getpass import getuser
 
 from glue import markup
+from astropy.time import Time
 
 from hveto import (__version__, config, core, plot, html, utils)
+from gwpy.time import tconvert
 
-from .html import (wrap_html, bold_param)
+from .html import  (bold_param, write_about_page)
 from gwdetchar.io import html as gwhtml
+from gwdetchar.io.html import (OBSERVATORY_MAP, FancyPlot, cis_link)
+from ._version import get_versions
+
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda'
@@ -46,8 +51,67 @@ __credits__ = 'Josh Smith, Joe Areeda'
 # but not in the actual function declaration - the decorator will take care of
 # that for you.
 
+def wrap_html(func):
+    """Decorator to wrap a function with `init_page` and `close_page` calls
+
+    This allows inner HTML methods to be written with minimal arguments
+    and content, hopefully making things simpler
+    """
+    @wraps(func)
+    def decorated_func(ifo, start, end, *args, **kwargs):
+        # set page init args
+        initargs = {
+            'title': '%s Hveto | %d-%d' % (ifo, start, end),
+            'base': os.path.curdir,
+        }
+        for key in ['title', 'base']:
+            if key in kwargs:
+                initargs[key] = kwargs.pop(key)
+        # find outdir
+        outdir = kwargs.pop('outdir', initargs['base'])
+        winners = kwargs.pop('winners', [])
+        if not os.path.isdir(outdir):
+            os.makedirs(outdir)
+        # write about page
+        try:
+            config = kwargs.pop('config')
+        except KeyError:
+            about = None
+        else:
+            iargs = initargs.copy()
+            aboutdir = os.path.join(outdir, 'about')
+            if iargs['base'] == os.path.curdir:
+                iargs['base'] = os.path.pardir
+            about = write_about_page(ifo, start, end, config, outdir=aboutdir,
+                                     **iargs)
+            if os.path.basename(about) == 'index.html':
+                about = about[:-10]
+        # open page
+        page = gwhtml.new_bootstrap_page(navbar=None, **initargs)
+        page.add(banner(ifo, start, end))
+        # write content
+        page.add(str(func(*args, **kwargs)))
+        # close page with custom footer
+        fname = 'index.html'
+        if 'html_file' in kwargs:
+            fname = kwargs['html_file']
+        index = os.path.join('.', fname)
+        version = get_versions()['version']
+        commit = get_versions()['full-revisionid']
+        url = 'https://github.com/gwdetchar/hveto/tree/{}'.format(commit)
+        link = markup.oneliner.a(
+            'View hveto-{} on GitHub'.format(version), href=url,
+            target='_blank')
+        report = 'https://github.com/gwdetchar/hveto/issues'
+        issues = markup.oneliner.a(
+            'Report an issue', href=report, target='_blank')
+        gwhtml.close_page(page, index, about=about, link=link, issues=issues)
+        return index
+    return decorated_func
+
+
 @wrap_html
-def write_hveto_safety_page(rounds, thresh):
+def write_hveto_safety_page(rounds, thresh, inj_img=None):
     """Write the Hveto results to HTML
 
     Parameters
@@ -61,6 +125,7 @@ def write_hveto_safety_page(rounds, thresh):
     rounds : `list` of `HvetoRound`
         the rounds produced by this analysis
     thresh: significance threshold to be considered unsafe
+    inj_img: png of time-freq x SNR injections
     plots : `list` of `str`
         the `list` of summary plots
     outdir : `str`, optional
@@ -76,11 +141,19 @@ def write_hveto_safety_page(rounds, thresh):
     page.h2("Hveto safety study")
     tableclass = 'table table-condensed table-hover table-responsive'
     page.table(class_=tableclass)
-    page.caption("Summary of this HierarchichalVeto safety analysis.")
-    l = gwhtml.html_link("./safety_summary.csv", 'Channel summary as CSV')
+    page.caption("Summary of Hierarchical Veto safety analysis.")
+    l = gwhtml.html_link('./safety_summary.csv', 'Channel summary as CSV')
     page.add(bold_param('Download channel summary', l))
-    l = gwhtml.html_link('./omega_times.txt', 'times for omega')
-    page.add(bold_param('Download omega times (to run wdq_batch)', l))
+
+    if os.path.exists('./omega_times.txt'):
+        l = gwhtml.html_link('./omega_times.txt', 'times for omega')
+        page.add(bold_param('Download omega times (to run wdq_batch)', l))
+
+    if inj_img:
+        caption = 'All injections'
+        prim_plot = FancyPlot(inj_img, caption=caption)
+        page.img(src=inj_img, class_='fancybox', alt=caption)
+        page.br()
 
     # make channel table header
     page.thead()
@@ -98,16 +171,16 @@ def write_hveto_safety_page(rounds, thresh):
 
         if round.unsafe:
             if round.winner.significance >= thresh:
-                row_class = 'row-uu'
+                row_class = 'row-uu panel-warning panel-heading'
                 safety_status = 'uns-uns'
             else:
-                row_class = 'row-us'
+                row_class = 'row-us panel-success panel-heading'
                 safety_status = 'uns-saf'
         elif round.winner.significance >= thresh:
-            row_class = 'row-su'
+            row_class = 'row-su panel-danger panel-heading'
             safety_status = 'saf-uns'
         else:
-            row_class = 'row-ss'
+            row_class = 'row-ss panel-heading panel-info'
             safety_status = 'saf-saf'
 
         page.tr(_class=row_class)
@@ -115,8 +188,9 @@ def write_hveto_safety_page(rounds, thresh):
         page.td(gwhtml.html_link('./hveto-round-%04d-summary.html' % round.n, round.n, target='_blank',
                           title="Jump to round %d details" % round.n), _class=row_class)
         # link name to CIS
-        page.td(gwhtml.cis_link(round.winner.name))
+        page.td(gwhtml.cis_link(round.winner.name), _class=row_class)
         page.td(safety_status, _class=row_class)
+
         for attr in ['window', 'snr', 'significance']:
             v = getattr(round.winner, attr)
             if isinstance(v, float):
@@ -142,7 +216,7 @@ def write_hveto_safety_page(rounds, thresh):
 
 
 @wrap_html
-def write_safety_round(round, thresh):
+def write_safety_round(round, thresh, write_about_file=False, html_file=None):
     """Write the HTML summary for a specific round
 
     Parameters
@@ -220,18 +294,7 @@ def write_safety_round(round, thresh):
                         ('%.2f [%.2f/%.2f]' % (pc, round.deadtime[0], round.deadtime[1]))))
 
 
-    # for desc, tag in zip(
-    #         ['Veto segments', 'Veto triggers', 'Vetoed primary triggers',
-    #          'Unvetoed primary triggers'],
-    #         ['VETO_SEGS', 'WINNER', 'VETOED', 'RAW']):
-    #     if isinstance(round.files[tag], str):
-    #         files = [round.files[tag]]
-    #     else:
-    #         files = round.files[tag]
-    #     link = ' '.join([gwhtml.html_link(
-    #         f, '[%s]' % os.path.splitext(f)[1].strip('.')) for f in files])
-    #     page.add(bold_param(desc, link))
-    # link omega scans if generated
+
     if round.scans is not None:
         page.p('<b>Omega scans:</b>')
         for t in round.scans:
@@ -248,6 +311,7 @@ def write_safety_round(round, thresh):
                 caption = 'Omega scan of %s at %s' % (c, t['time'])
                 png = ('./scans/%s/%s_%s_1.00_spectrogram_whitened.png'
                        % (t['time'], t['time'], c))
+                img = FancyPlot(png, caption)
                 page.a('[%s]' % tag[0].lower(), class_='fancybox',
                        href=png, title=caption,
                        **{'data-fancybox-group': 'omega-preview'})
@@ -265,3 +329,38 @@ def write_safety_round(round, thresh):
     page.div.close()  # panel-body
     page.div.close()  # panel
     return page()
+
+def banner(ifo, start, end):
+    """Initialise a new markup banner
+
+    Parameters
+    ----------
+    ifo : `str`
+        the interferometer prefix
+    start : `int`
+        the GPS start time of the analysis
+    end : `int`
+        the GPS end time of the analysis
+
+    Returns
+    -------
+    page : `markup.page`
+        the structured markup to open an HTML document
+    """
+    # create page
+    page = markup.page()
+    # write banner
+    page.div(class_='page-header', role='banner')
+    page.h1("%s Hierarchical Veto" % ifo)
+    start_utc = tconvert(start)
+    end_utc = tconvert(end)
+    page.h3('{:d}-{:d}'.format(int(start), int(end)))
+    page.h3('{:s} to {:s}'.format(str(start_utc), str(end_utc)))
+    page.div.close()
+    return page()
+
+def gps2utc(gps):
+    """Convert GPS time to string"""
+    gps_time = Time(int(gps), format='gps', scale='utc')
+    utc = gps_time.datetime.strftime('%Y-%m-%d %H:%M:%S')
+    return utc
