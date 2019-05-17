@@ -325,15 +325,15 @@ if livetime == 0:
     message = ("No active segments found for analysis flag %r in interval "
                "[%d, %d)" % (aflag, start, end))
     logger.critical(message)
-    index = html.write_null_page(ifo, start, end, message, context='info',
-                                 **htmlv)
+    htmlv['context'] = 'info'
+    index = html.write_null_page(ifo, start, end, message, **htmlv)
     logger.info("HTML report written to %s" % index)
     sys.exit(0)
 
 # no primary triggers
 if len(primary) == 0:
-    index = html.write_null_page(ifo, start, end, message, context='danger',
-                                 **htmlv)
+    htmlv['context'] = 'danger'
+    index = html.write_null_page(ifo, start, end, message, **htmlv)
     logger.info("HTML report written to %s" % index)
     sys.exit(0)
 
