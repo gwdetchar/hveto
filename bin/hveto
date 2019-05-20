@@ -23,28 +23,28 @@
 import time
 jobstart = time.time()
 
-import argparse
 import os
+import sys
+import json
 import random
 import warnings
-import multiprocessing
-import json
+import argparse
 import datetime
 import subprocess
-import sys
+import configparser
+import multiprocessing
+from pathlib import Path
 from socket import getfqdn
 from getpass import getuser
 from distutils.spawn import find_executable
-from pathlib import Path
 
-import configparser
 import numpy
 
 from matplotlib import use
 use('agg')
 
-from gwpy.io.cache import read_cache
 from gwpy.time import to_gps
+from gwpy.io.cache import read_cache
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
