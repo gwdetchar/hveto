@@ -20,14 +20,9 @@
 """Setup the Hveto package
 """
 
-import sys
 from setuptools import setup
 
 import versioneer
-
-# enforce python version
-if sys.version < '3.5':
-    raise ImportError("Python versions older than 3.5 are not supported.")
 
 # versioneer
 version = versioneer.get_version()
