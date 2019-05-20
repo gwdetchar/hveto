@@ -50,6 +50,7 @@ from gwpy.segments import (Segment, SegmentList,
 
 from gwdetchar import cli
 from gwdetchar.io.html import (OBSERVATORY_MAP, FancyPlot, cis_link)
+from gwdetchar.omega import batch
 
 from hveto import (__version__, config, core, plot, html, utils)
 from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, get_column_label)
@@ -58,10 +59,10 @@ from hveto.segments import (write_ascii as write_ascii_segments,
 from hveto.triggers import (get_triggers, find_auxiliary_channels)
 
 IFO = os.getenv('IFO')
-WDQ_BATCH = find_executable('gwdetchar-omega-batch')
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
+__credits__ = ('Joshua Smith <joshua.smith@ligo.org>, '
+               'Alex Urban <alexander.urban@ligo.org>')
 
 logger = cli.logger(name=os.path.basename(__file__))
 
@@ -96,20 +97,12 @@ parser.add_argument('-w', '--omega-scans', type=int, metavar='NSCAN',
                     help='generate a workflow of omega scans for each round, '
                          'this will launch automatically to condor, '
                          'requires the gwdetchar package')
-parser.add_argument('-W', '--wdq-batch', type=find_executable,
-                    default=WDQ_BATCH,
-                    help='path of wdq-batch executable to '
-                         'use (default: %(default)s)')
 
 pout = parser.add_argument_group('Output options')
 pout.add_argument('-o', '--output-directory', default=os.curdir,
                   help='path of output directory, default: %(default)s')
 
 args = parser.parse_args()
-
-if args.omega_scans and not args.wdq_batch:
-    parser.error('argument --wdq-batch is required with --omega-scans when '
-                 'wdq-batch is not on PATH')
 
 ifo = args.ifo
 start = int(args.gpsstart)
@@ -124,7 +117,7 @@ logger.info("Interferometer: %s" % ifo)
 # -- initialisation -----------------------------------------------------------
 
 # read configuration
-cp = config.HvetoConfigParser(ifo=args.ifo)
+cp = config.HvetoConfigParser(ifo=ifo)
 cp.read(args.config_file)
 logger.info("Parsed configuration file(s)")
 
@@ -236,7 +229,7 @@ auxfreq = cp.getfloats('auxiliary', 'frequency-range')
 try:
     auxchannels = cp.get('auxiliary', 'channels').strip('\n').split('\n')
 except config.configparser.NoOptionError:
-    auxchannels = find_auxiliary_channels(auxetg, (start, end), ifo=args.ifo,
+    auxchannels = find_auxiliary_channels(auxetg, (start, end), ifo=ifo,
                                           cache=acache)
     cp.set('auxiliary', 'channels', '\n'.join(auxchannels))
     logger.debug("Auto-discovered %d auxiliary channels" % len(auxchannels))
@@ -815,22 +808,20 @@ if args.omega_scans:
     logger.debug("%d scans already complete or in progress, %d remaining"
                  % (len(omegatimes) - len(newtimes), len(newtimes)))
     if len(newtimes) > 0:
-        logger.info('Creating workflow for omega scans...')
-        batch = [args.wdq_batch] + newtimes + [
-            '--ignore-state-flags',
-            '--output-dir', omegadir,
-            '--ifo', ifo,
-            '--condor-timeout', str(4),
-            '--submit'
-        ]
-        logger.debug("$ {}".format(" ".join(batch)))
-        proc = subprocess.Popen(batch)
-        out, err = proc.communicate()
-        if proc.returncode:
-            raise subprocess.CalledProcessError(
-                proc.returncode, ' '.join(batch))
-        logger.info('Launched {} omega scans to condor, check their progress '
-                    'with condor_q'.format(newtimes))
+        logger.info('Creating workflow for omega scans')
+        flags = batch.get_command_line_flags(
+            ifo=ifo,
+            ignore_state_flags=True)
+        condorcmds = batch.get_condor_arguments(
+            timeout=4,
+            gps=start)
+        dagman = batch.generate_dag(
+            newtimes,
+            flags=flags,
+            submit=True,
+            outdir=omegadir,
+            condor_commands=condorcmds)
+        logger.info('Launched {} omega scans to condor'.format(len(newtimes)))
     else:
         logger.debug('Skipping omega scans')
 
