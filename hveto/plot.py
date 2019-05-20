@@ -19,8 +19,6 @@
 """Plotting routines for hveto
 """
 
-from __future__ import division
-
 import os.path
 import warnings
 from math import (log10, floor)

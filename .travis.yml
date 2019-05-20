@@ -4,8 +4,6 @@ matrix:
   fast_finish: true
 
   include:
-    - python: '2.7'
-      env: PIP_FLAGS="--quiet --pre"
     - python: '3.5'
       env: PIP_FLAGS="--quiet --pre"
     - python: '3.6'
@@ -15,8 +13,6 @@ matrix:
       sudo: required
       env: PIP_FLAGS="--quiet --pre"
 
-    - python: '2.7'
-      env: PIP_FLAGS="--quiet"
     - python: '3.5'
       env: PIP_FLAGS="--quiet"
     - python: '3.6'

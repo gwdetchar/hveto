@@ -8,6 +8,5 @@ lxml
 MarkupPy >= 1.14
 matplotlib >= 1.5
 numpy >= 1.10
-pathlib ; python_version < '3'
 pytest >= 3.1.0
 scipy

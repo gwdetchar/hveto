@@ -25,8 +25,6 @@ import re
 import warnings
 from collections import OrderedDict
 
-from six import string_types
-
 import numpy
 
 from astropy.table import vstack as vstack_tables
@@ -242,7 +240,7 @@ def _format_params(channel, etg, fmt, trigfind_kwargs, read_kwargs):
     # format params
     for key in read_kwargs:
         if (key.endswith(('columns', 'names', 'branches')) and
-                isinstance(read_kwargs[key], string_types)):
+                isinstance(read_kwargs[key], str)):
             read_kwargs[key] = [x.strip() for x in read_kwargs[key].split(',')]
 
     # custom params for ETGs

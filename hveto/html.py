@@ -19,8 +19,6 @@
 """HTML utilities for hveto
 """
 
-from __future__ import division
-
 import os.path
 from functools import wraps
 

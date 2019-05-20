@@ -206,10 +206,7 @@ Module API
 """
 
 import os
-try:
-    import configparser
-except ImportError:  # python 2.x
-    import ConfigParser as configparser
+import configparser
 
 from .segments import DEFAULT_SEGMENT_SERVER
 

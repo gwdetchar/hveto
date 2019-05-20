@@ -23,8 +23,6 @@ This method will apply the minimal SNR thresholds and any frequency cuts
 as given in the configuration files
 """
 
-from __future__ import division
-
 import argparse
 import os
 import warnings

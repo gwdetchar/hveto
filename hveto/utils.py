@@ -19,8 +19,6 @@
 """General utilities for hveto
 """
 
-from __future__ import (division, print_function)
-
 import sys
 import os.path
 from math import ceil
