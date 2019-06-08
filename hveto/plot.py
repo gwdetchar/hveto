@@ -32,6 +32,8 @@ from matplotlib.colors import LogNorm
 
 from gwpy.plot import Plot
 
+from gwdetchar.plot import texify
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda, Alex Urban'
 
@@ -382,8 +384,7 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
     # set xticks to show channel names
     if show_channel_names:
         ax.set_xticks(range(len(channels)))
-        ax.set_xticklabels([c.replace('_', '\_')
-                            for c in channels])  # noqa: W605
+        ax.set_xticklabels([texify(c) for c in channels])
         for i, t in enumerate(ax.get_xticklabels()):
             t.set_rotation(270)
             t.set_verticalalignment('top')
@@ -431,8 +432,8 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
                 ha = 'center'
             y = l.get_ydata()[0] + yoffset
             c = l.get_label()
-            tooltips.append(ax.annotate(c.replace('_', r'\_'), (x, y),
-                                        ha=ha, zorder=ylim[1], bbox=bbox))
+            tooltips.append(ax.annotate(texify(c), (x, y), ha=ha,
+                                        zorder=ylim[1], bbox=bbox))
             l.set_gid('line-%d' % i)
             tooltips[-1].set_gid('tooltip-%d' % i)
 
