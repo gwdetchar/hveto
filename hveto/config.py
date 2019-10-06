@@ -23,19 +23,24 @@ Configuration files for Hveto
 How to write a configuration file
 =================================
 
-The `hveto` command-line executable can run without a configuration file, and wi
-ll auto-select the primary channel, and attempt to auto-detect which auxiliary c
-hannels are available. It will also inset a minimal list of 'unsafe' channels so that the analysis isn't totally meaningless.
+The `hveto` command-line executable can run without a configuration file, and
+will auto-select the primary channel, and attempt to auto-detect which
+auxiliary channels are available. It will also inset a minimal list of 'unsafe'
+channels so that the analysis isn't totally meaningless.
 
-However, the way that things are auto-detected means that the resulting output i
-sn't exactly reproducable after-the-fact in general. If someone adds or removes data for an auxiliary channel, a rerun will operate over a different channel lis
-ts, and confusion will reign.
+However, the way that things are auto-detected means that the resulting output
+isn't exactly reproducable after-the-fact in general. If someone adds or
+removes data for an auxiliary channel, a rerun will operate over a different
+channel lists, and confusion will reign.
 
-So, it is highly recommended that you use a custom configuration file for your a
-nalyses. It could be that the configuration file never changes, but the very fac
-t that it exists should mean that you are in much greater control over what the output will look like.
+So, it is highly recommended that you use a custom configuration file for your
+analyses. It could be that the configuration file never changes, but the very
+fact that it exists should mean that you are in much greater control over what
+the output will look like.
 
-Each of the below sections lists the valid options and a description of what the value should be, and then an example of what that section might look like in the INI format:
+Each of the below sections lists the valid options and a description of what
+the value should be, and then an example of what that section might look like
+in the INI format:
 
 [hveto]
 -------
@@ -205,7 +210,6 @@ Module API
 ==========
 """
 
-import os
 import configparser
 
 from .segments import DEFAULT_SEGMENT_SERVER
@@ -216,7 +220,7 @@ __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
 class HvetoConfigParser(configparser.ConfigParser):
     HVETO_DEFAULTS = {
-       'hveto': {
+        'hveto': {
             'snr-thresholds': (8, 10, 12, 15, 20, 50, 100, 300),
             'time-windows': (.1, .2, .5, 1, 2, 5),
             'minimum-significance': 5,
@@ -243,12 +247,12 @@ class HvetoConfigParser(configparser.ConfigParser):
                                 '%(IFO)s:DER_DATA_H',
                                 '%(IFO)s:h_4096Hz',
                                 '%(IFO)s:h_16384Hz'],
-        }
+        },
     }
 
     def __init__(self, ifo=None, defaults=dict(), **kwargs):
         if ifo is not None:
-           defaults.setdefault('IFO', ifo)
+            defaults.setdefault('IFO', ifo)
         configparser.ConfigParser.__init__(self, defaults=defaults, **kwargs)
         self.set_hveto_defaults()
 

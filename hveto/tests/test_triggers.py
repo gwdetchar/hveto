@@ -21,8 +21,6 @@
 
 import pytest
 
-import numpy
-
 from astropy.table import Table
 
 from gwpy.segments import (Segment, SegmentList)

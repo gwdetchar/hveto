@@ -20,7 +20,6 @@
 """
 
 import itertools
-import re
 from math import (log, exp, log10)
 from bisect import (bisect_left, bisect_right)
 
@@ -143,7 +142,8 @@ def find_all_coincidences(triggers, channel, snrs, windows):
     return coincs
 
 
-def find_max_significance(primary, auxiliary, channel, snrs, windows, livetime):
+def find_max_significance(primary, auxiliary, channel, snrs, windows,
+                          livetime):
     """Find the maximum Hveto significance for this primary-auxiliary pair
 
     Parameters
@@ -282,12 +282,14 @@ def find_coincidences(a, b, dt=1):
         in `b`
     """
     dx = dt/2.
+
     def _is_coincident(t):
         x = bisect_left(b, t-dx)  # find b >= t-dx
         y = bisect_right(b, t+dx)  # find b <= t+dx
         if x != y:
             return True
         return False
+
     out = numpy.zeros(a.size)
     for i, t in enumerate(a):
         out[i] = _is_coincident(t)

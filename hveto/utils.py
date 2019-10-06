@@ -19,8 +19,6 @@
 """General utilities for hveto
 """
 
-import sys
-import os.path
 from math import ceil
 
 from gwdatafind.utils import filename_metadata

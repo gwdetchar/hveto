@@ -1,5 +1,5 @@
+# development
 dqsegdb
-gitpython
 gwdetchar >= 0.5.0
 gwpy >= 0.14.0
 gwtrigfind
@@ -8,5 +8,8 @@ lxml
 MarkupPy >= 1.14
 matplotlib >= 1.5
 numpy >= 1.10
-pytest >= 3.1.0
 scipy
+# testing
+flake8
+pytest >= 3.1.0
+coverage

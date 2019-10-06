@@ -153,6 +153,7 @@ def find_trigger_files(channel, etg, segments, **kwargs):
 
 re_delim = re.compile('[_-]')
 
+
 def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
     """Find all auxiliary channels processed by a given ETG
 
@@ -222,7 +223,7 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
 
 
 def _sanitize_name(name):
-    return re.sub("[-_\.]", "_", name).lower()
+    return re.sub("[-_\.]", "_", name).lower()  # noqa: W605
 
 
 def _format_params(channel, etg, fmt, trigfind_kwargs, read_kwargs):
