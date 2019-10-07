@@ -23,7 +23,6 @@
 import os
 import sys
 import json
-import argparse
 
 from gwpy.segments import SegmentList
 
@@ -31,10 +30,12 @@ from gwdetchar import cli
 
 from hveto import __version__
 
+
 # -- parse command line -------------------------------------------------------
 
 def abs_path(p):
     return os.path.abspath(os.path.expanduser(p))
+
 
 parser = cli.create_parser(description=__doc__, version=__version__)
 parser.add_argument('-t', '--trigger-time', required=True,
@@ -65,8 +66,6 @@ except IOError:
     logger.error("'summary-stats.json' was not found in the input directory")
     sys.exit(0)
 
-format_segment = lambda index: float(line.split('\t')[index])
-get_segments = lambda line: [format_segment(1),format_segment(2)]
 for i, cround in enumerate(segment_stats['rounds']):
     seg_files = filter(
         lambda f_name: '.txt' in f_name, cround[u'files'][u'VETO_SEGS'])
@@ -74,12 +73,12 @@ for i, cround in enumerate(segment_stats['rounds']):
         segments = SegmentList.read(os.path.join(directory, f))
         for segment in segments:
             if segment[0] <= trigger_time <= segment[1]:
-                logger.info('Signal was vetoed in round %d by segment %s'
-                    % ((i + 1), segment))
+                logger.info('Signal was vetoed in round %d by segment %s' % (
+                    (i + 1), segment))
                 logger.debug('Winner: %s' % cround['name'])
                 logger.debug('Significance: %s' % cround['significance'])
                 logger.debug('SNR: %s' % cround['snr'])
                 logger.debug('Window: %s' % cround['window'])
                 sys.exit(0)
 
-logger.info('Signal was not vetoed.')    
+logger.info('Signal was not vetoed.')

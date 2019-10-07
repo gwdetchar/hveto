@@ -19,8 +19,6 @@
 """Tests for `hveto.utils`
 """
 
-import tempfile
-
 import pytest
 
 from gwpy.io.cache import read_cache

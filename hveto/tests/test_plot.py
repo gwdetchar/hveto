@@ -24,7 +24,7 @@ import tempfile
 import pytest
 
 from matplotlib import use
-use('agg')
+use('agg')  # noqa
 
 from numpy import random
 

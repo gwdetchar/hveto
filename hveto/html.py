@@ -305,11 +305,10 @@ def write_round(round, context='info'):
         for t in round.scans:
             page.p()
             page.a('%s [SNR %.1f]' % (t['time'], t['snr']),
-                href='./scans/%s/' % t['time'], **{
-                'class_': 'fancybox',
-                'data-fancybox-group': 'hveto-image',
-                'target': '_blank',
-            })
+                   href='./scans/%s/' % t['time'], **{
+                       'class_': 'fancybox',
+                       'data-fancybox-group': 'hveto-image',
+                       'target': '_blank'})
             for c, tag in zip([round.primary, round.winner.name],
                               ['Primary', 'Auxiliary']):
                 caption = 'Omega scan of %s at %s' % (c, t['time'])

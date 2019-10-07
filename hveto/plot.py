@@ -19,7 +19,6 @@
 """Plotting routines for hveto
 """
 
-import os.path
 import warnings
 from math import (log10, floor)
 from io import BytesIO
@@ -234,10 +233,9 @@ def before_after_histogram(
     _finalize_plot(plot, ax, outfile, **axargs)
 
 
-def veto_scatter(
-        outfile, a, b, label1='All', label2='Vetoed', x='time', y='snr',
-        color=None, clim=None, clabel=None, cmap=None, clog=True,
-        figsize=[9, 6],**kwargs):
+def veto_scatter(outfile, a, b, label1='All', label2='Vetoed', x='time',
+                 y='snr', color=None, clim=None, clabel=None, cmap=None,
+                 clog=True, figsize=[9, 6], **kwargs):
     """Plot an x-y scatter of all/vetoed events
     """
     # format axis arguments
@@ -384,7 +382,8 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
     # set xticks to show channel names
     if show_channel_names:
         ax.set_xticks(range(len(channels)))
-        ax.set_xticklabels([c.replace('_','\_') for c in channels])
+        ax.set_xticklabels([c.replace('_', '\_')
+                            for c in channels])  # noqa: W605
         for i, t in enumerate(ax.get_xticklabels()):
             t.set_rotation(270)
             t.set_verticalalignment('top')
@@ -427,7 +426,7 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
             if x < xthresh:
                 ha = 'left'
             elif x > (len(channels) - xthresh):
-                ha ='right'
+                ha = 'right'
             else:
                 ha = 'center'
             y = l.get_ydata()[0] + yoffset

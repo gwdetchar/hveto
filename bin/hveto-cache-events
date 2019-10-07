@@ -23,7 +23,6 @@ This method will apply the minimal SNR thresholds and any frequency cuts
 as given in the configuration files
 """
 
-import argparse
 import os
 import warnings
 import multiprocessing
@@ -34,7 +33,6 @@ import h5py
 from astropy.table import vstack
 
 from gwpy.io.cache import (cache_segments, file_segment, read_cache)
-from gwpy.time import to_gps
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
@@ -56,6 +54,7 @@ logger = cli.logger(name=os.path.basename(__file__))
 
 def abs_path(p):
     return Path(p).expanduser().resolve()
+
 
 parser = cli.create_parser(description=__doc__, version=__version__)
 cli.add_gps_start_stop_arguments(parser)
@@ -262,7 +261,7 @@ logger.debug("Read list of %d auxiliary channels" % len(auxchannels))
 
 # remove unsafe channels
 nunsafe = 0
-for i in range(len(auxchannels) -1, -1, -1):
+for i in range(len(auxchannels) - 1, -1, -1):
     if auxchannels[i] in unsafe:
         logger.warning("Auxiliary channel %r identified as unsafe and has "
                        "been removed" % auxchannels[i])

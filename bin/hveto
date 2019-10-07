@@ -21,29 +21,25 @@
 """
 
 import time
-jobstart = time.time()
+jobstart = time.time()  # noqa
 
 import os
 import sys
 import json
 import random
 import warnings
-import argparse
 import datetime
-import subprocess
 import configparser
 import multiprocessing
 from pathlib import Path
 from socket import getfqdn
 from getpass import getuser
-from distutils.spawn import find_executable
 
 import numpy
 
 from matplotlib import use
-use('agg')
+use('agg')  # noqa
 
-from gwpy.time import to_gps
 from gwpy.io.cache import read_cache
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
@@ -71,6 +67,7 @@ logger = cli.logger(name=os.path.basename(__file__))
 
 def abs_path(p):
     return os.path.abspath(os.path.expanduser(p))
+
 
 parser = cli.create_parser(description=__doc__, version=__version__)
 cli.add_gps_start_stop_arguments(parser)
@@ -258,7 +255,7 @@ logger.debug("Read list of %d unsafe channels" % len(unsafe))
 
 # remove unsafe channels
 nunsafe = 0
-for i in range(len(auxchannels) -1, -1, -1):
+for i in range(len(auxchannels) - 1, -1, -1):
     if auxchannels[i] in unsafe:
         logger.warning("Auxiliary channel %r identified as unsafe and has "
                        "been removed" % auxchannels[i])
@@ -347,6 +344,7 @@ if acache is not None:  # auto-detect the file format
     areadkw['path'] = 'triggers'
 atrigfindkw = cp.getparams('auxiliary', 'trigfind-')
 
+
 def _get_aux_triggers(channel):
     if acache is None:
         auxcache = None
@@ -379,6 +377,7 @@ def _get_aux_triggers(channel):
             logger.warning("    %s No events found for %s"
                            % (tag, channel))
     return out
+
 
 # map with multiprocessing
 if args.nproc > 1:
@@ -455,10 +454,11 @@ while True:
     #   only now do we actually have the new data to calculate significance
     #   drop
     if round.n > 1:
-        png = (pngname % 'SIG_DROP').replace('.png', '.svg')
+        png = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
         plot.significance_drop(
-            png, oldsignificances, newsignificances,
-            title=' | '.join([title, subtitle]), bbox_inches='tight')
+            png, oldsignificances, newsignificances,  # noqa: F821
+            title=' | '.join([title, subtitle]),  # noqa: F821
+            bbox_inches='tight')
         logger.debug("Figure written to %s" % png)
         png = FancyPlot(png, caption=ROUND_CAPTION['SIG_DROP'])
         rounds[-1].plots.append(png)
@@ -574,8 +574,8 @@ cum. deadtime :   %s\n\n""" % (
 
     # -- make some plots --
 
-    pngname = os.path.join(plotdir, '%s-HVETO_%%s_ROUND_%d-%d-%d.png' %
-        (ifo, round.n, start, duration))
+    pngname = os.path.join(plotdir, '%s-HVETO_%%s_ROUND_%d-%d-%d.png' % (
+        ifo, round.n, start, duration))
     if plot.rcParams['text.usetex']:
         wname = round.winner.name.replace('_', r'\_')
     else:
@@ -704,8 +704,8 @@ if not rounds:
     sys.exit(0)
 
 # -- plot all rounds impact
-pngname = os.path.join(plotdir, '%s-HVETO_%%s_ALL_ROUNDS-%d-%d.png' %
-    (ifo, start, duration))
+pngname = os.path.join(plotdir, '%s-HVETO_%%s_ALL_ROUNDS-%d-%d.png' % (
+    ifo, start, duration))
 plots = []
 title = '%s Hveto all rounds' % args.ifo
 subtitle = '%d rounds | %d-%d' % (len(rounds), start, end)
