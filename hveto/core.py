@@ -56,6 +56,7 @@ class HvetoRound(object):
         'files',
         'scans',
         'unsafe',
+        'n_coincs',
     )
 
     def __init__(self, round, primary, segments=None, vetoes=None,
@@ -68,6 +69,7 @@ class HvetoRound(object):
         self.files = {}
         self.scans = None
         self.unsafe = False # used in safety studies to flag already known
+        self.n_coincs = 0    # used in safety studies for report
 
     @property
     def livetime(self):

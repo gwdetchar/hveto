@@ -128,7 +128,7 @@ def safety_calc(cp, logger, outdir, inifile,
     _unsafe = _unsafe.replace('-', '_')
     unsafe = set(_unsafe.strip('\n').split('\n'))
 
-    safety_cutoff = cp.getfloat('primary', 'snr-threshold')
+    safety_cutoff = cp.getfloat('safety', 'safety_cutoff')
     safety_max_rounds = cp.getfloat('safety', 'safety_max_rounds')
     live_time = float(end - start)
 
@@ -161,8 +161,11 @@ def safety_calc(cp, logger, outdir, inifile,
     plotdir = os.path.join('.', 'plots') # results
     os.makedirs(plotdir, exist_ok=True)
 
-    coincdir = os.path.join(outdir, 'coinc') # any coincident
+    coincdir = os.path.join('.', 'coinc') # any coincident
     os.makedirs(coincdir, exist_ok=True)
+
+    trigdir = os.path.join('.', 'triggers')  # any coincident
+    os.makedirs(trigdir, exist_ok=True)
 
     sigs = dict((c, 0) for c in auxiliary)
     for p, cdict in coincs.items():
@@ -195,7 +198,9 @@ def safety_calc(cp, logger, outdir, inifile,
                 chan_stat.ncoinc = trig_cnt
 
                 chan_stats.append(chan_stat)
-
+            else:
+                logger.info('{:s} had zero trigger coincidences'.
+                            format(this_chan))
     # sort by significance
     chan_stats = sorted(chan_stats, key=lambda x: x.significance, reverse=True)
 
@@ -205,7 +210,7 @@ def safety_calc(cp, logger, outdir, inifile,
     with open(sum_file, 'w') as f:
         # CSV column name
         vals = 'chan, significance, N-coinc, N-expected, '
-        vals += 'N-aux, N-coinc/N-expected, SNR, dT '
+        vals += 'N-aux, N-coinc/N-expected, SNR, dT, was unsafe, is unsafe '
         print(vals, file=f)
 
         old_names = set()
@@ -222,27 +227,33 @@ def safety_calc(cp, logger, outdir, inifile,
                 # recalc because of bug(?) in find_all_coincidences
                 try:
                     trig_cnt = len(coincs)
-                    sig = significance(trig_cnt, cs.mu)
+                    sig = significance(trig_cnt, cs.mu) if trig_cnt > 0 else 0
                 except KeyError:
                     sig == 0
 
-                if sig > safety_min and chan_num <= safety_max_rounds :
-                    cs.ncoinc = trig_cnt
-                    cs.significance = sig
-                    chan_num += 1
+                cs.ncoinc = trig_cnt
+                cs.significance = sig
+                chan_num += 1
 
-                    dups = [item for item, count in collections.Counter(
-                            coincs['time']).items() if count > 1]
+                dups = [item for item, count in collections.Counter(
+                        coincs['time']).items() if count > 1]
 
-                    dup_str = ''
-                    if len(dups) > 0:
-                        dup_str = ','.join(map(str, coincs['gpstime']))
+                dup_str = ''
+                if len(dups) > 0:
+                    dup_str = ','.join(map(str, coincs['time']))
 
-                    vals = '%s,%.3f,%d,%.3f,%.0f,%.4f,%.1f,%.2f,%s' %\
-                           (name, cs.significance, cs.ncoinc, cs.mu,
-                            len(allaux), cs.ncoinc / cs.mu, cs.snr,
-                            cs.window, dup_str)
-                    print(vals, file=f)
+                was_safe  = 'Unsafe' if name in _unsafe else 'Safe'
+                is_safe = 'Unsafe' if sig > safety_cutoff else 'Safe'
+
+                expected = cs.ncoinc / cs.mu if cs.mu != 0 else 0;
+
+                vals = '%s,%.3f,%d,%.3f,%.0f,%.4f,%.1f,%.2f,%s, %s' %\
+                       (name, cs.significance, cs.ncoinc, cs.mu,
+                        len(allaux), expected, cs.snr,
+                        cs.window, was_safe, is_safe)
+                print(vals, file=f)
+
+                if sig > safety_min and chan_num <= safety_max_rounds:
 
                     # process as if it were a round winner
                     round = HvetoRound(chan_num, prim_as_tbl)
@@ -259,31 +270,45 @@ def safety_calc(cp, logger, outdir, inifile,
                     before = prim_as_tbl
                     beforeaux = auxiliary[cs.name]
 
-                    # we don't apply vetoes to primary
+                    # we calculate but don't apply vetoes to primary
                     primary_vetoed, vetoed = veto(prim_as_tbl, round.vetoes)
 
                     aux_vetoed, avetoed = veto(beforeaux, round.vetoes)
 
                     round.winner = cs
+                    winner = cs
                     round.efficiency = (len(vetoed), len(primary_vetoed) +
                                         len(vetoed))
                     round.use_percentage = (len(coincs), len(cs.events))
                     round.cum_efficiency = round.efficiency
                     round.cum_deadtime = round.deadtime
 
+                    # write triggers
+                    trigfile = os.path.join(trigdir,
+                                            '%s-HVETO_%%s_TRIGS_ROUND_%d-%d-%d.txt'
+                                            % (ifo, round.n, start, duration))
+                    for tag, arr in zip(
+                            ['WINNER', 'COINCS'],
+                            [winner.events, coincs]):
+                        trig_fname = trigfile % tag
+                        arr.write(trig_fname, format='ascii', overwrite=True)
+                        logger.debug("Round %d %s events written to %s"
+                                     % (round.n, tag.lower(), f))
+                        round.files[tag] = trig_fname
+                    round.n_coincs = len(coincs)
                     logger.debug('%4d. %s ' % (round.n, cs.name))
                     # log results
-                    logger.info("""Results for round %d
-    winner :          %s
-    significance :    %s
-    mu :              %s
-    snr :             %s
-    dt :              %s
-    use_percentage :  %s
-    efficiency :      %s
-    deadtime :        %s
-    cum. efficiency : %s
-    cum. deadtime :   %s""" %
+                    logger.info('Results for round %d\n'
+                                '    winner :          %s\n'
+                                '    significance :    %s\n'
+                                '    mu :              %s\n'
+                                '    snr :             %s\n'
+                                '    dt :              %s\n'
+                                '    use_percentage :  %s\n'
+                                '    efficiency :      %s\n'
+                                '    deadtime :        %s\n'
+                                '    cum. efficiency : %s\n'
+                                '    cum. deadtime :   %s' %
                         (
                         round.n, round.winner.name, round.winner.significance,
                         round.winner.mu, round.winner.snr, round.winner.window,
@@ -418,6 +443,19 @@ def safety_calc(cp, logger, outdir, inifile,
                     round.unsafe = ifo + ':' + round.winner.name in unsafe
 
                     rounds.append(round)
+        # end of round processing, any channels left over
+        nused = len(olddir)
+        remaining = list()
+        for name in auxchannels:
+            if not name in old_names:
+                old_names.add(name)
+                was_safe = 'Unsafe' if name in _unsafe else 'Safe'
+                is_safe = 'Unsafe' if sig > safety_cutoff else 'Safe'
+                allaux = auxiliary[name]
+
+                vals = '%s,%.3f,%d,%.3f,%.0f,%.4f,%.1f,%.2f,%s, %s' % \
+                       (name, 0, 0, 0, len(allaux), 0, 0, 0, was_safe, is_safe)
+                print(vals, file=f)
 
     # -- write HTML
     # prepare html variables

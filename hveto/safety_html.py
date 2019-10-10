@@ -257,7 +257,8 @@ def write_safety_round(round, thresh, write_about_file=False, html_file=None):
     page.a("<small>[top]</small>", href='#')
     page.div.close()  # pull-right
     # heading
-    page.h3('Round %d, channel = %s, window = %s, SNR thresh = %s, significane = %.1f'
+    page.h3('Round %d, channel = %s, window = %s, '
+            'SNR thresh = %s, Significance = %.1f'
             % (round.n, round.winner.name, round.winner.window,
                round.winner.snr, round.winner.significance), class_='panel-title ' + panel_bkg)
     page.div.close()  # panel-heading
@@ -277,14 +278,16 @@ def write_safety_round(round, thresh, write_about_file=False, html_file=None):
     except ZeroDivisionError:
         pc = 0.
     page.add(bold_param('Use percentage',
-                        ('%.2f [%d/%d]' % (pc, round.use_percentage[0], round.use_percentage[1]))))
+                        ('%.2f [%d/%d]' % (pc, round.use_percentage[0],
+                                           round.use_percentage[1]))))
 
     try:
         pc = round.efficiency[0] / round.efficiency[1] * 100.
     except ZeroDivisionError:
         pc = 0.
     page.add(bold_param('Efficiency',
-                        ('%.2f [%d/%d]' % (pc, round.efficiency[0], round.efficiency[1]))))
+                        ('%.2f [%d/%d]' % (pc, round.efficiency[0],
+                                           round.efficiency[1]))))
 
     try:
         pc = round.deadtime[0] / round.deadtime[1] * 100.
@@ -293,7 +296,17 @@ def write_safety_round(round, thresh, write_about_file=False, html_file=None):
     page.add(bold_param('Deadtime',
                         ('%.2f [%.2f/%.2f]' % (pc, round.deadtime[0], round.deadtime[1]))))
 
-
+    for desc, tag, n in zip(
+            ['Coincident aux trigs', 'Coincident primary trigs'],
+            ['WINNER', 'COINCS'], [round.efficiency[0], round.n_coincs]):
+        if isinstance(round.files[tag], str):
+            files = [round.files[tag]]
+        else:
+            files = round.files[tag]
+        link = ' '.join([gwhtml.html_link(
+            f, '[%s]' % os.path.splitext(f)[1].strip('.')) for f in files])
+        description = '{:s} ({:d})'.format(desc, n)
+        page.add(bold_param(description, link))
 
     if round.scans is not None:
         page.p('<b>Omega scans:</b>')
