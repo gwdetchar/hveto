@@ -47,6 +47,7 @@ from gwpy.segments import (Segment, SegmentList,
 from gwdetchar import cli
 from gwdetchar.io.html import (FancyPlot, cis_link)
 from gwdetchar.omega import batch
+from gwdetchar.plot import texify
 
 from hveto import (__version__, config, core, plot, html, utils)
 from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, get_column_label)
@@ -576,10 +577,7 @@ cum. deadtime :   %s\n\n""" % (
 
     pngname = os.path.join(plotdir, '%s-HVETO_%%s_ROUND_%d-%d-%d.png' % (
         ifo, round.n, start, duration))
-    if plot.rcParams['text.usetex']:
-        wname = round.winner.name.replace('_', r'\_')
-    else:
-        wname = round.winner.name
+    wname = texify(round.winner.name)
     beforel = 'Before\n[%d]' % len(before)
     afterl = 'After\n[%d]' % len(primary)
     vetoedl = 'Vetoed\n(primary)\n[%d]' % len(vetoed)
