@@ -575,8 +575,8 @@ cum. deadtime :   %s\n\n""" % (
 
     # -- make some plots --
 
-    pngname = os.path.join(plotdir, '%s-HVETO_%%s_ROUND_%d-%d-%d.png' %
-        (ifo, round.n, start, duration))
+    pngname = os.path.join(plotdir, '%s-HVETO_%%s_ROUND_%d-%d-%d.png' % (
+        ifo, round.n, start, duration))
     wname = texify(round.winner.name)
     beforel = 'Before\n[%d]' % len(before)
     afterl = 'After\n[%d]' % len(primary)
