@@ -238,7 +238,9 @@ def write_summary(
 
     # scaffold plots
     if plots:
+        page.div(class_='card border-light card-body scaffold shadow-sm')
         page.add(gwhtml.scaffold_plots(plots, nperrow=plotsperrow))
+        page.div.close()  # card border-light card-body scaffold shadow-sm
     return page()
 
 
@@ -259,7 +261,7 @@ def write_round(round_, context):
         the formatted HTML for this round
     """
     page = markup.page()
-    page.div(class_='card card-%s mb-5 shadow-sm' % context)
+    page.div(class_='card card-%s mb-3 shadow-sm' % context)
     # -- make heading
     page.div(class_='card-header pb-0')
     # heading
@@ -317,7 +319,7 @@ def write_round(round_, context):
     # add significance drop plot at end
     page.div(class_='row')
     page.div(class_='col-sm-12')
-    page.add(gwhtml.fancybox_img(round_.plots[-1]))
+    page.add(gwhtml.fancybox_img(round_.plots[-1], lazy=True))
     page.div.close()  # col-sm-12
     page.div.close()  # row
     page.div.close()  # col-md-8
@@ -367,7 +369,7 @@ def write_hveto_page(rounds, plots, context='default'):
     """
     page = markup.page()
     page.add(write_summary(rounds, plots))
-    page.h2('Round details', id_='rounds')
+    page.h2('Round details', class_='mt-4', id_='rounds')
     for r in rounds:
         page.add(write_round(r, context=context))
     return page
