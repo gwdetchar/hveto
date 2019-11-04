@@ -398,12 +398,7 @@ def write_null_page(reason, context='info'):
     index : `str`
         the path of the HTML written for this analysis
     """
-    page = markup.page()
-    # write alert
-    page.div(class_='alert alert-%s' % context)
-    page.p(reason)
-    page.div.close()  # alert
-    return page
+    return gwhtml.alert(reason, context=context, dismiss=False)
 
 
 @wrap_html
@@ -428,6 +423,4 @@ def write_about_page(configfile):
     index : `str`
         the path of the HTML written for this analysis
     """
-    # set up page
-    page = gwhtml.about_this_page(configfile)
-    return page
+    return gwhtml.about_this_page(configfile)

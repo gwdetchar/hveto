@@ -45,7 +45,7 @@ from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
 from gwdetchar import cli
-from gwdetchar.io.html import (OBSERVATORY_MAP, FancyPlot, cis_link)
+from gwdetchar.io.html import (FancyPlot, cis_link)
 from gwdetchar.omega import batch
 
 from hveto import (__version__, config, core, plot, html, utils)
@@ -136,7 +136,7 @@ for d in [segdir, plotdir, trigdir, omegadir]:
 htmlv = {
     'title': '%s Hveto | %d-%d' % (ifo, start, end),
     'config': None,
-    'context': OBSERVATORY_MAP[ifo]['context'],
+    'context': ifo.lower(),
 }
 
 # get segments
