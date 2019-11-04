@@ -34,6 +34,7 @@ import gwtrigfind
 from gwpy.io import cache as io_cache
 from gwpy.io.utils import file_list
 from gwpy.table import EventTable
+from gwpy.table.filters import in_segmentlist
 from gwpy.table.io.pycbc import filter_empty_files as filter_empty_pycbc_files
 from gwpy.segments import SegmentList
 
@@ -287,7 +288,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             new = EventTable.read(segcache, **read_kwargs)
             new.meta = {k: new.meta[k] for k in TABLE_META if new.meta.get(k)}
             if outofbounds:
-                new = new[new[new.dtype.names[0]].in_segmentlist(segaslist)]
+                new = new[in_segmentlist(new[new.dtype.names[0]], segaslist)]
             tables.append(new)
     if len(tables):
         table = vstack_tables(tables)

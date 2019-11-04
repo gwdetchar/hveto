@@ -45,7 +45,7 @@ from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 
 from gwdetchar import cli
-from gwdetchar.io.html import (OBSERVATORY_MAP, FancyPlot, cis_link)
+from gwdetchar.io.html import (FancyPlot, cis_link)
 from gwdetchar.omega import batch
 
 from hveto import (__version__, config, core, plot, html, utils)
@@ -136,7 +136,7 @@ for d in [segdir, plotdir, trigdir, omegadir]:
 htmlv = {
     'title': '%s Hveto | %d-%d' % (ifo, start, end),
     'config': None,
-    'context': OBSERVATORY_MAP[ifo]['context'],
+    'context': ifo.lower(),
 }
 
 # get segments
@@ -454,14 +454,14 @@ while True:
     #   only now do we actually have the new data to calculate significance
     #   drop
     if round.n > 1:
-        png = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
+        svg = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
         plot.significance_drop(
-            png, oldsignificances, newsignificances,  # noqa: F821
+            svg, oldsignificances, newsignificances,  # noqa: F821
             title=' | '.join([title, subtitle]),  # noqa: F821
             bbox_inches='tight')
-        logger.debug("Figure written to %s" % png)
-        png = FancyPlot(png, caption=ROUND_CAPTION['SIG_DROP'])
-        rounds[-1].plots.append(png)
+        logger.debug("Figure written to %s" % svg)
+        svg = FancyPlot(svg, caption=ROUND_CAPTION['SIG_DROP'])
+        rounds[-1].plots.append(svg)
     oldsignificances = newsignificances
 
     # break out of the loop if the significance is below the stopping point
