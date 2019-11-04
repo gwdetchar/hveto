@@ -29,61 +29,44 @@ from gwdetchar.utils import parse_html
 from .. import html
 
 BANNER = """<div class="page-header" role="banner">
-<h1>L1 HierarchicalVeto</h1>
-<h3>0-100</h3>
+<h1 class="pb-2 mt-3 mb-2 border-bottom">L1 HierarchicalVeto</h1>
+<h3 class="mt-3">0-100</h3>
 </div>"""
 
-NAVBAR = """<header class="navbar navbar-fixed-top navbar-h1">
-<div class="container">
-<div class="navbar-header">
-<button class="navbar-toggle" data-toggle="collapse" type="button" data-target=".navbar-collapse">
-<span class="icon-bar"></span>
-<span class="icon-bar"></span>
-<span class="icon-bar"></span>
+NAVBAR = """<nav class="navbar fixed-top navbar-expand-md navbar-h1 shadow-sm">
+<div class="container-fluid">
+<div class="navbar-brand border border-white rounded">H1 Hveto</div>
+<button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target=".navbar-collapse">
+<span class="navbar-toggler-icon"></span>
 </button>
-<div class="navbar-brand">H1</div>
-<div class="navbar-brand">Hveto</div>
-<div class="btn-group pull-right ifo-links">
-<a class="navbar-brand dropdown-toggle" href="#" data-toggle="dropdown">
-Links
-<b class="caret"></b>
-</a>
-<ul class="dropdown-menu">
-<li class="dropdown-header">Internal</li>
-<li>
-<a href="about">About this page</a>
+<div class="collapse navbar-collapse justify-content-between">
+<ul class="nav navbar-nav mr-auto">
+<li class="nav-item">
+<a href="#" class="nav-link">Summary</a>
 </li>
-<li class="divider"></li>
-<li class="dropdown-header">External</li>
-<li>
-<a href="https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day/19800106" target="_blank">LHO Summary Pages</a>
-</li>
-<li>
-<a href="https://alog.ligo-wa.caltech.edu/aLOG" target="_blank">LHO Logbook</a>
+<li class="nav-item dropdown">
+<a href="#" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">Rounds</a>
+<div class="dropdown-menu dropdown-1-col shadow">
+<a href="#hveto-round-1" class="dropdown-item">1: H1:TEST-STRAIN</a>
+</div>
 </li>
 </ul>
-</div>
-</div>
-<nav class="collapse navbar-collapse">
 <ul class="nav navbar-nav">
-<li>
-<a href="#">Summary</a>
-</li>
-<li class="dropdown">
-<a href="#" class="dropdown-toggle" data-toggle="dropdown">
-Rounds
-<b class="caret"></b>
-</a>
-<ul class="dropdown-menu">
-<li>
-<a href="#hveto-round-1">1: H1:TEST-STRAIN</a>
-</li>
-</ul>
-</li>
-</ul>
-</nav>
+<li class="nav-item dropdown">
+<a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown">Links</a>
+<div class="dropdown-menu dropdown-menu-right shadow">
+<h6 class="dropdown-header">Internal</h6>
+<a href="about" class="dropdown-item">About this page</a>
+<div class="dropdown-divider"></div>
+<h6 class="dropdown-header">External</h6>
+<a href="https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day/19800106" class="dropdown-item" target="_blank">LHO Summary Pages</a>
+<a href="https://alog.ligo-wa.caltech.edu/aLOG" class="dropdown-item" target="_blank">LHO Logbook</a>
 </div>
-</header>"""  # noqa: E501
+</li>
+</ul>
+</div>
+</div>
+</nav>"""  # noqa: E501
 
 
 # -- unit tests ---------------------------------------------------------------

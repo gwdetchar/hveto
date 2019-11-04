@@ -86,8 +86,8 @@ def banner(ifo, start, end):
     page = markup.page()
     # write banner
     page.div(class_='page-header', role='banner')
-    page.h1("%s HierarchicalVeto" % ifo)
-    page.h3("%d-%d" % (start, end))
+    page.h1("%s HierarchicalVeto" % ifo, class_='pb-2 mt-3 mb-2 border-bottom')
+    page.h3("%d-%d" % (start, end), class_='mt-3')
     page.div.close()
     return page()
 
@@ -138,13 +138,9 @@ def wrap_html(func):
         version = get_versions()['version']
         commit = get_versions()['full-revisionid']
         url = 'https://github.com/gwdetchar/hveto/tree/{}'.format(commit)
-        link = markup.oneliner.a(
-            'View hveto-{} on GitHub'.format(version), href=url,
-            target='_blank')
-        report = 'https://github.com/gwdetchar/hveto/issues'
-        issues = markup.oneliner.a(
-            'Report an issue', href=report, target='_blank')
-        gwhtml.close_page(page, index, about=about, link=link, issues=issues)
+        gwhtml.close_page(page, index, about=about,
+                          link=('hveto-%s' % version, url, 'GitHub'),
+                          issues='https://github.com/gwdetchar/hveto/issues')
         return index
     return decorated_func
 
@@ -174,7 +170,7 @@ def bold_param(key, value, **attrs):
 
 def write_summary(
         rounds, plots=[], header='Summary', plotsperrow=4,
-        tableclass='table table-condensed table-hover table-responsive'):
+        tableclass='table table-sm table-hover'):
     """Write the Hveto analysis summary HTML
 
     Parameters
@@ -197,7 +193,7 @@ def write_summary(
         and images
     """
     page = markup.page()
-    page.h2(header)
+    page.h2(header, class_='mt-4')
     page.table(class_=tableclass)
     page.caption("Summary of this HierarchichalVeto analysis.")
     # make header
@@ -246,12 +242,12 @@ def write_summary(
     return page()
 
 
-def write_round(round, context='info'):
+def write_round(round_, context):
     """Write the HTML summary for a specific round
 
     Parameters
     ----------
-    round : `HvetoRound`
+    round_ : `HvetoRound`
         the analysis round object
 
     context : `str`
@@ -263,53 +259,49 @@ def write_round(round, context='info'):
         the formatted HTML for this round
     """
     page = markup.page()
-    page.div(class_='panel well panel-%s' % context)
+    page.div(class_='card card-%s mb-5 shadow-sm' % context)
     # -- make heading
-    page.div(class_='panel-heading clearfix')
-    # link to top of page
-    page.div(class_='pull-right')
-    page.a("<small>[top]</small>", href='#')
-    page.div.close()  # pull-right
+    page.div(class_='card-header pb-0')
     # heading
-    page.h3('Round %d, Winner = %s, window = %s, SNR thresh = %s'
-            % (round.n, round.winner.name, round.winner.window,
-               round.winner.snr),
-            class_='panel-title', id_='hveto-round-%d' % round.n)
-    page.div.close()  # panel-heading
+    page.h5('Round %d, Winner = %s, window = %s, SNR thresh = %s'
+            % (round_.n, round_.winner.name, round_.winner.window,
+               round_.winner.snr),
+            class_='card-title', id_='hveto-round-%d' % round_.n)
+    page.div.close()  # card-header pb-0
 
     # -- make body
-    page.div(class_='panel-body')
+    page.div(class_='card-body')
     page.ul(class_='list-group')
-    page.li(class_='list-group-item')
+    page.li(class_='list-group-item flex-column align-items-start')
     page.div(class_='row')
     # summary information
-    page.div(class_='col-md-3', id_='hveto-round-%d-summary' % round.n)
-    page.add(bold_param('Winner', round.winner.name))
-    page.add(bold_param('SNR threshold', round.winner.snr))
-    page.add(bold_param('Window', round.winner.window))
-    page.add(bold_param('Significance', '%.2f' % round.winner.significance))
+    page.div(class_='col-md-3', id_='hveto-round-%d-summary' % round_.n)
+    page.add(bold_param('Winner', round_.winner.name))
+    page.add(bold_param('SNR threshold', round_.winner.snr))
+    page.add(bold_param('Window', round_.winner.window))
+    page.add(bold_param('Significance', '%.2f' % round_.winner.significance))
     for desc, tag in zip(
             ['Veto segments', 'Veto triggers', 'Vetoed primary triggers',
              'Unvetoed primary triggers'],
             ['VETO_SEGS', 'WINNER', 'VETOED', 'RAW']):
-        if isinstance(round.files[tag], str):
-            files = [round.files[tag]]
+        if isinstance(round_.files[tag], str):
+            files = [round_.files[tag]]
         else:
-            files = round.files[tag]
+            files = round_.files[tag]
         link = ' '.join([gwhtml.html_link(
             f, '[%s]' % os.path.splitext(f)[1].strip('.')) for f in files])
         page.add(bold_param(desc, link))
     # link omega scans if generated
-    if round.scans is not None:
+    if round_.scans is not None:
         page.p('<b>Omega scans:</b>')
-        for t in round.scans:
+        for t in round_.scans:
             page.p()
             page.a('%s [SNR %.1f]' % (t['time'], t['snr']),
                    href='./scans/%s/' % t['time'], **{
                        'class_': 'fancybox',
                        'data-fancybox-group': 'hveto-image',
                        'target': '_blank'})
-            for c, tag in zip([round.primary, round.winner.name],
+            for c, tag in zip([round_.primary, round_.winner.name],
                               ['Primary', 'Auxiliary']):
                 caption = 'Omega scan of %s at %s' % (c, t['time'])
                 png = ('./scans/%s/plots/%s-qscan_whitened-1.png'
@@ -320,22 +312,22 @@ def write_round(round, context='info'):
             page.p.close()
     page.div.close()  # col
     # plots
-    page.div(class_='col-md-9', id_='hveto-round-%d-plots' % round.n)
-    page.add(gwhtml.scaffold_plots(round.plots[:-1], nperrow=4))
+    page.div(class_='col-md-9', id_='hveto-round-%d-plots' % round_.n)
+    page.add(gwhtml.scaffold_plots(round_.plots[:-1], nperrow=4))
     # add significance drop plot at end
     page.div(class_='row')
     page.div(class_='col-sm-12')
-    page.add(gwhtml.fancybox_img(round.plots[-1]))
+    page.add(gwhtml.fancybox_img(round_.plots[-1]))
     page.div.close()  # col-sm-12
     page.div.close()  # row
     page.div.close()  # col-md-8
 
     page.div.close()  # row
-    page.li.close()  # list-group-item
+    page.li.close()  # list-group-item flex-column align-items-start
     page.ul.close()  # list-group
     # close and return
-    page.div.close()  # panel-body
-    page.div.close()  # panel
+    page.div.close()  # card-body
+    page.div.close()  # card
     return page()
 
 
