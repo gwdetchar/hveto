@@ -210,8 +210,11 @@ def write_summary(
     for r in rounds:
         page.tr()
         # link round down page
-        page.td(gwhtml.html_link('#hveto-round-%d' % r.n, r.n, target=None,
-                                 title="Jump to round %d details" % r.n))
+        page.td(gwhtml.html_link(
+            '#hveto-round-%d' % r.n, r.n, target=None,
+            title="Jump to round %d details" % r.n,
+            style='color: inherit;',
+        ))
         # link name to CIS
         page.td(gwhtml.cis_link(r.winner.name))
         for attr in ['window', 'snr', 'significance']:
@@ -291,7 +294,8 @@ def write_round(round_, context):
         else:
             files = round_.files[tag]
         link = ' '.join([gwhtml.html_link(
-            f, '[%s]' % os.path.splitext(f)[1].strip('.')) for f in files])
+            f, '[%s]' % os.path.splitext(f)[1].strip('.'),
+            style='color: inherit;') for f in files])
         page.add(bold_param(desc, link))
     # link omega scans if generated
     if round_.scans is not None:
@@ -301,7 +305,7 @@ def write_round(round_, context):
             page.a('%s [SNR %.1f]' % (t['time'], t['snr']),
                    href='./scans/%s/' % t['time'], **{
                        'class_': 'fancybox',
-                       'data-fancybox-group': 'hveto-image',
+                       'style': 'color: inherit;',
                        'target': '_blank'})
             for c, tag in zip([round_.primary, round_.winner.name],
                               ['Primary', 'Auxiliary']):
@@ -310,7 +314,9 @@ def write_round(round_, context):
                        % (t['time'], c.replace('-', '_').replace(':', '-')))
                 page.a('[%s]' % tag[0].lower(), class_='fancybox',
                        href=png, title=caption,
-                       **{'data-fancybox-group': 'omega-preview'})
+                       style='color: inherit;',
+                       **{'data-fancybox-group': 'omega-preview',
+                          'data-fancybox': 'gallery'})
             page.p.close()
     page.div.close()  # col
     # plots
