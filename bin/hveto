@@ -414,7 +414,7 @@ auxslabel = get_column_label(auxscol)
 auxflabel = get_column_label(auxfcol)
 
 rounds = []
-round = core.HvetoRound(1, pchannel)
+round = core.HvetoRound(1, pchannel, rank=scol)
 round.segments = analysis.active
 
 while True:
@@ -674,7 +674,7 @@ cum. deadtime :   %s\n\n""" % (
 
     # move to the next round
     rounds.append(round)
-    round = core.HvetoRound(round.n + 1, pchannel,
+    round = core.HvetoRound(round.n + 1, pchannel, rank=scol,
                             segments=round.segments-round.vetoes)
 
 # write file with all segments

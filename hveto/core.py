@@ -54,10 +54,11 @@ class HvetoRound(object):
         'plots',
         'files',
         'scans',
+        'rank',
     )
 
     def __init__(self, round, primary, segments=None, vetoes=None,
-                 plots=[], files={}):
+                 plots=[], files={}, rank=None):
         self.n = round
         self.primary = primary
         self.segments = segments
@@ -65,6 +66,7 @@ class HvetoRound(object):
         self.plots = []
         self.files = {}
         self.scans = None
+        self.rank = rank
 
     @property
     def livetime(self):
