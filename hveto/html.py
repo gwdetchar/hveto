@@ -302,7 +302,7 @@ def write_round(round_, context):
         page.p('<b>Omega scans:</b>')
         for t in round_.scans:
             page.p()
-            page.a('%s [SNR %.1f]' % (t['time'], t['snr']),
+            page.a('%s [SNR %.1f]' % (t['time'], t[round_.rank]),
                    href='./scans/%s/' % t['time'], **{
                        'class_': 'fancybox',
                        'style': 'color: inherit;',
