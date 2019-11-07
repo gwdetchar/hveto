@@ -307,6 +307,13 @@ else:
        pchannel, livetime)
     logger.critical(message)
 
+# cluster primary triggers
+clusterkwargs = cp.getparams('primary', 'cluster-')
+if clusterkwargs:
+    primary = primary.cluster(**clusterkwargs)
+    logger.info("%d primary events remain after clustering over %s" %
+                (len(primary), clusterkwargs['rank']))
+
 # -- bail out early -----------------------------------------------------------
 # the bail out is done here so that we can at least generate the eventual
 # configuration file, mainly for HTML purposes
