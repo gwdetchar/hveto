@@ -696,8 +696,8 @@ if not rounds:
         winner.name, cis_link(winner.name, class_='alert-link'))
     message += '<br>[T<sub>win</sub>: %ss, SNR: %s]' % (
         winner.window, winner.snr)
-    index = html.write_null_page(ifo, start, end, message, context='warning',
-                                 **htmlv)
+    htmlv['context'] = 'warning'
+    index = html.write_null_page(ifo, start, end, message, **htmlv)
     logger.info("HTML report written to %s" % index)
     sys.exit(0)
 
