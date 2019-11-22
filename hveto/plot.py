@@ -179,7 +179,7 @@ COLUMN_LABEL = {
     'central_freq': r"Frequency [Hz]",
     'frequency': r"Frequency [Hz]",
     'mchirp': r"Chirp mass [M$_\odot$]",
-    'new_snr': r"$\chi^2$-weighted signal-to-noise ratio (New SNR)",
+    'new_snr': r"$\chi^2$-weighted SNR (newSNR)",
     'peak_frequency': r"Frequency [Hz]",
     'rho': r"$\rho$",
     'snr': r"Signal-to-noise ratio (SNR)",

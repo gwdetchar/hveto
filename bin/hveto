@@ -424,6 +424,10 @@ rounds = []
 round = core.HvetoRound(1, pchannel, rank=scol)
 round.segments = analysis.active
 
+# set plot values for PyCBC triggers
+scatter_lim = [5, 12] if petg == 'pycbc.live' else [3, 100]
+scatter_log = False if petg == 'pycbc.live' else True
+
 while True:
     logger.info("-- Processing round %d --" % round.n)
 
@@ -631,9 +635,9 @@ cum. deadtime :   %s\n\n""" % (
     plot.veto_scatter(
         png, before, vetoed, x='time', y=fcol, color=scol,
         label1=None, label2=None, ylabel=flabel,
-        clabel=slabel, clim=[3, 100], cmap='YlGnBu',
+        clabel=slabel, clim=scatter_lim, cmap='YlGnBu',
         epoch=start, xlim=[start, end], ylim=pfreq,
-        title=ptitle, subtitle=subtitle)
+        title=ptitle, subtitle=subtitle, clog=scatter_log)
     logger.debug("Figure written to %s" % png)
     png = FancyPlot(png, caption=ROUND_CAPTION['TIME'])
     round.plots.append(png)
