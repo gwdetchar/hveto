@@ -24,7 +24,7 @@ import h5py
 
 from gwpy.table import EventTable
 
-def safety_h5_read(inpath, grp='/'):
+def safety_h5_read(inpath, frq_range=None, grp='/'):
     """Read all events from group as channelx
     INPUT
     =====
@@ -45,6 +45,11 @@ def safety_h5_read(inpath, grp='/'):
         ev = infile.get(chan)
         if len(ev) > 0:
             evtbl = EventTable(ev[()])
-            ret[chan] = evtbl
+            if frq_range:
+                sel = (evtbl['frequency'] >= frq_range[0]) & \
+                      (evtbl['frequency'] <= frq_range[1])
+                ret[chan] = evtbl[sel]
+            else:
+                ret[chan] = evtbl
 
     return ret

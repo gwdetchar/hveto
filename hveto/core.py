@@ -55,8 +55,10 @@ class HvetoRound(object):
         'plots',
         'files',
         'scans',
+        # Used by safety
         'unsafe',
         'n_coincs',
+        'n_vetoed',
     )
 
     def __init__(self, round, primary, segments=None, vetoes=None,
@@ -70,6 +72,7 @@ class HvetoRound(object):
         self.scans = None
         self.unsafe = False # used in safety studies to flag already known
         self.n_coincs = 0    # used in safety studies for report
+        self.n_vetoed = 0
 
     @property
     def livetime(self):
@@ -195,7 +198,7 @@ def find_max_significance(primary, auxiliary, channel, snrs, windows, livetime):
 
 class HvetoWinner(object):
     __slots__ = ['name', 'significance', 'snr', 'window', 'segments',
-                 'events', 'ncoinc', 'mu']
+                 'events', 'ncoinc', 'mu', 'n_vetoed']
 
     def __init__(self, name=None, significance=None, snr=None,
                  window=None, segments=None, events=None, ncoinc=0, mu=None):

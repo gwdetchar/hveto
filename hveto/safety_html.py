@@ -109,6 +109,13 @@ def wrap_html(func):
         return index
     return decorated_func
 
+def add_file_download(page, path, label, text):
+    """Add a downloadable file to results page
+    """
+    if os.path.exists(path):
+        l = gwhtml.html_link(path, label)
+        page.add(bold_param(text, l))
+
 
 @wrap_html
 def write_hveto_safety_page(rounds, thresh, inj_img=None):
@@ -142,12 +149,21 @@ def write_hveto_safety_page(rounds, thresh, inj_img=None):
     tableclass = 'table table-condensed table-hover table-responsive'
     page.table(class_=tableclass)
     page.caption("Summary of Hierarchical Veto safety analysis.")
-    l = gwhtml.html_link('./safety_summary.csv', 'Channel summary as CSV')
-    page.add(bold_param('Download channel summary', l))
 
-    if os.path.exists('./omega_times.txt'):
-        l = gwhtml.html_link('./omega_times.txt', 'times for omega')
-        page.add(bold_param('Download omega times (to run wdq_batch)', l))
+    page.h3('Input used')
+    add_file_download(page, './primary.h5', 'Primary (hwinj) triggers',
+                      'Download primary triggers used:')
+    add_file_download(page, './auxiliary.h5', 'Auxiliary (omicron) triggers',
+                      'Download auxiliary triggers used:')
+    add_file_download(page, './segment.xml.gz', 'Segment(s) used',
+                      'Download segment(s) analyzed:')
+
+    page.h3('Downloadable output')
+    add_file_download(page, './safety_summary.csv', 'Channel summary as CSV',
+                      'Download channel summary (with at least '
+                      '1 trigger analyzed):')
+    add_file_download(page, './omega_times.txt', 'times for omega',
+                      'Download omega times (to run wdq_batch):')
 
     if inj_img:
         caption = 'All injections'
@@ -268,7 +284,7 @@ def write_safety_round(round, thresh, write_about_file=False, html_file=None):
     page.div(class_='row')
     # summary information
     page.div(class_='col-md-3', id_='hveto-round-%04d-summary' % round.n)
-    page.add(bold_param('Winner', round.winner.name))
+    page.add(bold_param('Channel', round.winner.name))
     page.add(bold_param('SNR threshold', round.winner.snr))
     page.add(bold_param('Window', round.winner.window))
     page.add(bold_param('Significance', '%.2f' % round.winner.significance))
@@ -297,8 +313,8 @@ def write_safety_round(round, thresh, write_about_file=False, html_file=None):
                         ('%.2f [%.2f/%.2f]' % (pc, round.deadtime[0], round.deadtime[1]))))
 
     for desc, tag, n in zip(
-            ['Coincident aux trigs', 'Coincident primary trigs'],
-            ['WINNER', 'COINCS'], [round.efficiency[0], round.n_coincs]):
+            ['Coincident primary trigs', 'Coincident aux trigs'],
+            ['VETOED', 'COINCS'], [round.n_vetoed, round.n_coincs]):
         if isinstance(round.files[tag], str):
             files = [round.files[tag]]
         else:

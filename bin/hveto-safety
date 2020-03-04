@@ -26,6 +26,7 @@ matplotlib.use('Agg')
 
 import collections
 import os
+from shutil import copyfile
 import subprocess
 import time
 
@@ -99,7 +100,6 @@ def safety_calc(cp, logger, outdir, inifile,
 
     auxchannels = auxiliary.keys()
 
-    # labels for event table columns used by plotting routines
     slabel = r"Signal-to-noise ratio (SNR)"
     flabel = r"Frequency [Hz]"
     auxslabel = slabel
@@ -288,14 +288,15 @@ def safety_calc(cp, logger, outdir, inifile,
                                             '%s-HVETO_%%s_TRIGS_ROUND_%d-%d-%d.txt'
                                             % (ifo, round.n, start, duration))
                     for tag, arr in zip(
-                            ['WINNER', 'COINCS'],
-                            [winner.events, coincs]):
+                            ['VETOED', 'COINCS'],
+                            [vetoed, coincs]):
                         trig_fname = trigfile % tag
                         arr.write(trig_fname, format='ascii', overwrite=True)
                         logger.debug("Round %d %s events written to %s"
-                                     % (round.n, tag.lower(), f))
+                                     % (round.n, tag.lower(), trig_fname))
                         round.files[tag] = trig_fname
                     round.n_coincs = len(coincs)
+                    round.n_vetoed = len(vetoed)
                     logger.debug('%4d. %s ' % (round.n, cs.name))
                     # log results
                     logger.info('Results for round %d\n'
@@ -558,8 +559,11 @@ if __name__ == "__main__":
     cp.read(args.config_file)
     logger.info("Parsed configuration file(s)")
 
-    primary = safety_h5_read(args.primary)
-    auxiliary = safety_h5_read(args.auxiliary)
+    primary_freq_range = cp.getfloats('primary', 'frequency-range')
+    primary = safety_h5_read(args.primary, primary_freq_range)
+
+    aux_freq_range = cp.getfloats('auxiliary', 'frequency-range')
+    auxiliary = safety_h5_read(args.auxiliary, aux_freq_range)
 
     outdir = args.output_directory
     if os.path.exists(outdir):
@@ -574,6 +578,12 @@ if __name__ == "__main__":
     os.chdir(outdir)
 
     analysis_seg = DataQualityFlag.read(args.segment)
+
+    # copy input files to results
+    copyfile(args.primary, os.path.join(outdir, 'primary.h5'))
+    copyfile(args.auxiliary, os.path.join(outdir, 'auxiliary.h5'))
+    copyfile(args.segment, os.path.join(outdir, 'segment.xml.gz'))
+
     safety_calc(cp, logger, outdir, args.config_file, args.ifo,
                 args.gpsstart, args.gpsend, start_time)
 
