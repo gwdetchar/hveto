@@ -76,7 +76,7 @@ def get_events(tcache):
     return ret
 
 def plot_tbl(table, channel):
-    plot = table.scatter('time', 'freq', color='snr',
+    plot = table.scatter('time', 'frequency', color='snr',
                          edgecolor='none')
     ax = plot.gca()
 
