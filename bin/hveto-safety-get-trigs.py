@@ -141,7 +141,7 @@ if __name__ == "__main__":
     prim_cache = find_trigger_files(prim, 'omicron', start, end)
     prim_trigs = get_events(prim_cache)
     prim_trigs = prim_trigs[(prim_trigs['freq']>15) &
-                            (prim_trigs['freq']>900)]
+                            (prim_trigs['freq']<900)]
     prim_filename = args.outbase + '-primary.h5'
     with h5py.File(prim_filename, 'w') as prim_out:
         prim_trigs.write(prim_out, path='/'+prim)
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     logger.info('Primary trig plot written to {:s}'.format(prim_plot_file))
 
     trig_path = os.path.join('/home/detchar/triggers', ifo)
-    trigfiles = glob.glob(trig_path)
+    trigfiles = glob.glob(trig_path+'/*_OMICRON')
 
     aux_file = args.outbase + '-auxiliary.h5'
     aux_end = end + 10
