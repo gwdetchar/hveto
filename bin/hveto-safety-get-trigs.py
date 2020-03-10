@@ -166,9 +166,10 @@ if __name__ == "__main__":
             chan = ifo + ':' + dirname.replace('_','-',1).\
                     replace('_OMICRON', '')
             aux_cache = find_trigger_files(chan, 'omicron', aux_start, aux_end)
-            aux_trigs = get_events(aux_cache)
-            if len(aux_trigs) > 0:
-                aux_trigs.write(aux, path=chan)
+            if len(aux_cache) > 0:
+                aux_trigs = get_events(aux_cache)
+                if len(aux_trigs) > 0:
+                    aux_trigs.write(aux, path=chan)
 
     logger.info('Wrote aux triggers to {:s}'.format(aux_file))
     # -------
