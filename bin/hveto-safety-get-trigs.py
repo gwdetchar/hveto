@@ -71,7 +71,7 @@ def get_events(tcache):
 
     ret = EventTable()
     ret['time'] = time
-    ret['freq'] = freq
+    ret['frequency'] = freq
     ret['snr'] = snr
     return ret
 
@@ -140,8 +140,8 @@ if __name__ == "__main__":
     prim = ifo + ':GDS-CALIB_STRAIN'
     prim_cache = find_trigger_files(prim, 'omicron', start, end)
     prim_trigs = get_events(prim_cache)
-    prim_trigs = prim_trigs[(prim_trigs['freq']>15) &
-                            (prim_trigs['freq']<900)]
+    prim_trigs = prim_trigs[(prim_trigs['frequency']>15) &
+                            (prim_trigs['frequency']<900)]
     prim_filename = args.outbase + '-primary.h5'
     with h5py.File(prim_filename, 'w') as prim_out:
         prim_trigs.write(prim_out, path='/'+prim)
@@ -174,5 +174,5 @@ if __name__ == "__main__":
     logger.info('Wrote aux triggers to {:s}'.format(aux_file))
     # -------
     elap = time.time() - start_time
-    logger.info('Run time {:.1} s'.format(elap))
+    logger.info('Run time {:.1f} s'.format(elap))
 
