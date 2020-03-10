@@ -46,7 +46,7 @@ def safety_h5_read(inpath, frq_range=None, grp='/'):
         if len(ev) > 0:
             evtbl = EventTable(ev[()])
             if frq_range:
-                sel = (evtbl['freq'] >= frq_range[0]) & \
+                sel = (evtbl['frequency'] >= frq_range[0]) & \
                       (evtbl['frequency'] <= frq_range[1])
                 ret[chan] = evtbl[sel]
             else:

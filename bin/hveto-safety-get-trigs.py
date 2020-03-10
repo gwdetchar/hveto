@@ -142,6 +142,7 @@ if __name__ == "__main__":
     prim_trigs = get_events(prim_cache)
     prim_trigs = prim_trigs[(prim_trigs['frequency']>15) &
                             (prim_trigs['frequency']<900)]
+    prim_trigs['channel'] = prim
     prim_filename = args.outbase + '-primary.h5'
     with h5py.File(prim_filename, 'w') as prim_out:
         prim_trigs.write(prim_out, path='/'+prim)
@@ -169,6 +170,7 @@ if __name__ == "__main__":
             if len(aux_cache) > 0:
                 aux_trigs = get_events(aux_cache)
                 if len(aux_trigs) > 0:
+                    aux_trigs['channel'] = chan
                     aux_trigs.write(aux, path=chan)
 
     logger.info('Wrote aux triggers to {:s}'.format(aux_file))

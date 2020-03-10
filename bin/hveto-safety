@@ -135,7 +135,7 @@ def safety_calc(cp, logger, outdir, inifile,
     chan_num = 0
 
     # Convert dictionaries of event tables to 1 table
-    # NB: channe name is one column
+    # NB: channel name is one column
     pri_list = list(primary.values())
     aux_list = list(auxiliary.values())
     rec = vstack_tables(pri_list+aux_list)
