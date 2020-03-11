@@ -200,7 +200,7 @@ def safety_calc(cp, logger, outdir, inifile,
                 chan_stats.append(chan_stat)
             else:
                 logger.info('{:s} had zero trigger coincidences'.
-                            format(this_chan))
+                            format(chan))
     # sort by significance
     chan_stats = sorted(chan_stats, key=lambda x: x.significance, reverse=True)
 
