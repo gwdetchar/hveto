@@ -539,6 +539,10 @@ def write_round_plots(original_triggers, after_vetoing, vetoed, original_aux,
         channels
     labels : `dict`
         dictionary of plot labels for primary and auxiliary channels
+    pfreq : `tuple`
+        frequency range to plot for primary triggers
+    pngname : `str`
+        generalized plot filename that will be formatted for each plot
     logger : 'logging.Logger`, default: `None`
         if provided, log messages will be written to the provided logger,
 
