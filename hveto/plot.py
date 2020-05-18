@@ -22,6 +22,8 @@
 import warnings
 from math import (log10, floor)
 from io import BytesIO
+import os
+import logging
 
 import numpy
 
@@ -33,6 +35,7 @@ from matplotlib.colors import LogNorm
 from gwpy.plot import Plot
 
 from gwdetchar.plot import texify
+from gwdetchar.io.html import FancyPlot
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda, Alex Urban'
@@ -504,3 +507,149 @@ def hveto_roc(outfile, rounds, figsize=[9, 6], constants=[1, 5, 10, 20],
                   handlelength=1, handletextpad=.5, loc='upper left')
     # save and close
     _finalize_plot(plot, ax, outfile, **axargs)
+
+def write_round_plots(original_triggers, after_vetoing, vetoed, original_aux,
+                      winner, coincs, ifo, round, trange, cols, labels, pfreq,
+                      pngname, logger=None):
+    """Generate and write single round result plots
+
+    Parameters
+    ----------
+    original_triggers : `EventTable`
+        table of primary channel triggers before vetoes have been applied
+    after_vetoing : `EventTable`
+        table of primary channel triggers after vetoes have been applied
+    vetoed : `EventTable`
+        table of primary channel triggers that were vetoed
+    original_aux : `EventTable`
+        table of auxiliary channel triggers for round winner
+    winner : `HvetoWinner`
+        winning channel of this Hveto round
+    coincs : `EventTable`
+        table of winning auxiliary channel triggers that were coincident
+        with a trigger in the primary channel
+    ifo : `str`
+        interferometer used in Hveto analysis
+    round : `HvetoRound`
+        round of Hveto that is currently being processed
+    trange : `tuple`
+        (GPS start time, GPS end time) of Hveto analysis
+    cols : `dict`
+        dictionary of column names to use when plotting primary and auxiliary
+        channels
+    labels : `dict`
+        dictionary of plot labels for primary and auxiliary channels
+    logger : 'logging.Logger`, default: `None`
+        if provided, log messages will be written to the provided logger,
+
+    Returns
+    -------
+    plots : `list`
+        a list of all figures generated for this round
+    """
+    duration = trange[1] - trange[0]
+    plots = []
+    wname = texify(round.winner.name)
+    beforel = 'Before\n[%d]' % len(original_triggers)
+    afterl = 'After\n[%d]' % len(after_vetoing)
+    vetoedl = 'Vetoed\n(primary)\n[%d]' % len(vetoed)
+    beforeauxl = 'All\n[%d]' % len(original_aux)
+    usedl = 'Used\n(aux)\n[%d]' % len(winner.events)
+    coincl = 'Coinc.\n[%d]' % len(coincs)
+    title = '%s Hveto round %d' % (ifo, round.n)
+    ptitle = '%s: primary impact' % title
+    atitle = '%s: auxiliary use' % title
+    subtitle = 'winner: %s [%d-%d]' % (wname, trange[0], trange[1])
+
+    # before/after histogram
+    png = pngname % 'HISTOGRAM'
+    before_after_histogram(
+        png, original_triggers[cols['scol']], after_vetoing[cols['scol']],
+        label1=beforel, label2=afterl, xlabel=labels['slabel'],
+        title=ptitle, subtitle=subtitle)
+    if logger:
+        logger.debug("Figure written to %s" % png)
+    png = FancyPlot(png, caption=ROUND_CAPTION['HISTOGRAM'])
+    plots.append(png)
+
+    # snr versus time
+    png = pngname % 'SNR_TIME'
+    veto_scatter(
+        png, original_triggers, vetoed, x='time', y=cols['scol'], label1=beforel, label2=vetoedl,
+        epoch=trange[0], xlim=trange, ylabel=labels['slabel'],
+        title=ptitle, subtitle=subtitle, legend_title="Primary:")
+    if logger:
+        logger.debug("Figure written to %s" % png)
+    png = FancyPlot(png, caption=ROUND_CAPTION['SNR_TIME'])
+    plots.append(png)
+
+    # snr versus frequency
+    png = pngname % 'SNR_%s' % cols['fcol'].upper()
+    veto_scatter(
+        png, original_triggers, vetoed, x=cols['fcol'], y=cols['scol'], label1=beforel,
+        label2=vetoedl, xlabel=labels['flabel'], ylabel=labels['slabel'], xlim=pfreq,
+        title=ptitle, subtitle=subtitle, legend_title="Primary:")
+    if logger:
+        logger.debug("Figure written to %s" % png)
+    png = FancyPlot(png, caption=ROUND_CAPTION['SNR'])
+    plots.append(png)
+
+    # frequency versus time coloured by SNR
+    png = pngname % '%s_TIME' % cols['fcol'].upper()
+    veto_scatter(
+        png, original_triggers, vetoed, x='time', y=cols['fcol'], color=cols['scol'],
+        label1=None, label2=None, ylabel=labels['flabel'],
+        clabel=labels['slabel'], clim=[3, 100], cmap='YlGnBu',
+        epoch=trange[0], xlim=trange, ylim=pfreq,
+        title=ptitle, subtitle=subtitle)
+    if logger:
+        logger.debug("Figure written to %s" % png)
+    png = FancyPlot(png, caption=ROUND_CAPTION['TIME'])
+    plots.append(png)
+
+    # aux used versus frequency
+    png = pngname % 'USED_SNR_TIME'
+    veto_scatter(
+        png, winner.events, vetoed, x='time', y=[cols['auxscol'], cols['scol']], label1=usedl,
+        label2=vetoedl, ylabel=labels['slabel'], epoch=trange[0], xlim=trange,
+        title=atitle, subtitle=subtitle)
+    if logger:
+        logger.debug("Figure written to %s" % png)
+    png = FancyPlot(png, caption=ROUND_CAPTION['USED_SNR_TIME'])
+    plots.append(png)
+
+    # snr versus time
+    png = pngname % 'AUX_SNR_TIME'
+    veto_scatter(
+        png, original_aux, (winner.events, coincs), x='time', y=cols['auxscol'],
+        label1=beforeauxl, label2=(usedl, coincl), epoch=trange[0],
+        xlim=trange, ylabel=labels['auxslabel'], title=atitle, subtitle=subtitle)
+    if logger:
+        logger.debug("Figure written to %s" % png)
+    png = FancyPlot(png, caption=ROUND_CAPTION['AUX_SNR_TIME'])
+    plots.append(png)
+
+    # snr versus frequency
+    png = pngname % 'AUX_SNR_FREQUENCY'
+    veto_scatter(
+        png, original_aux, (winner.events, coincs), x=cols['auxfcol'], y=cols['auxscol'],
+        label1=beforeauxl, label2=(usedl, coincl), xlabel=labels['auxflabel'],
+        ylabel=labels['auxslabel'], title=atitle, subtitle=subtitle, legend_title="Aux:")
+    if logger:
+        logger.debug("Figure written to %s" % png)
+    png = FancyPlot(png, caption=ROUND_CAPTION['AUX_SNR_FREQUENCY'])
+    plots.append(png)
+
+    # frequency versus time coloured by SNR
+    png = pngname % 'AUX_FREQUENCY_TIME'
+    veto_scatter(
+        png, original_aux, (winner.events, coincs), x='time', y=cols['auxfcol'],
+        color=cols['auxscol'], label1=None, label2=[None, None], ylabel=labels['auxflabel'],
+        clabel=labels['auxslabel'], clim=[3, 100], cmap='YlGnBu', epoch=trange[0],
+        xlim=trange, title=atitle, subtitle=subtitle)
+    if logger:
+        logger.debug("Figure written to %s" % png)
+    png = FancyPlot(png, caption=ROUND_CAPTION['AUX_FREQUENCY_TIME'])
+    plots.append(png)
+
+    return plots
