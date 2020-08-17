@@ -22,6 +22,15 @@
 from math import ceil
 
 from gwdatafind.utils import filename_metadata
+import pandas as pd
+import numpy
+from gwpy.time import from_gps, to_gps
+from gwpy.segments import Segment
+import argparse
+import time
+import glob
+import os
+import datetime as dt
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
@@ -62,3 +71,58 @@ def channel_groups(channellist, ngroups):
     n = int(ceil(len(channellist) / ngroups))
     for i in range(0, len(channellist), n):
         yield channellist[i:i+n]
+
+
+def primary_vetoed(starttime, endtime, ifo, snr=6.0, significance=5.0,
+                   output_dir=os.curdir):
+
+    """Finds all the vetoed primary triggers and the auxiliary winner
+       channel between two gpstimes vetoed by hveto. The data includes
+       the gpstime, snr, peak frequency of the primary trigger and the
+       hveto significance of the correlation between the noise in auxiliary
+       and primary channel.
+       SNR and significance threshold can be used to query the data.
+
+       Returns
+       -------
+       pandas dataframe and saves the csv file in the output directory"""
+
+    startdate = from_gps(starttime).date()
+    enddate = from_gps(endtime).date()
+
+    filename = output_dir+'hveto_primary_{}_{}.csv'.format(starttime, endtime)
+    #Getting all the dates in string format
+    delta = enddate - startdate
+    days = delta.days
+    dates_final = [(startdate + dt.timedelta(i)).strftime('%Y%m%d') for i in
+                   range(days)]
+    #Getting the Vetoed triggers files for each day
+    dfwhole = pd.DataFrame()
+    for j in dates_final:
+        hveto_path = '/home/detchar/public_html/hveto/day/' + j + '/latest/'
+    #files = glob.glob(hveto_path+'triggers/'+ '/*VETOED*.txt')
+
+        try:
+            files = glob.glob(hveto_path+'triggers/' + '/*VETOED*.txt')
+            df = pd.read_csv(hveto_path + 'summary-stats.txt', sep=" ")
+            n = len(df)
+            files = files[:n]
+            dfday = pd.DataFrame()
+            for i in range(n):
+                dfvetoed = pd.read_csv(files[i], sep=" ")
+                dfvetoed['winner'] = df['winner'].iloc[i]
+                dfvetoed['significance'] = df['significance'].iloc[i]
+                dfday = dfday.append(dfvetoed)
+            dfday = dfday.reset_index(drop=True)
+
+            dfwhole = dfwhole.append(dfday)
+            dfwhole = dfwhole[(dfwhole.snr >= snr) &
+                              (dfwhole.significance >= significance)]
+            dfwhole = dfwhole.reset_index(drop=True)
+        except FileNotFoundError:
+            print("Hveto did not run on {0}".format(j))
+    print(dfwhole)
+
+    dfwhole.to_csv(filename, index=None)
+
+    return
