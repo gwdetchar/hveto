@@ -100,7 +100,6 @@ def primary_vetoed(starttime, endtime, ifo, snr=6.0, significance=5.0,
     dfwhole = pd.DataFrame()
     for j in dates_final:
         hveto_path = '/home/detchar/public_html/hveto/day/' + j + '/latest/'
-    #files = glob.glob(hveto_path+'triggers/'+ '/*VETOED*.txt')
 
         try:
             files = glob.glob(hveto_path+'triggers/' + '/*VETOED*.txt')
