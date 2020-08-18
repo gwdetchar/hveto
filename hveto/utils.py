@@ -20,14 +20,9 @@
 """
 
 from math import ceil
-
 from gwdatafind.utils import filename_metadata
 import pandas as pd
-import numpy
 from gwpy.time import from_gps, to_gps
-from gwpy.segments import Segment
-import argparse
-import time
 import glob
 import os
 import datetime as dt
