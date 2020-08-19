@@ -56,3 +56,7 @@ rm -f conda-reqs.txt  # clean up
 # activate the environment
 . ${CONDA_PATH}/etc/profile.d/conda.sh
 conda activate hvetoci
+
+# install this package
+# note: need --editable for coverage with `which ...` to work
+python -m pip install --editable .
