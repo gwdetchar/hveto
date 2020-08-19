@@ -22,7 +22,7 @@
 from math import ceil
 from gwdatafind.utils import filename_metadata
 import pandas as pd
-from gwpy.time import from_gps, to_gps
+from gwpy.time import from_gps
 import glob
 import os
 import datetime as dt
@@ -86,12 +86,12 @@ def primary_vetoed(starttime, endtime, ifo, snr=6.0, significance=5.0,
     enddate = from_gps(endtime).date()
 
     filename = output_dir+'hveto_primary_{}_{}.csv'.format(starttime, endtime)
-    #Getting all the dates in string format
+    # Getting all the dates in string format
     delta = enddate - startdate
     days = delta.days
     dates_final = [(startdate + dt.timedelta(i)).strftime('%Y%m%d') for i in
                    range(days)]
-    #Getting the Vetoed triggers files for each day
+    # Getting the Vetoed triggers files for each day
     dfwhole = pd.DataFrame()
     for j in dates_final:
         hveto_path = '/home/detchar/public_html/hveto/day/' + j + '/latest/'
