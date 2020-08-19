@@ -1,32 +1,24 @@
 language: python
 
+os: linux
+
 matrix:
   fast_finish: true
 
   include:
-    - python: '3.5'
-      env: PIP_FLAGS="--quiet --pre"
-    - python: '3.6'
-      env: PIP_FLAGS="--quiet --pre"
-    - python: '3.7'
-      dist: xenial
-      sudo: required
-      env: PIP_FLAGS="--quiet --pre"
+    # conda builds
+    - name: "conda:3.6"
+      env: PYTHON_VERSION="3.6"
+    - name: "conda:3.7"
+      env: PYTHON_VERSION="3.7"
+    - name: "conda:3.8"
+      env: PYTHON_VERSION="3.8"
 
-    - python: '3.5'
-      env: PIP_FLAGS="--quiet"
-    - python: '3.6'
-      env: PIP_FLAGS="--quiet"
-    - python: '3.7'
-      dist: xenial
-      sudo: required
-      env: PIP_FLAGS="--quiet"
-
-before_install:
-  - python -m pip install -q --upgrade pip
-  - python -m pip install ${PIP_FLAGS} -r requirements.txt
 
 install:
+  # install miniconda, create env, and activate
+  - bash -ex ./ci/install-conda.sh
+  # install this package
   # note: need --editable for coverage with `which ...` to work
   - python -m pip install --editable .
 
@@ -39,8 +31,7 @@ script:
   - python -m coverage run --append `which hveto-trace` --help
 
 after_success:
-  - python -m pip install ${PIP_FLAGS} codecov
-  - python -m codecov --flags $(uname) python${TRAVIS_PYTHON_VERSION/./}
+  - bash -ex ./ci/codecov.sh
 
 cache:
   pip: true
