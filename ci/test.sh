@@ -23,6 +23,11 @@ trap 'set +ex' RETURN
 # Run the test suite for Hveto on the current system
 #
 
+# reactivate environmennt
+if [ -n ${CIRCLECI} ] && [ -d /opt/conda/envs ]; then
+    conda activate hvetoci || source activate hvetoci
+fi
+
 # get path to python and pip
 PYTHON=$(which "python${PYTHON_VERSION}")
 PIP="${PYTHON} -m pip"
