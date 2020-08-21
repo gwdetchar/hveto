@@ -25,7 +25,7 @@ import pandas
 from gwpy.time import from_gps
 import glob
 import os
-import datetime as dt
+import datetime
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
