@@ -20,25 +20,20 @@
 """Run the HierarchichalVeto (hveto) algorithm over some data
 """
 
-import time
-jobstart = time.time()  # noqa
-
-import os
-import sys
-import json
-import random
-import warnings
-import datetime
 import configparser
+import datetime
+import json
 import multiprocessing
+import numpy
+import os
+import random
+import sys
+import time
+import warnings
+
+from getpass import getuser
 from pathlib import Path
 from socket import getfqdn
-from getpass import getuser
-
-import numpy
-
-from matplotlib import use
-use('agg')  # noqa
 
 from gwpy.io.cache import read_cache
 from gwpy.segments import (Segment, SegmentList,
@@ -47,15 +42,22 @@ from gwpy.segments import (Segment, SegmentList,
 from gwdetchar import cli
 from gwdetchar.io.html import (FancyPlot, cis_link)
 from gwdetchar.omega import batch
-from gwdetchar.plot import texify
 
-from hveto import (__version__, config, core, plot, html, utils)
-from hveto.plot import (HEADER_CAPTION, ROUND_CAPTION, get_column_label)
+from hveto import (__version__, config, core, html, utils)
 from hveto.segments import (write_ascii as write_ascii_segments,
                             read_veto_definer_file)
 from hveto.triggers import (get_triggers, find_auxiliary_channels)
 
+# set matplotlib backend
+from matplotlib import use
+use("Agg")
+
+# backend-dependent imports
+from gwdetchar.plot import texify  # noqa: E402
+from hveto import plot  # noqa: E402
+
 IFO = os.getenv('IFO')
+JOBSTART = time.time()
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = ('Joshua Smith <joshua.smith@ligo.org>, '
@@ -415,10 +417,10 @@ pevents = [primary]
 pvetoed = []
 
 auxfcol, auxscol = auxiliary[auxchannels[0]].dtype.names[1:3]
-slabel = get_column_label(scol)
-flabel = get_column_label(fcol)
-auxslabel = get_column_label(auxscol)
-auxflabel = get_column_label(auxfcol)
+slabel = plot.get_column_label(scol)
+flabel = plot.get_column_label(fcol)
+auxslabel = plot.get_column_label(auxscol)
+auxflabel = plot.get_column_label(auxfcol)
 
 rounds = []
 round = core.HvetoRound(1, pchannel, rank=scol)
@@ -468,7 +470,7 @@ while True:
             title=' | '.join([title, subtitle]),  # noqa: F821
             bbox_inches='tight')
         logger.debug("Figure written to %s" % svg)
-        svg = FancyPlot(svg, caption=ROUND_CAPTION['SIG_DROP'])
+        svg = FancyPlot(svg, caption=plot.ROUND_CAPTION['SIG_DROP'])
         rounds[-1].plots.append(svg)
     oldsignificances = newsignificances
 
@@ -603,7 +605,7 @@ cum. deadtime :   %s\n\n""" % (
         label1=beforel, label2=afterl, xlabel=slabel,
         title=ptitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
-    png = FancyPlot(png, caption=ROUND_CAPTION['HISTOGRAM'])
+    png = FancyPlot(png, caption=plot.ROUND_CAPTION['HISTOGRAM'])
     round.plots.append(png)
 
     # snr versus time
@@ -613,7 +615,7 @@ cum. deadtime :   %s\n\n""" % (
         epoch=start, xlim=[start, end], ylabel=slabel,
         title=ptitle, subtitle=subtitle, legend_title="Primary:")
     logger.debug("Figure written to %s" % png)
-    png = FancyPlot(png, caption=ROUND_CAPTION['SNR_TIME'])
+    png = FancyPlot(png, caption=plot.ROUND_CAPTION['SNR_TIME'])
     round.plots.append(png)
 
     # snr versus frequency
@@ -623,7 +625,7 @@ cum. deadtime :   %s\n\n""" % (
         label2=vetoedl, xlabel=flabel, ylabel=slabel, xlim=pfreq,
         title=ptitle, subtitle=subtitle, legend_title="Primary:")
     logger.debug("Figure written to %s" % png)
-    png = FancyPlot(png, caption=ROUND_CAPTION['SNR'])
+    png = FancyPlot(png, caption=plot.ROUND_CAPTION['SNR'])
     round.plots.append(png)
 
     # frequency versus time coloured by SNR
@@ -635,7 +637,7 @@ cum. deadtime :   %s\n\n""" % (
         epoch=start, xlim=[start, end], ylim=pfreq,
         title=ptitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
-    png = FancyPlot(png, caption=ROUND_CAPTION['TIME'])
+    png = FancyPlot(png, caption=plot.ROUND_CAPTION['TIME'])
     round.plots.append(png)
 
     # aux used versus frequency
@@ -645,7 +647,7 @@ cum. deadtime :   %s\n\n""" % (
         label2=vetoedl, ylabel=slabel, epoch=start, xlim=[start, end],
         title=atitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
-    png = FancyPlot(png, caption=ROUND_CAPTION['USED_SNR_TIME'])
+    png = FancyPlot(png, caption=plot.ROUND_CAPTION['USED_SNR_TIME'])
     round.plots.append(png)
 
     # snr versus time
@@ -655,7 +657,7 @@ cum. deadtime :   %s\n\n""" % (
         label1=beforeauxl, label2=(usedl, coincl), epoch=start,
         xlim=[start, end], ylabel=auxslabel, title=atitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
-    png = FancyPlot(png, caption=ROUND_CAPTION['AUX_SNR_TIME'])
+    png = FancyPlot(png, caption=plot.ROUND_CAPTION['AUX_SNR_TIME'])
     round.plots.append(png)
 
     # snr versus frequency
@@ -665,7 +667,7 @@ cum. deadtime :   %s\n\n""" % (
         label1=beforeauxl, label2=(usedl, coincl), xlabel=auxflabel,
         ylabel=auxslabel, title=atitle, subtitle=subtitle, legend_title="Aux:")
     logger.debug("Figure written to %s" % png)
-    png = FancyPlot(png, caption=ROUND_CAPTION['AUX_SNR_FREQUENCY'])
+    png = FancyPlot(png, caption=plot.ROUND_CAPTION['AUX_SNR_FREQUENCY'])
     round.plots.append(png)
 
     # frequency versus time coloured by SNR
@@ -676,7 +678,7 @@ cum. deadtime :   %s\n\n""" % (
         clabel=auxslabel, clim=[3, 100], cmap='YlGnBu', epoch=start,
         xlim=[start, end], title=atitle, subtitle=subtitle)
     logger.debug("Figure written to %s" % png)
-    png = FancyPlot(png, caption=ROUND_CAPTION['AUX_FREQUENCY_TIME'])
+    png = FancyPlot(png, caption=plot.ROUND_CAPTION['AUX_FREQUENCY_TIME'])
     round.plots.append(png)
 
     # move to the next round
@@ -723,14 +725,14 @@ plot.before_after_histogram(
     png, pevents[0][scol], pevents[-1][scol],
     label1=beforel, label2=afterl, xlabel=slabel,
     title=title, subtitle=subtitle)
-png = FancyPlot(png, caption=HEADER_CAPTION['HISTOGRAM'])
+png = FancyPlot(png, caption=plot.HEADER_CAPTION['HISTOGRAM'])
 plots.append(png)
 logger.debug("Figure written to %s" % png)
 
 # efficiency/deadtime curve
 png = pngname % 'ROC'
 plot.hveto_roc(png, rounds, title=title, subtitle=subtitle)
-png = FancyPlot(png, caption=HEADER_CAPTION['ROC'])
+png = FancyPlot(png, caption=plot.HEADER_CAPTION['ROC'])
 plots.append(png)
 logger.debug("Figure written to %s" % png)
 
@@ -743,7 +745,7 @@ plot.veto_scatter(
     label1='', label2=labels, title=title,
     subtitle=subtitle, ylabel=flabel, x='time', y=fcol,
     epoch=start, xlim=[start, end], legend_title=legtitle)
-png = FancyPlot(png, caption=HEADER_CAPTION['TIME'])
+png = FancyPlot(png, caption=plot.HEADER_CAPTION['TIME'])
 plots.append(png)
 logger.debug("Figure written to %s" % png)
 
@@ -753,7 +755,7 @@ plot.veto_scatter(
     png, pevents[0], pvetoed, label1='', label2=labels, title=title,
     subtitle=subtitle, ylabel=slabel, x='time', y=scol,
     epoch=start, xlim=[start, end], legend_title=legtitle)
-png = FancyPlot(png, caption=HEADER_CAPTION['SNR_TIME'])
+png = FancyPlot(png, caption=plot.HEADER_CAPTION['SNR_TIME'])
 plots.append(png)
 logger.debug("Figure written to %s" % png)
 
@@ -836,5 +838,5 @@ index = html.write_hveto_page(
     ifo, start, end, rounds, plots,
     winners=[r.winner.name for r in rounds], **htmlv)
 logger.debug("HTML written to %s" % index)
-logger.debug("Analysis completed in %d seconds" % (time.time() - jobstart))
+logger.debug("Analysis completed in %d seconds" % (time.time() - JOBSTART))
 logger.info("-- Hveto complete --")

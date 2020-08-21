@@ -7,21 +7,29 @@ import argparse
 import atexit
 import json
 import os
+import pkg_resources
 import re
 import subprocess
 import sys
 import tempfile
-from distutils.spawn import find_executable
 
-import pkg_resources
+from distutils.spawn import find_executable
 
 CONDA_PACKAGE_MAP = {
     "matplotlib": "matplotlib-base",
 }
 
 
-def parse_requirements(file):
-    for line in file:
+def _clean():
+    # clean up when we're done
+    if os.path.isfile(tmp):
+        os.remove(tmp)
+atexit.register(_clean)  # noqa: E305
+
+
+def parse_requirements(file_):
+    # parse requirements file
+    for line in file_:
         if line.startswith("-r "):
             name = line[3:].rstrip()
             with open(name, "r") as file2:
@@ -56,12 +64,6 @@ with open(args.filename, "r") as reqf:
         requirements.append('{}{}'.format(name, item.specifier))
 
 tmp = tempfile.mktemp()
-
-# clean up when we're done
-def _clean():
-    if os.path.isfile(tmp):
-        os.remove(tmp)
-atexit.register(_clean)
 
 # print requirements to temp file
 with open(tmp, 'w') as reqfile:
