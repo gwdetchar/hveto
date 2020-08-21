@@ -1,6 +1,11 @@
-language: python
+language: minimal
 
 os: linux
+
+env:
+  global:
+    - COVERAGE_STORAGE="json"
+    - CONDA_PKGS_DIRS="${HOME}/.cache/conda/pkgs"
 
 matrix:
   fast_finish: true
@@ -14,18 +19,44 @@ matrix:
     - name: "conda:3.8"
       env: PYTHON_VERSION="3.8"
 
+before_install:
+  - curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh;
+  - bash miniconda.sh -b -p ${HOME}/miniconda
+  - source "${HOME}/miniconda/etc/profile.d/conda.sh"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda config --add channels conda-forge
+  - travis_retry conda update --quiet --yes conda
+  # Useful for debugging any issues with conda
+  - conda info --all
 
 install:
-  # install miniconda, create env, and activate
-  - bash -ex ./ci/install-conda.sh
+  # create a conda environment
+  - travis_retry conda create --quiet --yes --name hvetoci python=${PYTHON_VERSION} pip setuptools
+  - travis_retry conda activate hvetoci
+  - travis_retry python ./ci/parse-conda-requirements.py requirements.txt -o conda-reqs.txt
+  - travis_retry conda install --quiet --yes --update-all --name hvetoci --file conda-reqs.txt
+  - rm -f conda-reqs.txt  # clean up
+  # install this version
+  # note: need --editable for coverage with `which ...` to work
+  - python -m pip install --editable .
 
-script:  # run tests
-  - bash -ex ./ci/test.sh
+script:
+  - python -m flake8 .
+  - python -m flake8 bin/*
+  - python -m coverage run -m pytest --verbose --pyargs hveto
+  - python -m coverage run --append `which hveto` --help
+  - python -m coverage run --append `which hveto-cache-events` --help
+  - python -m coverage run --append `which hveto-trace` --help
 
-after_success:  # compute coverage
-  - bash -ex ./ci/codecov.sh
+after_success:
+  - python -m pip install codecov
+  - python -m codecov --flags $(uname) python${PYTHON_VERSION/./}
+
+before_cache:
+  - travis_retry conda clean --quiet --yes --all
+  - rm -f $HOME/.cache/pip/log/debug.log
 
 cache:
   pip: true
-before_cache:
-  - rm -f $HOME/.cache/pip/log/debug.log
+  directories:
+    - ${HOME}/.cache/conda/pkgs
