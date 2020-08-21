@@ -21,7 +21,7 @@
 
 from math import ceil
 from gwdatafind.utils import filename_metadata
-import pandas as pd
+import pandas
 from gwpy.time import from_gps
 import glob
 import os
