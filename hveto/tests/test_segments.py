@@ -22,10 +22,10 @@
 import os
 import shutil
 from tempfile import NamedTemporaryFile
+from unittest import mock
 
 import pytest
 
-from gwpy.testing.compat import mock
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 

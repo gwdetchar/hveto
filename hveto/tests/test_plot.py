@@ -19,16 +19,15 @@
 """Tests for `hveto.plot`
 """
 
-import tempfile
-
 import pytest
-
-from matplotlib import use
-use('agg')  # noqa
+import tempfile
 
 from numpy import random
 
-from .. import plot
+from matplotlib import use
+use('agg')
+
+from .. import plot  # noqa: E402
 
 
 @pytest.mark.parametrize('num', (10, 50, 200))

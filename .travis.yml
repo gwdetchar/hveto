@@ -1,48 +1,62 @@
-language: python
+language: minimal
+
+os: linux
+
+env:
+  global:
+    - COVERAGE_STORAGE="json"
+    - CONDA_PKGS_DIRS="${HOME}/.cache/conda/pkgs"
 
 matrix:
   fast_finish: true
 
   include:
-    - python: '3.5'
-      env: PIP_FLAGS="--quiet --pre"
-    - python: '3.6'
-      env: PIP_FLAGS="--quiet --pre"
-    - python: '3.7'
-      dist: xenial
-      sudo: required
-      env: PIP_FLAGS="--quiet --pre"
-
-    - python: '3.5'
-      env: PIP_FLAGS="--quiet"
-    - python: '3.6'
-      env: PIP_FLAGS="--quiet"
-    - python: '3.7'
-      dist: xenial
-      sudo: required
-      env: PIP_FLAGS="--quiet"
+    # conda builds
+    - name: "conda:3.6"
+      env: PYTHON_VERSION="3.6"
+    - name: "conda:3.7"
+      env: PYTHON_VERSION="3.7"
+    - name: "conda:3.8"
+      env: PYTHON_VERSION="3.8"
 
 before_install:
-  - python -m pip install -q --upgrade pip
-  - python -m pip install ${PIP_FLAGS} -r requirements.txt
+  - curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+  - bash miniconda.sh -b -p ${HOME}/miniconda
+  - source "${HOME}/miniconda/etc/profile.d/conda.sh"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda config --add channels conda-forge
+  - travis_retry conda update --quiet --yes conda
+  # Useful for debugging any issues with conda
+  - conda info --all
 
 install:
+  # create a conda environment
+  - travis_retry conda create --quiet --yes --name hvetoci python=${PYTHON_VERSION} pip setuptools
+  - travis_retry conda activate hvetoci
+  - travis_retry python ./ci/parse-conda-requirements.py requirements.txt -o conda-reqs.txt
+  - travis_retry conda install --quiet --yes --update-all --name hvetoci --file conda-reqs.txt
+  - rm -f conda-reqs.txt  # clean up
+  # install this version
   # note: need --editable for coverage with `which ...` to work
   - python -m pip install --editable .
 
 script:
   - python -m flake8 .
   - python -m flake8 bin/*
-  - python -m coverage run -m pytest hveto/
+  - python -m coverage run -m pytest --verbose --pyargs hveto
   - python -m coverage run --append `which hveto` --help
   - python -m coverage run --append `which hveto-cache-events` --help
   - python -m coverage run --append `which hveto-trace` --help
 
 after_success:
-  - python -m pip install ${PIP_FLAGS} codecov
-  - python -m codecov --flags $(uname) python${TRAVIS_PYTHON_VERSION/./}
+  - python -m pip install codecov
+  - python -m codecov --flags $(uname) python${PYTHON_VERSION/./}
+
+before_cache:
+  - travis_retry conda clean --quiet --yes --all
+  - rm -f $HOME/.cache/pip/log/debug.log
 
 cache:
   pip: true
-before_cache:
-  - rm -f $HOME/.cache/pip/log/debug.log
+  directories:
+    - ${HOME}/.cache/conda/pkgs
