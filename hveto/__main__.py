@@ -141,6 +141,9 @@ def create_parser():
         help='path of output directory, default: %(default)s',
     )
 
+    # return the parser
+    return parser
+
 
 # -- main code block ----------------------------------------------------------
 

@@ -70,6 +70,7 @@ def create_parser():
         default='INFO',
         help='Log verbose output',
     )
+    return parser
 
 
 # -- main code block ----------------------------------------------------------
