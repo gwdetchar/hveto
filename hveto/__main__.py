@@ -287,7 +287,6 @@ def main(args=None):
         auxchannels = sorted(set(auxchannels))
         LOGGER.debug("Read list of %d auxiliary channels" % len(auxchannels))
 
-
     # load unsafe channels list
     _unsafe = cp.get('safety', 'unsafe-channels')
     if os.path.isfile(_unsafe):  # from file
@@ -406,7 +405,6 @@ def main(args=None):
         areadkw['path'] = 'triggers'
     atrigfindkw = cp.getparams('auxiliary', 'trigfind-')
 
-
     def _get_aux_triggers(channel):
         if acache is None:
             auxcache = None
@@ -440,7 +438,6 @@ def main(args=None):
                                % (tag, channel))
         return out
 
-
     # map with multiprocessing
     if args.nproc > 1:
         pool = multiprocessing.Pool(processes=args.nproc)
@@ -463,7 +460,6 @@ def main(args=None):
     # -- execute hveto analysis -----------------
 
     minsig = cp.getfloat('hveto', 'minimum-significance')
-    significance = 1e9
 
     pevents = [primary]
     pvetoed = []
@@ -524,7 +520,7 @@ def main(args=None):
             LOGGER.debug("Figure written to %s" % svg)
             svg = FancyPlot(svg, caption=plot.ROUND_CAPTION['SIG_DROP'])
             rounds[-1].plots.append(svg)
-        oldsignificances = newsignificances
+        oldsignificances = newsignificances  # noqa: F841
 
         # break out of the loop if the significance is below stopping point
         if winner.significance < minsig:
@@ -740,9 +736,9 @@ def main(args=None):
         rnd.plots.append(png)
 
         # move to the next round
-        rounds.append(round)
-        round = core.HvetoRound(rnd.n + 1, pchannel, rank=scol,
-                                segments=rnd.segments-rnd.vetoes)
+        rounds.append(rnd)
+        rnd = core.HvetoRound(rnd.n + 1, pchannel, rank=scol,
+                              segments=rnd.segments-rnd.vetoes)
 
     # write file with all segments
     segfile = os.path.join(
@@ -881,7 +877,7 @@ def main(args=None):
             condorcmds = batch.get_condor_arguments(
                 timeout=4,
                 gps=start)
-            dagman = batch.generate_dag(
+            batch.generate_dag(
                 newtimes,
                 flags=flags,
                 submit=True,

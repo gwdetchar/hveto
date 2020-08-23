@@ -196,14 +196,12 @@ def main(args=None):
     snrs = cp.getfloats('hveto', 'snr-thresholds')
     minsnr = min(snrs)
 
-
     # -- utility methods ------------------------------
 
     def create_path(channel):
         ifo, name = channel.split(':', 1)
         name = name.replace('-', '_')
         return trigdir / "{}-{}-{}-{}.h5".format(ifo, name, start, duration)
-
 
     def read_and_cache_events(channel, etg, cache=None, trigfind_kw={},
                               **read_kw):
@@ -244,7 +242,6 @@ def main(args=None):
                 return path, len(trigs)
             except TypeError:  # None
                 return
-
 
     def write_events(channel, tab, segments):
         """Write events to file with a given filename
@@ -410,7 +407,6 @@ def main(args=None):
                 LOGGER.debug("    %s Cached %d new events for %s"
                              % (tag, n, channel))
         return e
-
 
     # map with multiprocessing
     if args.nproc > 1:
