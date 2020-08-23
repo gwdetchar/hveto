@@ -71,6 +71,59 @@ def _abs_path(p):
     return os.path.abspath(os.path.expanduser(p))
 
 
+def _find_max_significance(channels, primary, snrs, windows, livetime):
+    """Utility to find hveto maximum significance with multiprocessing
+    """
+    pchannel = primary.channel
+    aux = dict((c, auxiliary[c]) for c in channels)
+    return core.find_max_significance(primary, aux, pchannel,
+                                      snrs, windows, livetime)
+
+
+def _get_aux_triggers(channel, etg, segments, frange, counter,
+                      acache=None, areadkw={}, atrigfindkw={}):
+    """Retrieve triggers for auxiliary channels
+    """
+    if acache is None:
+        auxcache = None
+    else:
+        ifo, name = channel.split(':')
+        match = "{}-{}".format(ifo, name.replace('-', '_'))
+        auxcache = [e for e in acache if Path(e).name.startswith(match)]
+    # get triggers
+    try:
+        trigs = get_triggers(channel, etg, active, snr=snr,
+                             frange=frange, cache=auxcache, nproc=1,
+                             trigfind_kwargs=atrigfindkw, **areadkw)
+    # catch error and continue
+    except ValueError as e:
+        warnings.warn('%s: %s' % (type(e).__name__, str(e)))
+        out = None
+    else:
+        out = (channel, trigs)
+    # log result of load
+    with counter.get_lock():
+        counter.value += 1
+        tag = '[%d/%d]' % (counter.value, naux)
+        if out is None:  # something went wrong
+            LOGGER.critical("    %s Failed to read events for %s"
+                            % (tag, channel))
+        elif len(trigs):  # no triggers
+            LOGGER.debug("    %s Read %d events for %s"
+                         % (tag, len(trigs), channel))
+        else:  # everything is fine
+            LOGGER.warning("    %s No events found for %s"
+                           % (tag, channel))
+    return out
+
+
+def _veto(channels, vetoes):
+    """Utility to apply vetoes with multiprocessing
+    """
+    chandict = dict((c, auxiliary[c]) for c in channels)
+    return core.veto_all(chandict, vetoes)
+
+
 def create_parser():
     """Create a command-line parser for this entry point
     """
@@ -405,47 +458,26 @@ def main(args=None):
         areadkw['path'] = 'triggers'
     atrigfindkw = cp.getparams('auxiliary', 'trigfind-')
 
-    def _get_aux_triggers(channel):
-        if acache is None:
-            auxcache = None
-        else:
-            ifo, name = channel.split(':')
-            match = "{}-{}".format(ifo, name.replace('-', '_'))
-            auxcache = [e for e in acache if Path(e).name.startswith(match)]
-        # get triggers
-        try:
-            trigs = get_triggers(channel, auxetg, analysis.active, snr=minsnr,
-                                 frange=auxfreq, cache=auxcache, nproc=1,
-                                 trigfind_kwargs=atrigfindkw, **areadkw)
-        # catch error and continue
-        except ValueError as e:
-            warnings.warn('%s: %s' % (type(e).__name__, str(e)))
-            out = None
-        else:
-            out = (channel, trigs)
-        # log result of load
-        with counter.get_lock():
-            counter.value += 1
-            tag = '[%d/%d]' % (counter.value, naux)
-            if out is None:  # something went wrong
-                LOGGER.critical("    %s Failed to read events for %s"
-                                % (tag, channel))
-            elif len(trigs):  # no triggers
-                LOGGER.debug("    %s Read %d events for %s"
-                             % (tag, len(trigs), channel))
-            else:  # everything is fine
-                LOGGER.warning("    %s No events found for %s"
-                               % (tag, channel))
-        return out
-
     # map with multiprocessing
     if args.nproc > 1:
+        kwargs = [(chan, auxetg, analysis.active, auxfreq, counter, acache,
+                   areadkw, atrigfindkw) for chan in auxchannels]
         pool = multiprocessing.Pool(processes=args.nproc)
-        results = pool.map(_get_aux_triggers, auxchannels)
+        results = pool.starmap(_get_aux_triggers, kwargs)
         pool.close()
     # map without multiprocessing
     else:
-        results = map(_get_aux_triggers, auxchannels)
+        results = map(
+            _get_aux_triggers,
+            auxchannels,
+            [auxetg] * len(auxchannels),
+            [analysis.active] * len(auxchannels),
+            [auxfreq] * len(auxchannels),
+            [counter] * len(auxchannels),
+            [acache] * len(auxchannels),
+            [areadkw] * len(auxchannels),
+            [atrigfindkw] * len(auxchannels),
+        )
 
     LOGGER.info("All aux events loaded")
 
@@ -485,15 +517,15 @@ def main(args=None):
 
         # calculate significances for this round
         if args.nproc > 1:  # multiprocessing
-            def _find_max_significance(channels):
-                aux = dict((c, auxiliary[c]) for c in channels)
-                return core.find_max_significance(
-                    primary, aux, pchannel, snrs, windows, rnd.livetime)
             # separate channel list into chunks and process each chunk
             pool = multiprocessing.Pool(
                 processes=min(args.nproc, len(auxiliary.keys())))
             chunks = utils.channel_groups(list(auxiliary.keys()), args.nproc)
-            results = pool.map(_find_max_significance, chunks)
+            results = pool.starmaap(
+                _find_max_significance,
+                [(chunk, primary, snrs, windows, rnd.livetime)
+                 for chunk in chunks],
+            )
             pool.close()
             winners, sigsets = zip(*results)
             # find winner of chunk winners
@@ -571,14 +603,12 @@ def main(args=None):
 
         # apply vetoes to auxiliary
         if args.nproc > 1:  # multiprocess
-            def _veto(channels):
-                return core.veto_all(dict((c, auxiliary[c]) for c in channels),
-                                     rnd.vetoes)
             # separate channel list into chunks and process each chunk
             pool = multiprocessing.Pool(
                 processes=min(args.nproc, len(auxiliary.keys())))
             chunks = utils.channel_groups(list(auxiliary.keys()), args.nproc)
-            results = pool.map(_veto, chunks)
+            results = pool.starmap(
+                _veto, [(chunk, rnd.vetoes) for chunk in chunks])
             pool.close()
             auxiliary = results[0]
             for subdict in results[1:]:
