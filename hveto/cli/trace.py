@@ -37,7 +37,7 @@ __author__ = 'Joshua Smith <joshua.smith@ligo.org>'
 # -- parse command line -------------------------------------------------------
 
 def _abs_path(p):
-    return Path(p).expanduser().resolve()
+    return os.path.abspath(os.path.expanduser(p))
 
 
 def create_parser():
