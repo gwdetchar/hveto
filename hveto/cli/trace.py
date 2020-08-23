@@ -23,7 +23,6 @@
 import os
 import sys
 import json
-from pathlib import Path
 
 from gwpy.segments import SegmentList
 
