@@ -274,7 +274,6 @@ def main(args=None):
         h5f.close()
         return path
 
-
     # -- load channels --------------------------------
 
     # get primary channel name
@@ -379,7 +378,6 @@ def main(args=None):
     areadkw = cp.getparams('auxiliary', 'read-')
     atrigfindkw = cp.getparams('auxiliary', 'trigfind-')
 
-
     def read_and_write_aux_triggers(channel):
         if acache is None:
             auxcache = None
@@ -434,4 +432,4 @@ def main(args=None):
 # -- run code -----------------------------------------------------------------
 
 if __name__ == "__main__":
-     main()
+    main()
