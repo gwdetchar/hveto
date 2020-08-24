@@ -104,13 +104,13 @@ def _get_aux_triggers(channel):
         counter.value += 1
         tag = '[%d/%d]' % (counter.value, naux)
         if out is None:  # something went wrong
-            logger.critical("    %s Failed to read events for %s"
+            LOGGER.critical("    %s Failed to read events for %s"
                             % (tag, channel))
         elif len(trigs):  # no triggers
-            logger.debug("    %s Read %d events for %s"
+            LOGGER.debug("    %s Read %d events for %s"
                          % (tag, len(trigs), channel))
         else:  # everything is fine
-            logger.warning("    %s No events found for %s"
+            LOGGER.warning("    %s No events found for %s"
                            % (tag, channel))
     return out
 
@@ -201,14 +201,21 @@ def create_parser():
 def main(args=None):
     """Run the hveto command-line interface
     """
+    # declare global variables
+    # this is needed for multiprocessing utilities
+    global acache, analysis, areadkw, atrigfindkw, auxiliary, auxetg
+    global auxfreq, counter, livetime, minsnr, naux, pchannel, primary
+    global rnd, snrs, windows
+
+    # parse command-line
     parser = create_parser()
     args = parser.parse_args(args=args)
-
     ifo = args.ifo
     start = int(args.gpsstart)
     end = int(args.gpsend)
     duration = end - start
 
+    # log startup
     LOGGER.info("-- Welcome to Hveto --")
     LOGGER.info("GPS start time: %d" % start)
     LOGGER.info("GPS end time: %d" % end)
@@ -463,17 +470,7 @@ def main(args=None):
         pool.close()
     # map without multiprocessing
     else:
-        results = map(
-            _get_aux_triggers,
-            auxchannels,
-            [auxetg] * len(auxchannels),
-            [analysis.active] * len(auxchannels),
-            [auxfreq] * len(auxchannels),
-            [counter] * len(auxchannels),
-            [acache] * len(auxchannels),
-            [areadkw] * len(auxchannels),
-            [atrigfindkw] * len(auxchannels),
-        )
+        results = map(_get_aux_triggers, auxchannels)
 
     LOGGER.info("All aux events loaded")
 
