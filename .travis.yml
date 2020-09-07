@@ -20,6 +20,7 @@ matrix:
       env: PYTHON_VERSION="3.8"
 
 before_install:
+  - curl -LO https://raw.githubusercontent.com/gwpy/gwpy/master/ci/parse-conda-requirements.py
   - curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
   - bash miniconda.sh -b -p ${HOME}/miniconda
   - source "${HOME}/miniconda/etc/profile.d/conda.sh"
@@ -33,9 +34,10 @@ install:
   # create a conda environment
   - travis_retry conda create --quiet --yes --name hvetoci python=${PYTHON_VERSION} pip setuptools
   - travis_retry conda activate hvetoci
-  - travis_retry python ./ci/parse-conda-requirements.py requirements.txt -o conda-reqs.txt
+  - travis_retry python ./parse-conda-requirements.py requirements.txt -o conda-reqs.txt
   - travis_retry conda install --quiet --yes --update-all --name hvetoci --file conda-reqs.txt
-  - rm -f conda-reqs.txt  # clean up
+  # clean up
+  - rm -f conda-reqs.txt parse-conda-requirements.py
   # install this version
   # note: need --editable for coverage with `which ...` to work
   - python -m pip install --editable .
