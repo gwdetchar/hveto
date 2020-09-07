@@ -23,6 +23,7 @@ import pytest
 
 from gwpy.io.cache import read_cache
 
+from gwpy.table import EventTable
 from .. import utils
 
 
@@ -43,3 +44,13 @@ def test_write_lal_cache(tmpdir):
 ])
 def test_channel_groups(n, out):
     assert list(utils.channel_groups([1, 2, 3, 4, 5], n)) == out
+
+
+def test_primary_vetoed():
+    with pytest.warns(UserWarning):
+        out = utils.primary_vetoed(1)
+    # check out type and columns
+    assert isinstance(out, EventTable)
+    for col in ['time', 'snr', 'peak_frequency', 'channel', 'winner',
+                'significance']:
+        assert col in out.dtype.names
