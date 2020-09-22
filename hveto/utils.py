@@ -82,8 +82,8 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
 
     Parameters
     ----------
-    start, end : `str` or `float`
-        start and end GPS times for this analysis
+    starttime : `str` or `float`
+        start GPS time for this analysis
 
     snr : `float`, optional
         signal-to-noise ratio threshold on triggers, default: 6.0
