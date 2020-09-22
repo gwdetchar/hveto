@@ -46,6 +46,7 @@ def test_write_lal_cache(tmpdir):
 def test_channel_groups(n, out):
     assert list(utils.channel_groups([1, 2, 3, 4, 5], n)) == out
 
+
 mock_table = EventTable(data=[[1257293167.0], [35.7], [46.2],
                         ['H1:GDS-CALIB_STRAIN'], ['H1:LSC-POP_A_LF_OUT_DQ'],
                         [152.1195], [1]], names=('time', 'peak_frequency',
