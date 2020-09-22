@@ -99,11 +99,7 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
     catalogue : `~gwpy.table.EventTable`
         a tabular catalogue of primary triggers vetoed in the hveto run"""
 
-    if starttime:
-        path = const.get_hvetopath(starttime)
-    else:
-        path = hveto_path
-
+    path = const.get_hvetopath(starttime) if starttime else hveto_path
     t_vetoed = EventTable(names=['time', 'snr', 'peak_frequency', 'channel',
                                  'winner', 'significance'])
     try:
