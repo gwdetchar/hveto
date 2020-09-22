@@ -85,17 +85,11 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
     start, end : `str` or `float`
         start and end GPS times for this analysis
 
-    ifo : `str`
-        string denoting the interferometer, e.g. ``'H1'`` for Hanford
-
     snr : `float`, optional
         signal-to-noise ratio threshold on triggers, default: 6.0
 
     significance : `float`, optional
         hveto significance threshold on auxiliary channels, default: 5.0
-
-    output_dir : `str`, optional
-        output directory for data products, default: `'.'`
 
     Returns
     -------
