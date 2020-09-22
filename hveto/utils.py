@@ -88,6 +88,9 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
     snr : `float`, optional
         signal-to-noise ratio threshold on triggers, default: 6.0
 
+    hveto_path : 'str'
+        path of the hveto files directory, not required if starttime given
+
     significance : `float`, optional
         hveto significance threshold on auxiliary channels, default: 5.0
 
