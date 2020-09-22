@@ -100,8 +100,7 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
     Returns
     -------
     catalogue : `~gwpy.table.EventTable`
-        a tabular catalogue of which triggers were vetoed from the primary
-        channel, and which auxiliary channel caused them to be vetoed"""
+        a tabular catalogue of primary triggers vetoed in the hveto run"""
 
     if starttime:
         path = const.get_hvetopath(starttime)
