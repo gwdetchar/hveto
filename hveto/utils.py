@@ -22,16 +22,16 @@
 import glob
 import warnings
 
-from hveto import const
-
 from math import ceil
-
 from gwdatafind.utils import filename_metadata
 
-from gwpy.table import EventTable, Column
+from gwpy.table import (Column, EventTable)
+
+from . import const
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
+__credits__ = 'Siddharth Soni <siddharth.soni@ligo.org>'
 
 
 def write_lal_cache(target, paths):
@@ -97,8 +97,8 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
     Returns
     -------
     catalogue : `~gwpy.table.EventTable`
-        a tabular catalogue of primary triggers vetoed in the hveto run"""
-
+        a tabular catalogue of primary triggers vetoed in the hveto run
+    """
     path = const.get_hvetopath(starttime) if starttime else hveto_path
     t_vetoed = EventTable(names=['time', 'snr', 'peak_frequency', 'channel',
                                  'winner', 'significance'])
@@ -123,5 +123,4 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
         t_vetoed.add_column(colround)
     except (FileNotFoundError, ValueError):
         warnings.warn("Hveto did not run this day")
-
     return t_vetoed
