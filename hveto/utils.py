@@ -30,8 +30,8 @@ from gwpy.table import (Column, EventTable)
 from . import const
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = 'Alex Urban <alexander.urban@ligo.org>'
-__credits__ = 'Siddharth Soni <siddharth.soni@ligo.org>'
+__credits__ = ('Alex Urban <Alexander.urban@ligo.org> '
+               'Siddharth Soni <siddharth.soni@ligo.org>')
 
 
 def write_lal_cache(target, paths):
@@ -86,7 +86,8 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
         start GPS time for this analysis
 
     hveto_path : 'str'
-        path of the hveto files directory, not required if starttime given
+        path of the hveto files directory,
+        not required if ``starttime`` is given
 
     snr : `float`, optional
         signal-to-noise ratio threshold on triggers, default: 6.0
@@ -121,6 +122,8 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
         t_vetoed.add_column(colwin)
         t_vetoed.add_column(colsig)
         t_vetoed.add_column(colround)
+        t_vetoed = t_vetoed.filter('snr>{0}'.format(snr),
+                                   'significance>{0}'.format(significance))
     except (FileNotFoundError, ValueError):
         warnings.warn("Hveto did not run this day")
     return t_vetoed
