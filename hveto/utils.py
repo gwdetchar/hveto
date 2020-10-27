@@ -30,7 +30,7 @@ from gwpy.table import (Column, EventTable)
 from . import const
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = ('Alex Urban <Alexander.urban@ligo.org> '
+__credits__ = ('Alex Urban <alexander.urban@ligo.org> '
                'Siddharth Soni <siddharth.soni@ligo.org>')
 
 
