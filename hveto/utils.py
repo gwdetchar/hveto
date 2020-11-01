@@ -19,12 +19,19 @@
 """General utilities for hveto
 """
 
-from math import ceil
+import glob
+import warnings
 
+from math import ceil
 from gwdatafind.utils import filename_metadata
 
+from gwpy.table import (Column, EventTable)
+
+from . import const
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = 'Alex Urban <alexander.urban@ligo.org>'
+__credits__ = ('Alex Urban <alexander.urban@ligo.org> '
+               'Siddharth Soni <siddharth.soni@ligo.org>')
 
 
 def write_lal_cache(target, paths):
@@ -62,3 +69,61 @@ def channel_groups(channellist, ngroups):
     n = int(ceil(len(channellist) / ngroups))
     for i in range(0, len(channellist), n):
         yield channellist[i:i+n]
+
+
+def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
+                   significance=5.0):
+
+    """Catalogue all vetoed primary triggers from a given analysis
+
+    This utility queries the output of an hveto analysis for the triggers
+    vetoed from its primary channel over all rounds (up to thresholds on
+    signal-to-noise ratio and round significance).
+
+    Parameters
+    ----------
+    starttime : `str` or `float`
+        start GPS time for this analysis
+
+    hveto_path : 'str'
+        path of the hveto files directory,
+        not required if ``starttime`` is given
+
+    snr : `float`, optional
+        signal-to-noise ratio threshold on triggers, default: 6.0
+
+    significance : `float`, optional
+        hveto significance threshold on auxiliary channels, default: 5.0
+
+    Returns
+    -------
+    catalogue : `~gwpy.table.EventTable`
+        a tabular catalogue of primary triggers vetoed in the hveto run
+    """
+    path = const.get_hvetopath(starttime) if starttime else hveto_path
+    t_vetoed = EventTable(names=['time', 'snr', 'peak_frequency', 'channel',
+                                 'winner', 'significance'])
+    try:
+        files = glob.glob(path+'/triggers/' + '/*VETOED*.txt')
+        t_summary = EventTable.read(path + '/summary-stats.txt',
+                                    format='ascii')
+        n = len(t_summary)
+        files = files[:n]
+        t_vetoed = EventTable.read(files, format='ascii')
+        lenoffiles = t_summary['nveto']
+        winsig = [round(t_summary['significance'][i], 4) for i in range(n)
+                  for j in range(lenoffiles[i])]
+        winchans = [t_summary['winner'][i] for i in range(n) for j in
+                    range(lenoffiles[i])]
+        rounds = [i+1 for i in range(n) for j in range(lenoffiles[i])]
+        colsig = Column(data=winsig, name='significance')
+        colwin = Column(data=winchans, name='winner')
+        colround = Column(data=rounds, name='round')
+        t_vetoed.add_column(colwin)
+        t_vetoed.add_column(colsig)
+        t_vetoed.add_column(colround)
+        t_vetoed = t_vetoed.filter('snr>{0}'.format(snr),
+                                   'significance>{0}'.format(significance))
+    except (FileNotFoundError, ValueError):
+        warnings.warn("Hveto did not run this day")
+    return t_vetoed
