@@ -47,11 +47,11 @@ script:
   # run flake8
   - python -m flake8 .
   # run test suite
-  - python -m pytest --cov --pyargs hveto
+  - python -m coverage run -m pytest --pyargs hveto
   # test executables
   - python -m coverage run --append --source hveto -m hveto --help
-  - python -m coverage run --append --source hveto -m hveto-cache-events --help
-  - python -m coverage run --append --source hveto -m hveto-trace --help
+  - python -m coverage run --append --source hveto -m hveto.cli.cache_events --help
+  - python -m coverage run --append --source hveto -m hveto.cli.trace --help
 
 after_success:
   - python -m pip install codecov
