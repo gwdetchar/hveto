@@ -19,6 +19,7 @@
 """General utilities for hveto
 """
 
+import os
 import glob
 import warnings
 
@@ -104,8 +105,8 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
     t_vetoed = EventTable(names=['time', 'snr', 'peak_frequency', 'channel',
                                  'winner', 'significance'])
     try:
-        files = glob.glob(path+'/triggers/' + '/*VETOED*.txt')
-        t_summary = EventTable.read(path + '/summary-stats.txt',
+        files = glob.glob(os.path.join(path, 'triggers', '*VETOED*.txt'))
+        t_summary = EventTable.read(os.path.join(path, 'summary-stats.txt'),
                                     format='ascii')
         n = len(t_summary)
         files = files[:n]
@@ -125,5 +126,5 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
         t_vetoed = t_vetoed.filter('snr>{0}'.format(snr),
                                    'significance>{0}'.format(significance))
     except (FileNotFoundError, ValueError):
-        warnings.warn("Hveto did not run this day")
+        warnings.warn("Could not find Hveto analysis for this day")
     return t_vetoed
