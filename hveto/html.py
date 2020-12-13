@@ -435,4 +435,4 @@ def write_about_page(configfile, prog=None):
     index : `str`
         the path of the HTML written for this analysis
     """
-    return gwhtml.about_this_page(configfile, prog=pro, prog=prog)
+    return gwhtml.about_this_page(configfile, prog=prog)
