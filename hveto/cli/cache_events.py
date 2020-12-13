@@ -57,7 +57,10 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 IFO = os.getenv('IFO')
 
-LOGGER = cli.logger(name='hveto.cache_events')
+# set up logger
+PROG = ('python -m hveto.cache_events' if sys.argv[0].endswith('.py')
+        else os.path.basename(sys.argv[0]))
+LOGGER = cli.logger(name=PROG.split('python -m ').pop())
 
 
 # -- parse command line -------------------------------------------------------
@@ -70,6 +73,7 @@ def create_parser():
     """Create a command-line parser for this entry point
     """
     parser = cli.create_parser(
+        prog=PROG,
         description=__doc__,
         version=__version__,
     )

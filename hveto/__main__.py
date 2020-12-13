@@ -57,7 +57,11 @@ from hveto import plot  # noqa: E402
 
 IFO = os.getenv('IFO')
 JOBSTART = time.time()
-LOGGER = cli.logger(name='hveto')
+
+# set up logger
+PROG = ('python -m hveto' if sys.argv[0].endswith('.py')
+        else os.path.basename(sys.argv[0]))
+LOGGER = cli.logger(name=PROG.split('python -m ').pop())
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = ('Joshua Smith <joshua.smith@ligo.org>, '
@@ -125,6 +129,7 @@ def create_parser():
     """Create a command-line parser for this entry point
     """
     parser = cli.create_parser(
+        prog=PROG,
         description=__doc__,
         version=__version__,
     )
