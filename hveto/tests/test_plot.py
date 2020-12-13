@@ -19,8 +19,9 @@
 """Tests for `hveto.plot`
 """
 
+import os
 import pytest
-import tempfile
+import shutil
 
 from numpy import random
 
@@ -31,14 +32,21 @@ from .. import plot  # noqa: E402
 
 
 @pytest.mark.parametrize('num', (10, 50, 200))
-def test_drop_plot(num):
+def test_drop_plot(num, tmpdir):
     random.seed(0)
+    outdir = str(tmpdir)
     # this test just makes sure the drop plot code runs end-to-end
     channels = ['X1:TEST-%d' % i for i in range(num)]
     old = dict(zip(channels, random.normal(size=num)))
     new = dict(zip(channels, random.normal(size=num)))
-    with tempfile.NamedTemporaryFile(suffix='.png') as png:
-        plot.significance_drop(png.name, old, new)
-
-    with tempfile.NamedTemporaryFile(suffix='.svg') as svg:
-        plot.significance_drop(svg.name, old, new)
+    # test PNG files
+    plot.significance_drop(os.path.join(outdir, 'test.png'),
+                           old, new)
+    # test SVG files, which raise UserWarnings
+    with pytest.warns(UserWarning) as record:
+        plot.significance_drop(os.path.join(outdir, 'test.svg'),
+                               old, new)
+    for rec in record:
+        assert rec.message.args[0].startswith("Failed to recover tooltip")
+    # clean up
+    shutil.rmtree(outdir, ignore_errors=True)

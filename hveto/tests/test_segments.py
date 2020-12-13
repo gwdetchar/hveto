@@ -20,11 +20,10 @@
 """
 
 import os
-import shutil
-from tempfile import NamedTemporaryFile
-from unittest import mock
-
 import pytest
+import shutil
+
+from unittest import mock
 
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
@@ -57,12 +56,14 @@ def test_query(dqflag):
 
 
 @pytest.mark.parametrize('ncol', (2, 4))
-def test_write_segments_ascii(ncol):
-    with NamedTemporaryFile(suffix='.txt', delete=False) as tmp:
-        segments.write_ascii(tmp.name, TEST_SEGMENTS, ncol=ncol)
-        tmp.delete = True
-        a = SegmentList.read(tmp.name, gpstype=float, strict=False)
-        assert a == TEST_SEGMENTS_2
+def test_write_segments_ascii(ncol, tmpdir):
+    outdir = str(tmpdir)
+    out = os.path.join(outdir, 'test.txt')
+    segments.write_ascii(out, TEST_SEGMENTS, ncol=ncol)
+    a = SegmentList.read(out, gpstype=float, strict=False)
+    assert a == TEST_SEGMENTS_2
+    # clean up
+    shutil.rmtree(outdir, ignore_errors=True)
 
 
 def test_write_segments_ascii_failure():
