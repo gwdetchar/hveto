@@ -250,6 +250,7 @@ def main(args=None):
     htmlv = {
         'title': '%s Hveto | %d-%d' % (ifo, start, end),
         'config': None,
+        'prog': PROG,
         'context': ifo.lower(),
     }
 
