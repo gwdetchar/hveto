@@ -22,7 +22,7 @@ This method will apply the minimal SNR thresholds and any frequency cuts
 as given in the configuration files
 """
 
-import h4py
+import h5py
 import os
 import multiprocessing
 import sys
