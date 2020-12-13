@@ -31,7 +31,7 @@ from .. import __version__
 
 __author__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
-PROG = ('python -m hveto.trace' if sys.argv[0].endswith('.py')
+PROG = ('python -m hveto.cli.trace' if sys.argv[0].endswith('.py')
         else os.path.basename(sys.argv[0]))
 
 

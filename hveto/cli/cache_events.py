@@ -59,7 +59,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 IFO = os.getenv('IFO')
 
 # set up logger
-PROG = ('python -m hveto.cache_events' if sys.argv[0].endswith('.py')
+PROG = ('python -m hveto.cli.cache_events' if sys.argv[0].endswith('.py')
         else os.path.basename(sys.argv[0]))
 LOGGER = cli.logger(name=PROG.split('python -m ').pop())
 
