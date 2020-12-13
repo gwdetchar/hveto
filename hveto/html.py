@@ -121,10 +121,11 @@ def wrap_html(func):
         else:
             iargs = initargs.copy()
             aboutdir = os.path.join(outdir, 'about')
+            prog = kwargs.pop('prog', None)
             if iargs['base'] == os.path.curdir:
                 iargs['base'] = os.path.pardir
-            about = write_about_page(ifo, start, end, config, outdir=aboutdir,
-                                     **iargs)
+            about = write_about_page(
+                ifo, start, end, config, prog=prog, outdir=aboutdir, **iargs)
             if os.path.basename(about) == 'index.html':
                 about = about[:-10]
         # open page
@@ -410,7 +411,7 @@ def write_null_page(reason, context='info'):
 
 
 @wrap_html
-def write_about_page(configfile):
+def write_about_page(configfile, prog=None):
     """Write a page explaining how an hveto analysis was completed
 
     Parameters
@@ -423,6 +424,9 @@ def write_about_page(configfile):
         the GPS end time of the analysis
     configfile : `str`
         the path of the configuration file to embed
+    prog : `str`, optional
+         name of the program which produced this page, defaults to
+         the script run on the command-line
     outdir : `str`, optional
         the output directory for the HTML
 
@@ -431,4 +435,4 @@ def write_about_page(configfile):
     index : `str`
         the path of the HTML written for this analysis
     """
-    return gwhtml.about_this_page(configfile)
+    return gwhtml.about_this_page(configfile, prog=prog)

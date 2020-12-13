@@ -22,12 +22,13 @@ This method will apply the minimal SNR thresholds and any frequency cuts
 as given in the configuration files
 """
 
-import os
-import warnings
-import multiprocessing
-from pathlib import Path
-
 import h5py
+import os
+import multiprocessing
+import sys
+import warnings
+
+from pathlib import Path
 
 from astropy.table import vstack
 
@@ -57,7 +58,10 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 IFO = os.getenv('IFO')
 
-LOGGER = cli.logger(name='hveto.cache_events')
+# set up logger
+PROG = ('python -m hveto.cli.cache_events' if sys.argv[0].endswith('.py')
+        else os.path.basename(sys.argv[0]))
+LOGGER = cli.logger(name=PROG.split('python -m ').pop())
 
 
 # -- parse command line -------------------------------------------------------
@@ -70,6 +74,7 @@ def create_parser():
     """Create a command-line parser for this entry point
     """
     parser = cli.create_parser(
+        prog=PROG,
         description=__doc__,
         version=__version__,
     )

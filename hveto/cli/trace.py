@@ -31,6 +31,9 @@ from .. import __version__
 
 __author__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
+PROG = ('python -m hveto.cli.trace' if sys.argv[0].endswith('.py')
+        else os.path.basename(sys.argv[0]))
+
 
 # -- parse command line -------------------------------------------------------
 
@@ -42,6 +45,7 @@ def create_parser():
     """Create a command-line parser for this entry point
     """
     parser = cli.create_parser(
+        prog=PROG,
         description=__doc__,
         version=__version__,
     )
@@ -80,7 +84,8 @@ def main(args=None):
     args = parser.parse_args(args=args)
     directory = args.directory
 
-    logger = cli.logger(name='hveto.trace', level=args.loglevel)
+    logger = cli.logger(name=PROG.split('python -m ').pop(),
+                        level=args.loglevel)
     logger.debug('Running in verbose mode')
     logger.debug('Search directory: %s' % directory)
 

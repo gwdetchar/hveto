@@ -224,7 +224,7 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
 
 
 def _sanitize_name(name):
-    return re.sub("[-_\.]", "_", name).lower()  # noqa: W605
+    return re.sub(r"[-_\.]", "_", name).lower()
 
 
 def _format_params(channel, etg, fmt, trigfind_kwargs, read_kwargs):
