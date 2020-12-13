@@ -22,12 +22,13 @@ This method will apply the minimal SNR thresholds and any frequency cuts
 as given in the configuration files
 """
 
+import h4py
 import os
-import warnings
 import multiprocessing
-from pathlib import Path
+import sys
+import warnings
 
-import h5py
+from pathlib import Path
 
 from astropy.table import vstack
 
