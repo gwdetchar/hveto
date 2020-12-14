@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with hveto.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Check if a trigger was vetoed by a specified hveto run
+"""Check whether a specified trigger time was vetoed by an hveto analysis
 """
 
 import os
@@ -60,7 +60,7 @@ def create_parser():
         '--directory',
         required=True,
         type=_abs_path,
-        help=('path to hveto-generated folder containing '
+        help=('path to the hveto output directory containing '
               'a summary-stats.json file'),
     )
     parser.add_argument(
@@ -78,45 +78,51 @@ def create_parser():
 # -- main code block ----------------------------------------------------------
 
 def main(args=None):
-    """Run the trace tool
+    """Run the hveto-trace command-line tool
     """
     parser = create_parser()
     args = parser.parse_args(args=args)
-    directory = args.directory
 
+    # initialize variables
+    time = float(args.trigger_time)
+    segment = None
+
+    # initialize logger
     logger = cli.logger(name=PROG.split('python -m ').pop(),
                         level=args.loglevel)
     logger.debug('Running in verbose mode')
-    logger.debug('Search directory: %s' % directory)
+    logger.debug('Search directory: {}'.format(args.directory))
 
-    trigger_time = float(args.trigger_time)
-    if directory[-1] != '/':
-        directory += '/'
-
-    try:
-        segment_stats = json.load(open('%ssummary-stats.json' % directory))
+    try:  # read veto segment statistics
+        segment_stats = json.load(open(os.path.join(
+            args.directory, 'summary-stats.json')))
     except IOError:
-        logger.error("'summary-stats.json' was not found "
-                     "in the input directory")
-        sys.exit(0)
+        logger.critical("'summary-stats.json' was not found "
+                        "in the input directory")
+        raise
 
-    for i, cround in enumerate(segment_stats['rounds']):
+    # loop over and log results to output
+    for (i, cround) in enumerate(segment_stats['rounds']):
         seg_files = filter(
-            lambda f_name: '.txt' in f_name, cround[u'files'][u'VETO_SEGS'])
+            lambda f_name: '.txt' in f_name,
+            cround[u'files'][u'VETO_SEGS'])
         for f in seg_files:
-            segments = SegmentList.read(os.path.join(directory, f))
-            for segment in segments:
-                if segment[0] <= trigger_time <= segment[1]:
-                    logger.info('Signal was vetoed in round %d by '
-                                'segment %s' % ((i + 1), segment))
-                    logger.debug('Winner: %s' % cround['name'])
-                    logger.debug('Significance: %s' % cround['significance'])
-                    logger.debug('SNR: %s' % cround['snr'])
-                    logger.debug('Window: %s' % cround['window'])
-                    sys.exit(0)
+            segments = SegmentList.read(os.path.join(args.directory, f))
+            if time in segments:
+                segment = segments[segments.find(time)]
+                logger.info('Trigger time {0} was vetoed in round {1} by '
+                            'segment {2}'.format(time, (i + 1), segment))
+                logger.debug('Round winner: {}'.format(cround['name']))
+                logger.debug('Significance: {}'.format(cround['significance']))
+                logger.debug('SNR: {}'.format(cround['snr']))
+                logger.debug('Window: {}'.format(cround['window']))
 
-    logger.info('Signal was not vetoed.')
+    if segment is None:
+        # if we got here, the signal was not vetoed
+        logger.info('Trigger time {} was not vetoed'.format(time))
 
+
+# -- run from command-line ----------------------------------------------------
 
 if __name__ == "__main__":
     main()
