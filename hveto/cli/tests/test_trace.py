@@ -48,6 +48,7 @@ VALID_RESULTS = """{
 EMPTY_RESULTS = '{"rounds": [{"files": {"VETO_SEGS": []}}]}'
 TEST_SEGMENTS = SegmentList([Segment(0, 8)])
 
+
 # -- cli tests ----------------------------------------------------------------
 
 def test_main(caplog, tmpdir):
