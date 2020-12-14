@@ -91,7 +91,7 @@ def main(args=None):
     logger = cli.logger(name=PROG.split('python -m ').pop(),
                         level=args.loglevel)
     logger.debug('Running in verbose mode')
-    logger.debug('Search directory: %s' % args.directory)
+    logger.debug('Search directory: {}'.format(args.directory))
 
     try:  # read veto segment statistics
         segment_stats = json.load(open(os.path.join(
