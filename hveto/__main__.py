@@ -115,6 +115,7 @@ def _get_aux_triggers(channel):
         else:  # everything is fine
             LOGGER.warning("    %s No events found for %s"
                            % (tag, channel))
+            out = None
     return out
 
 
