@@ -23,7 +23,6 @@ import itertools
 from math import (log, exp, log10)
 from bisect import (bisect_left, bisect_right)
 
-import json
 import numpy
 
 from scipy.special import (gammainc, gammaln)
