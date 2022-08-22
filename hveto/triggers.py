@@ -313,9 +313,13 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
     table = table[keep]
 
     if extra_times:
+        f_low = min(table[fcolumn])
+        s_low = min(table[scolumn])
         for time in extra_times:
             extra_row = numpy.zeros(len(table.colnames))
             extra_row[0] = time
+            extra_row[1] = f_low
+            extra_row[2] = s_low
             table.add_row(extra_row)
 
     # return basic table if 'raw'
