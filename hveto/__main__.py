@@ -195,6 +195,16 @@ def create_parser():
         default=os.curdir,
         help='path of output directory, default: %(default)s',
     )
+    parser.add_argument(
+        '-e',
+        '--extra-times',
+        action='append',
+        default=[],
+        type=float,
+        help=('extra times to add to the list of primary triggers '
+              'to include specific times that may not meet the thresholds '
+              'used to find triggers'),
+    )
 
     # return the parser
     return parser
@@ -411,6 +421,7 @@ def main(args=None):
     ptrigfindkw = cp.getparams('primary', 'trigfind-')
     primary = get_triggers(pchannel, petg, analysis.active, snr=psnr,
                            frange=pfreq, cache=pcache, nproc=args.nproc,
+                           extra_times=args.extra_times,
                            trigfind_kwargs=ptrigfindkw, **preadkw)
     fcol, scol = primary.dtype.names[1:3]
 

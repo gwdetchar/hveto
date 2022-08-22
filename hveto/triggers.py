@@ -253,7 +253,8 @@ def _format_params(channel, etg, fmt, trigfind_kwargs, read_kwargs):
 
 
 def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
-                 raw=False, trigfind_kwargs={}, **read_kwargs):
+                 raw=False, extra_times=None, trigfind_kwargs={}, 
+                 **read_kwargs):
     """Get triggers for the given channel
     """
     etg = _sanitize_name(etg)
@@ -310,6 +311,12 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         keep &= table[fcolumn] >= frange[0]
         keep &= table[fcolumn] < frange[1]
     table = table[keep]
+
+    if extra_times:
+        for time in extra_times:
+            extra_row = numpy.zeros(len(table.colnames))
+            extra_row[0] = time
+            table.add_row(extra_row)
 
     # return basic table if 'raw'
     if raw:
