@@ -262,10 +262,11 @@ def veto_scatter(outfile, a, b, label1='All', label2='Vetoed', x='time',
     else:
         colorargs = {'edgecolor': 'none'}
         if clim:
-            colorargs['vmin'] = clim[0]
-            colorargs['vmax'] = clim[1]
             if clog:
                 colorargs['norm'] = LogNorm(vmin=clim[0], vmax=clim[1])
+            else:
+                colorargs['vmin'] = clim[0]
+                colorargs['vmax'] = clim[1]
         a = a.copy()
         a.sort(color)
         m = ax.scatter(a[x], a[ya], c=a[color], label=label1, **colorargs)
