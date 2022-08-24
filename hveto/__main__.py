@@ -115,6 +115,7 @@ def _get_aux_triggers(channel):
         else:  # everything is fine
             LOGGER.warning("    %s No events found for %s"
                            % (tag, channel))
+            out = None
     return out
 
 
@@ -910,7 +911,7 @@ def main(args=None):
                 ignore_state_flags=True)
             condorcmds = batch.get_condor_arguments(
                 timeout=4,
-                extra_commands=["request_disk='1G'"],
+                extra_commands=["request_disk=1G"],
                 gps=start)
             batch.generate_dag(
                 newtimes,
