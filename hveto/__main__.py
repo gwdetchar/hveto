@@ -552,28 +552,19 @@ def main(args=None):
         #   only now do we actually have the new data to
         #   calculate significance drop
         if rnd.n > 1:
-            oldsigfile = os.path.join(
+            sigfile = os.path.join(
                 signidir,
-                '%s-HVETO_OLD_SIGNIFICANCE_TRIGS_ROUND_%d-%d-%d.txt' % (
-                    ifo, rnd.n, start, duration))
-            newsigfile = os.path.join(
-                 signidir,
-                 '%s-HVETO_NEW_SIGNIFICANCE_TRIGS_ROUND_%d-%d-%d.txt' % (
-                    ifo, rnd.n, start, duration))
+                '%s-HVETO_SIGNIFICANT_CHANNELS_ROUND_%d-%d-%d.txt' % (
+                    ifo, rnd.n-1, start, duration))
             # These are the channel names
-            old_chans = list(oldsignificances.keys())  # noqa: F821
+            sig_chans = list(oldsignificances.keys())  # noqa: F821
             # These are the signficance values
-            old_sigs = [round(i, 2) for
+            sig_vals = [round(i, 2) for
                         i in list(oldsignificances.values())]  # noqa: F821
-            oldsig_et = EventTable([old_chans, old_sigs],
-                                   names=['channels', 'significance'])
-            new_chans = list(newsignificances.keys())  # noqa: F821
-            new_sigs = [round(i, 2) for i in list(newsignificances.values())]
-            newsig_et = EventTable([new_chans, new_sigs],
-                                   names=['channels', 'significance'])
-            oldsig_et.write(oldsigfile, format='ascii', overwrite=True)
-            newsig_et.write(newsigfile, format='ascii', overwrite=True)
-            LOGGER.info("Written significance files for {}".format(rnd.n))
+            sig_et = EventTable([sig_chans, sig_vals],
+                                names=['channels', 'significance'])
+            sig_et.write(sigfile, format='ascii', overwrite=True)
+            LOGGER.info("Written significance files")
             svg = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
             plot.significance_drop(
                 svg, oldsignificances, newsignificances,  # noqa: F821
