@@ -37,6 +37,7 @@ from socket import getfqdn
 from gwpy.io.cache import read_cache
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
+from gwpy.table import EventTable
 
 from gwdetchar import cli
 from gwdetchar.io.html import (FancyPlot, cis_link)
@@ -253,7 +254,8 @@ def main(args=None):
     plotdir = 'plots'
     trigdir = 'triggers'
     omegadir = 'scans'
-    for d in [segdir, plotdir, trigdir, omegadir]:
+    signidir = 'significance'
+    for d in [segdir, plotdir, trigdir, omegadir, signidir]:
         if not os.path.isdir(d):
             os.makedirs(d)
 
@@ -550,6 +552,19 @@ def main(args=None):
         #   only now do we actually have the new data to
         #   calculate significance drop
         if rnd.n > 1:
+            sigfile = os.path.join(
+                signidir,
+                '%s-HVETO_SIGNIFICANT_CHANNELS_ROUND_%d-%d-%d.txt' % (
+                    ifo, rnd.n-1, start, duration))
+            # These are the channel names
+            sig_chans = list(oldsignificances.keys())  # noqa: F821
+            # These are the signficance values
+            sig_vals = [round(i, 4) for
+                        i in list(oldsignificances.values())]  # noqa: F821
+            sig_et = EventTable([sig_chans, sig_vals],
+                                names=['channels', 'significance'])
+            sig_et.write(sigfile, format='ascii', overwrite=True)
+            LOGGER.info("Written significance files")
             svg = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
             plot.significance_drop(
                 svg, oldsignificances, newsignificances,  # noqa: F821
