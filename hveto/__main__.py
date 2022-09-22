@@ -559,7 +559,7 @@ def main(args=None):
             # These are the channel names
             sig_chans = list(oldsignificances.keys())  # noqa: F821
             # These are the signficance values
-            sig_vals = [round(i, 2) for
+            sig_vals = [round(i, 4) for
                         i in list(oldsignificances.values())]  # noqa: F821
             sig_et = EventTable([sig_chans, sig_vals],
                                 names=['channels', 'significance'])
