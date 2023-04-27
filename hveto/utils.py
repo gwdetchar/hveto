@@ -103,25 +103,32 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
     """
     path = const.get_hvetopath(starttime) if starttime else hveto_path
     t_vetoed = EventTable(names=['time', 'snr', 'peak_frequency', 'channel',
-                                 'winner', 'significance'])
+                                 'winner', 'significance', 'use-percentage',
+                                 'round'])
     try:
         files = glob.glob(os.path.join(path, 'triggers', '*VETOED*.txt'))
         t_summary = EventTable.read(os.path.join(path, 'summary-stats.txt'),
                                     format='ascii')
         n = len(t_summary)
         files = files[:n]
+        files = sorted(files,
+                       key=lambda x: int(x.split('_')[-1].split('-')[0]))
         t_vetoed = EventTable.read(files, format='ascii')
         lenoffiles = t_summary['nveto']
         winsig = [round(t_summary['significance'][i], 4) for i in range(n)
                   for j in range(lenoffiles[i])]
+        winuseper = [round(t_summary['use-percentage'][i], 4) for i in range(n)
+                     for j in range(lenoffiles[i])]
         winchans = [t_summary['winner'][i] for i in range(n) for j in
                     range(lenoffiles[i])]
         rounds = [i+1 for i in range(n) for j in range(lenoffiles[i])]
         colsig = Column(data=winsig, name='significance')
+        coluseper = Column(data=winuseper, name='use-percentage')
         colwin = Column(data=winchans, name='winner')
         colround = Column(data=rounds, name='round')
         t_vetoed.add_column(colwin)
         t_vetoed.add_column(colsig)
+        t_vetoed.add_column(coluseper)
         t_vetoed.add_column(colround)
         t_vetoed = t_vetoed.filter('snr>{0}'.format(snr),
                                    'significance>{0}'.format(significance))
