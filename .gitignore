@@ -9,6 +9,9 @@
 /hveto.egg-info
 /.eggs/
 
+# IDE
+/.idea/
+
 # documentation products
 /docs/_build/
 /docs/_generated/
