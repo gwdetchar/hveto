@@ -33,6 +33,7 @@ import gwtrigfind
 
 from gwpy.io import cache as io_cache
 from gwpy.io.utils import file_list
+from gwpy.io.registry import get_read_format
 from gwpy.table import EventTable
 from gwpy.table.filters import in_segmentlist
 from gwpy.table.io.pycbc import filter_empty_files as filter_empty_pycbc_files
@@ -263,6 +264,9 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         readfmt = read_kwargs.pop("format", DEFAULT_FORMAT[etg])
     except KeyError:
         raise ValueError("unsupported ETG {!r}".format(etg))
+    if not readfmt and cache:
+        # try to identify format from files in cache
+        readfmt = get_read_format(EventTable, cache[0], {}, {})
     trigfind_kwargs, read_kwargs = _format_params(
         channel,
         etg,

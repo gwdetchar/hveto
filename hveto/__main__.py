@@ -420,7 +420,6 @@ def main(args=None):
     if pcache is not None:  # auto-detect the file format
         LOGGER.debug('Unsetting the primary trigger file format')
         preadkw['format'] = None
-        preadkw['path'] = 'triggers'
     ptrigfindkw = cp.getparams('primary', 'trigfind-')
     primary = get_triggers(pchannel, petg, analysis.active, snr=psnr,
                            frange=pfreq, cache=pcache, nproc=args.nproc,
@@ -479,7 +478,6 @@ def main(args=None):
     if acache is not None:  # auto-detect the file format
         LOGGER.debug('Unsetting the auxiliary trigger file format')
         areadkw['format'] = None
-        areadkw['path'] = 'triggers'
     atrigfindkw = cp.getparams('auxiliary', 'trigfind-')
 
     # map with multiprocessing
