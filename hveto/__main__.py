@@ -42,6 +42,7 @@ from gwpy.table import EventTable
 from gwdetchar import cli
 from gwdetchar.io.html import (FancyPlot, cis_link)
 from gwdetchar.omega import batch
+from gwpy.time import tconvert
 
 from hveto import (__version__, config, core, html, utils)
 from hveto.segments import (write_ascii as write_ascii_segments,
@@ -233,9 +234,9 @@ def main(args=None):
 
     # log startup
     LOGGER.info("-- Welcome to Hveto --")
-    LOGGER.info("GPS start time: %d" % start)
-    LOGGER.info("GPS end time: %d" % end)
-    LOGGER.info("Interferometer: %s" % ifo)
+    LOGGER.info(f"GPS start time: {start} - {tconvert(start)}")
+    LOGGER.info(f"GPS end time: {end} - {tconvert(end)}")
+    LOGGER.info(f"Interferometer: {ifo}")
 
     # -- initialisation -------------------------
 
@@ -261,7 +262,7 @@ def main(args=None):
 
     # prepare html variables
     htmlv = {
-        'title': '%s Hveto | %d-%d' % (ifo, start, end),
+        'title': f'{ifo} Hveto | {start} - {end}',
         'config': None,
         'prog': PROG,
         'context': ifo.lower(),
