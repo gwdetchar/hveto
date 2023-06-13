@@ -89,7 +89,8 @@ def banner(ifo, start, end):
     # write banner
     page.div(class_='page-header', role='banner')
     page.h1("%s HierarchicalVeto" % ifo, class_='pb-2 mt-3 mb-2 border-bottom')
-    page.h3(f"{start} - {end} {tconvert(start)} - {tconvert(end)}" % (start, end), class_='mt-3')
+    td = timedelta(seconds=(end-start))
+    page.h3(f"{start} - {end} {tconvert(start)} - {tconvert(end)}" , class_='mt-3')
     page.div.close()
     return page()
 
