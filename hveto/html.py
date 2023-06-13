@@ -20,11 +20,13 @@
 """
 
 import os.path
+from datetime import timedelta
 from functools import wraps
 
 from MarkupPy import markup
 
 from gwdetchar.io import html as gwhtml
+from gwpy.time import tconvert
 
 from ._version import get_versions
 
@@ -87,7 +89,7 @@ def banner(ifo, start, end):
     # write banner
     page.div(class_='page-header', role='banner')
     page.h1("%s HierarchicalVeto" % ifo, class_='pb-2 mt-3 mb-2 border-bottom')
-    page.h3("%d-%d" % (start, end), class_='mt-3')
+    page.h3(f"{start} - {end} {tconvert(start)} - {tconvert(end)}" % (start, end), class_='mt-3')
     page.div.close()
     return page()
 
@@ -101,8 +103,9 @@ def wrap_html(func):
     @wraps(func)
     def decorated_func(ifo, start, end, *args, **kwargs):
         # set page init args
+        td = timedelta(seconds=(end-start))
         initargs = {
-            'title': '%s Hveto | %d-%d' % (ifo, start, end),
+            'title': f'{ifo} Hveto | {start} - {end} ({end-start}) {tconvert(start)} - {tconvert(end)} {td}',
             'base': os.path.curdir,
         }
         for key in ['title', 'base']:
