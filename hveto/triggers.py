@@ -288,13 +288,26 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         cachesegs = io_cache.cache_segments(segcache)
         outofbounds = abs(cachesegs - segaslist)
         if segcache:
-            if len(segcache) == 1:  # just pass the single filename
-                segcache = segcache[0]
-            new = EventTable.read(segcache, **read_kwargs)
-            new.meta = {k: new.meta[k] for k in TABLE_META if new.meta.get(k)}
-            if outofbounds:
-                new = new[in_segmentlist(new[new.dtype.names[0]], segaslist)]
-            tables.append(new)
+            # if len(segcache) == 1:  # just pass the single filename
+            #     segcache = segcache[0]
+            #read trigger files one by one so we can ignore empty ones
+            # new = EventTable.read(segcache, **read_kwargs)
+            new: EventTable = None
+            for trig_file in segcache:
+                trig_tbl = EventTable.read(trig_file, **read_kwargs)
+                if len(trig_tbl) > 0:
+                    if new:
+                        new = vstack_tables([new, trig_tbl])
+                    else:
+                        new = trig_tbl
+                else:
+                    pass    # place for a breakpoint
+
+            if new is not None and  len(new) > 0:
+                new.meta = {k: new.meta[k] for k in TABLE_META if new.meta.get(k)}
+                if outofbounds:
+                    new = new[in_segmentlist(new[new.dtype.names[0]], segaslist)]
+                tables.append(new)
     if len(tables):
         table = vstack_tables(tables)
     else:
