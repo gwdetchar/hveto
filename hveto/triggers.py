@@ -303,10 +303,11 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
                 else:
                     pass    # place for a breakpoint
 
-            new.meta = {k: new.meta[k] for k in TABLE_META if new.meta.get(k)}
-            if outofbounds:
-                new = new[in_segmentlist(new[new.dtype.names[0]], segaslist)]
-            tables.append(new)
+            if new is not None and  len(new) > 0:
+                new.meta = {k: new.meta[k] for k in TABLE_META if new.meta.get(k)}
+                if outofbounds:
+                    new = new[in_segmentlist(new[new.dtype.names[0]], segaslist)]
+                tables.append(new)
     if len(tables):
         table = vstack_tables(tables)
     else:
