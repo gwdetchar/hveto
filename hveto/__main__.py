@@ -431,8 +431,7 @@ def main(args=None):
     if len(primary):
         LOGGER.info("Read %d events for %s" % (len(primary), pchannel))
     else:
-        message = "No events found for %r in %d seconds of livetime" % (
-           pchannel, livetime)
+        message = "No events found for %r in %d seconds of livetime" % (pchannel, livetime)
         LOGGER.critical(message)
 
     # cluster primary triggers
@@ -553,11 +552,10 @@ def main(args=None):
         if rnd.n > 1:
             sigfile = os.path.join(
                 signidir,
-                '%s-HVETO_SIGNIFICANT_CHANNELS_ROUND_%d-%d-%d.txt' % (
-                    ifo, rnd.n-1, start, duration))
+                '%s-HVETO_SIGNIFICANT_CHANNELS_ROUND_%d-%d-%d.txt' % (ifo, rnd.n - 1, start, duration))
             # These are the channel names
             sig_chans = list(oldsignificances.keys())  # noqa: F821
-            # These are the signficance values
+            # These are the significance values
             sig_vals = [round(i, 4) for
                         i in list(oldsignificances.values())]  # noqa: F821
             sig_et = EventTable([sig_chans, sig_vals],
@@ -786,8 +784,7 @@ def main(args=None):
 
         # move to the next round
         rounds.append(rnd)
-        rnd = core.HvetoRound(rnd.n + 1, pchannel, rank=scol,
-                              segments=rnd.segments-rnd.vetoes)
+        rnd = core.HvetoRound(rnd.n + 1, pchannel, rank=scol, segments=rnd.segments - rnd.vetoes)
 
     # write file with all segments
     segfile = os.path.join(

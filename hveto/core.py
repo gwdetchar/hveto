@@ -107,7 +107,7 @@ def find_all_coincidences(triggers, channel, snrs, windows):
         t = x['time']
         channels = dict((key, set()) for key in coincs)
         j = i - 1
-        segs = [Segment(t-dt/2., t+dt/2.) for dt in windows]
+        segs = [Segment(t - dt / 2., t + dt / 2.) for dt in windows]
 
         # define coincidence test
         def add_if_coinc(event):
@@ -172,8 +172,7 @@ def find_max_significance(primary, auxiliary, channel, snrs, windows,
     for p, cdict in coincs.items():
         dt, snr = p
         for chan in cdict:
-            mu = (len(primary) * (auxiliary[chan]['snr'] >= snr).sum() *
-                  dt / livetime)
+            mu = (len(primary) * (auxiliary[chan]['snr'] >= snr).sum() * dt / livetime)
             # NOTE: coincs[p][chan] counts the number of primary channel
             # triggers coincident with a 'chan' trigger
             try:
@@ -207,7 +206,7 @@ class HvetoWinner(object):
         self.mu = mu
 
     def get_segments(self, times):
-        return SegmentList([Segment(t - self.window/2., t + self.window/2.)
+        return SegmentList([Segment(t - self.window / 2., t + self.window / 2.)
                             for t in times])
 
 
@@ -259,7 +258,7 @@ def significance(n, mu):
     """
     g = gammainc(n, mu)
     if g == 0:
-        sig = -n * log10(mu) + mu * LOG_EXP_1 + gammaln(n+1) / LOG_10
+        sig = -n * log10(mu) + mu * LOG_EXP_1 + gammaln(n + 1) / LOG_10
     else:
         sig = -log10(g)
     return float(sig)
@@ -283,11 +282,11 @@ def find_coincidences(a, b, dt=1):
         the indices of all items in `a` within [-dt/2., +dt/2.) of an item
         in `b`
     """
-    dx = dt/2.
+    dx = dt / 2.
 
     def _is_coincident(t):
-        x = bisect_left(b, t-dx)  # find b >= t-dx
-        y = bisect_right(b, t+dx)  # find b <= t+dx
+        x = bisect_left(b, t - dx)  # find b >= t-dx
+        y = bisect_right(b, t + dx)  # find b <= t+dx
         if x != y:
             return True
         return False
