@@ -30,7 +30,7 @@ from .. import html
 
 BANNER = """<div class="page-header" role="banner">
 <h1 class="pb-2 mt-3 mb-2 border-bottom">L1 HierarchicalVeto</h1>
-<h3 class="mt-3">0-100</h3>
+<h3 class="mt-3">0 - 100 1980-01-06 00:00:00 - 1980-01-06 00:01:40</h3>
 </div>"""
 
 NAVBAR = """<nav class="navbar fixed-top navbar-expand-md navbar-h1 shadow-sm">

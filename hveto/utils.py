@@ -69,7 +69,7 @@ def channel_groups(channellist, ngroups):
     """
     n = int(ceil(len(channellist) / ngroups))
     for i in range(0, len(channellist), n):
-        yield channellist[i:i+n]
+        yield channellist[i:i + n]
 
 
 def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
@@ -121,7 +121,7 @@ def primary_vetoed(starttime=None, hveto_path=None, snr=6.0,
                      for j in range(lenoffiles[i])]
         winchans = [t_summary['winner'][i] for i in range(n) for j in
                     range(lenoffiles[i])]
-        rounds = [i+1 for i in range(n) for j in range(lenoffiles[i])]
+        rounds = [i + 1 for i in range(n) for j in range(lenoffiles[i])]
         colsig = Column(data=winsig, name='significance')
         coluseper = Column(data=winuseper, name='use-percentage')
         colwin = Column(data=winchans, name='winner')

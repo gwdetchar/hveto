@@ -403,7 +403,7 @@ def significance_drop(outfile, old, new, show_channel_names=None, **kwargs):
                 systems[sys] = [i, 1]
         systems = sorted(systems.items(), key=lambda x: x[1][0])
         labels, counts = zip(*systems)
-        xticks, xmticks = zip(*[(a, a+b/2.) for (a, b) in counts])
+        xticks, xmticks = zip(*[(a, a + b / 2.) for (a, b) in counts])
         # show ticks at the edge of each group
         ax.set_xticks(xticks, minor=False)
         ax.set_xticklabels([], minor=False)
@@ -497,7 +497,7 @@ def hveto_roc(outfile, rounds, figsize=[9, 6], constants=[1, 5, 10, 20],
     # draw some eff/dt contours
     if len(constants):
         for i, c in enumerate(constants):
-            g = 1 - ((i+1)/len(constants) * .5)
+            g = 1 - ((i + 1) / len(constants) * .5)
             x = axargs['xlim']
             y = [a * c for a in x]
             ax.plot(x, y, linestyle='--', color=(g, g, g), label=str(c))
