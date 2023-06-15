@@ -289,6 +289,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
             # if len(segcache) == 1:  # just pass the single filename
             #     segcache = segcache[0]
             # read trigger files one by one so we can ignore empty ones
+
             # new = EventTable.read(segcache, **read_kwargs)
             new: EventTable = None
             for trig_file in segcache:
@@ -303,6 +304,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
 
                 if new is not None and len(new) > 0:
                     new.meta = {k: new.meta[k] for k in TABLE_META if new.meta.get(k)}
+
                 if outofbounds:
                     new = new[in_segmentlist(new[new.dtype.names[0]], segaslist)]
                 tables.append(new)
