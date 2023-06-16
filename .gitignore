@@ -3,7 +3,7 @@
 /*.patch
 
 # build products
-/hveto/version.py
+/hveto/_version.py
 /build/
 /dist/
 /hveto.egg-info

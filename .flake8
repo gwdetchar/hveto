@@ -1,0 +1,21 @@
+; vim: set ft=dosini :
+
+[flake8]
+exclude =
+	__pycache__,
+	.eggs/,
+	.git/,
+	build/,
+	docs/,
+	hveto/_version.py,
+	venv/,
+ignore =
+	C901,
+	# missing whitespace around arithmetic operator
+	E226,
+	E402,
+max-complexity = 15
+max-line-length = 128
+per-file-ignores =
+	# ignore unused import in __init__
+	__init__.py:F401,
