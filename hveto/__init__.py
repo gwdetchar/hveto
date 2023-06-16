@@ -19,10 +19,10 @@
 """The HierarchichalVeto algorithm
 """
 
-from ._version import get_versions
-
-__version__ = get_versions()['version']
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
-del get_versions
+try:
+    from ._version import version as __version__
+except ModuleNotFoundError:  # development mode
+    __version__ = ''

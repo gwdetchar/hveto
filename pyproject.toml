@@ -1,0 +1,109 @@
+[build-system]
+requires = [
+  "setuptools",
+  "setuptools_scm[toml]>=3.4.3",
+  "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hveto"
+description = "A python implementation of the HierarchicalVeto (hveto) algorithm"
+readme = "README.rst"
+authors = [
+  { name = "Joshua Smith", email = "joshua.smith@ligo.org" },
+  { name = "Duncan Macleod", email = "duncan.macleod@ligo.org" },
+]
+maintainers = [
+  { name = "Joe Areeda", email = "joseph.areeda@ligo.org" },
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Natural Language :: English",
+  "Operating System :: POSIX",
+  "Operating System :: Unix",
+  "Operating System :: MacOS",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Astronomy",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+
+# requirements
+requires-python = ">=3.9"
+dependencies = [
+  "gwdetchar >= 2.0.0",
+  "gwpy >=2.0.0",
+  "gwtrigfind",
+  "h5py",
+  "lxml",
+  "MarkupPy >=1.14",
+  "matplotlib >=3.1",
+  "numpy >=1.10",
+  "python-ligo-lw >= 1.5.0",
+  "scipy",
+]
+
+# dynamic properties set by tools
+dynamic = [
+  "version",
+]
+
+[project.optional-dependencies]
+# test suite
+test = [
+  "coverage[toml]",
+  "pytest >=3.1.0",
+  "pytest-cov >=2.4.0",
+]
+# sphinx documentation
+docs = [
+  "numpydoc",
+  "Sphinx",
+  "sphinx_bootstrap_theme",
+  "sphinxcontrib-programoutput",
+]
+
+[project.scripts]
+hveto = "hveto.__main__:main"
+hveto-cache-events = "hveto.cli.cache_events:main"
+hveto-trace = "hveto.cli.trace:main"
+
+[project.urls]
+"Bug Tracker" = "https://github.com/gwdetchar/hveto/issues"
+"Documentation" = "https://hveto.readthedocs.io"
+"Source Code" = "https://github.com/gwdetchar/hveto"
+
+[tool.setuptools]
+license-files = [ "LICENSE" ]
+
+[tool.setuptools_scm]
+write_to = "hveto/_version.py"
+
+# -- coverage
+
+[tool.coverage.run]
+source = [ "hveto" ]
+omit = [
+  # don't report coverage for _version.py
+  # (generated automatically by setuptools-scm)
+  "*/_version.py",
+]
+
+[tool.coverage.report]
+# print report with one decimal point
+precision = 1
+
+# -- pytest
+
+[tool.pytest.ini_options]
+# print reasons for everything
+addopts = "-r a"
