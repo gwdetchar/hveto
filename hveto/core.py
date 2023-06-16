@@ -172,8 +172,7 @@ def find_max_significance(primary, auxiliary, channel, snrs, windows,
     for p, cdict in coincs.items():
         dt, snr = p
         for chan in cdict:
-            mu = (len(primary) * (auxiliary[chan]['snr'] >= snr).sum() *
-                  dt / livetime)
+            mu = (len(primary) * (auxiliary[chan]['snr'] >= snr).sum() * dt / livetime)
             # NOTE: coincs[p][chan] counts the number of primary channel
             # triggers coincident with a 'chan' trigger
             try:

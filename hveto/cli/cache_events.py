@@ -363,8 +363,7 @@ def main(args=None):
     elif args.append and e.is_file():
         LOGGER.info("Cached 0 new events for %s" % pchannel)
     else:
-        message = "No events found for %r in %d seconds of livetime" % (
-           pchannel, livetime)
+        message = "No events found for %r in %d seconds of livetime" % (pchannel, livetime)
         LOGGER.critical(message)
 
     # write primary to local cache

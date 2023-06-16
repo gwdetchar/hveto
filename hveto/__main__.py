@@ -431,8 +431,7 @@ def main(args=None):
     if len(primary):
         LOGGER.info("Read %d events for %s" % (len(primary), pchannel))
     else:
-        message = "No events found for %r in %d seconds of livetime" % (
-           pchannel, livetime)
+        message = "No events found for %r in %d seconds of livetime" % (pchannel, livetime)
         LOGGER.critical(message)
 
     # cluster primary triggers
