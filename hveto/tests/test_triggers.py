@@ -46,12 +46,11 @@ def test_aux_channels_from_cache():
 
 
 def test_get_triggers():
-    # test that trigfind raises a warning if the channel-level directory
-    # doesn't exist
+    # test that trigfind deals with non existant channels correctly
     with pytest.warns(UserWarning):
-        out = triggers.get_triggers('X1:DOES_NOT_EXIST', 'omicron',
-                                    SegmentList([Segment(0, 100)]))
+        out = triggers.get_triggers('X1:DOES_NOT_EXIST', 'omicron', SegmentList([Segment(0, 100)]))
     # check output type and columns
     assert isinstance(out, Table)
     for col in ['time', 'frequency', 'snr']:
         assert col in out.dtype.names
+    assert len(out) == 0

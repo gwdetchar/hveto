@@ -89,7 +89,8 @@ def banner(ifo, start, end):
     # write banner
     page.div(class_='page-header', role='banner')
     page.h1("%s HierarchicalVeto" % ifo, class_='pb-2 mt-3 mb-2 border-bottom')
-    td = timedelta(seconds=(end-start))
+
+    td = timedelta(seconds=(end - start))
     page.h3(f"{start} - {end} {tconvert(start)} - {tconvert(end)} -- {td}", class_='mt-3')
     page.div.close()
     return page()
@@ -104,7 +105,7 @@ def wrap_html(func):
     @wraps(func)
     def decorated_func(ifo, start, end, *args, **kwargs):
         # set page init args
-        td = timedelta(seconds=(end-start))
+        td = timedelta(seconds=(end - start))
         initargs = {
             'title': f'{ifo} Hveto | {start} - {end} ({end-start}) {tconvert(start)} - {tconvert(end)} {td}',
             'base': os.path.curdir,
@@ -232,7 +233,7 @@ def write_summary(
                      'cum_efficiency', 'cum_deadtime']:
             a, b = getattr(r, attr)
             try:
-                pc = a/b * 100.
+                pc = a / b * 100.
             except ZeroDivisionError:
                 pc = 0.
             if attr.endswith('deadtime'):

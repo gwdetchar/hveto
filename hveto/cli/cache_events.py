@@ -303,9 +303,9 @@ def main(args=None):
     if os.path.isfile(_unsafe):  # from file
         unsafe = set()
         with open(_unsafe, 'rb') as f:
-            for c in f.read().rstrip('\n').split('\n'):
-                if c.startswith('%(IFO)s'):
-                    unsafe.add(c.replace('%(IFO)s', ifo))
+            for c in f.read().rstrip(b'\n').split(b'\n'):
+                if c.startswith(b'%(IFO)s'):
+                    unsafe.add(c.replace(b'%(IFO)s', ifo))
                 elif not c.startswith('%s:' % ifo):
                     unsafe.add('%s:%s' % (ifo, c))
                 else:
