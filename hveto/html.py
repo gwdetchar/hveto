@@ -28,7 +28,7 @@ from MarkupPy import markup
 from gwdetchar.io import html as gwhtml
 from gwpy.time import tconvert
 
-from ._version import get_versions
+from . import __version__
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda, Alex Urban'
@@ -141,8 +141,11 @@ def wrap_html(func):
         page.add(str(func(*args, **kwargs)))
         # close page with custom footer
         index = os.path.join(outdir, 'index.html')
-        version = get_versions()['version']
-        commit = get_versions()['full-revisionid']
+        version = __version__
+        if "dev" in __version__:
+            commit = __version__.rsplit("g", 1)[1]
+        else:
+            commit = __version__
         url = 'https://github.com/gwdetchar/hveto/tree/{}'.format(commit)
         gwhtml.close_page(page, index, about=about,
                           link=('hveto-%s' % version, url, 'GitHub'),
