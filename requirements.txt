@@ -1,7 +1,9 @@
 # development
+astropy >=4.3.0
 gwdetchar >= 2.0.0
 gwpy >= 2.0.0
 gwtrigfind
+h5py
 lxml
 MarkupPy >= 1.14
 matplotlib >= 3.1
