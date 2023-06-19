@@ -67,7 +67,7 @@ test = [
 # sphinx documentation
 docs = [
   "numpydoc",
-  "Sphinx",
+  "Sphinx >=1.8",
   "sphinx_bootstrap_theme",
   "sphinxcontrib-programoutput",
 ]
