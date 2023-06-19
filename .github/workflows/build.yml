@@ -92,10 +92,13 @@ jobs:
       run: conda list --name test
 
     - name: Run test suite
-      run: python -m pytest -ra --color yes --cov hveto --pyargs hveto.tests --cov-report=xml --junitxml=pytest.xml
+      run: python -m pytest -ra --color yes --cov hveto --pyargs hveto.tests --junitxml=pytest.xml
 
     - name: Coverage report
       run: python -m coverage report --show-missing
+
+    - name: Prepare codecov upload
+      run: python -m coverage xml
 
     - name: Publish coverage to Codecov
       uses: codecov/codecov-action@v3
