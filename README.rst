@@ -61,8 +61,8 @@ proposing additions/changes.
    :target: https://choosealicense.com/licenses/gpl-3.0/
 .. |Supported Python versions| image:: https://img.shields.io/pypi/pyversions/hveto.svg
    :target: https://pypi.org/project/hveto/
-.. |Build Status| image:: https://travis-ci.org/gwdetchar/hveto.svg?branch=master
-   :target: https://travis-ci.org/gwdetchar/hveto
+.. |Build Status| image:: https://github.com/gwdetchar/hveto/actions/workflows/build.yml/badge.svg
+   :target: https://github.com/gwdetchar/hveto/actions/workflows/build.yml
 .. |Coverage Status| image:: https://codecov.io/gh/gwdetchar/hveto/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/gwdetchar/hveto
 .. |Documentation Status| image:: https://readthedocs.org/projects/hveto/badge/?version=stable
