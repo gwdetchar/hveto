@@ -57,7 +57,7 @@ dynamic = [
   "version",
 ]
 
-[project.optional-depend  encies]
+[project.optional-dependencies]
 # test suite
 test = [
   "coverage[toml]",
@@ -67,7 +67,7 @@ test = [
 # sphinx documentation
 docs = [
   "numpydoc",
-  "Sphinx >=1.8",
+  "Sphinx",
   "sphinx_bootstrap_theme",
   "sphinxcontrib-programoutput",
 ]
