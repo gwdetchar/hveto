@@ -57,7 +57,7 @@ dynamic = [
   "version",
 ]
 
-[project.optional-depend  encies]
+[project.optional-dependencies]
 # test suite
 test = [
   "coverage[toml]",
