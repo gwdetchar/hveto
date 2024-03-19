@@ -931,7 +931,7 @@ def main(args=None):
                 timeout=4,
                 extra_commands=["request_disk=1G"],
                 gps=start)
-            do_submit = True if args.no_submit else False
+            do_submit = not args.no_submit
             batch.generate_dag(
                 newtimes,
                 flags=flags,
