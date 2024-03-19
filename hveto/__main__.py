@@ -189,9 +189,13 @@ def create_parser():
               'this will launch automatically to condor, '
               'requires the gwdetchar package'),
     )
-    parser.add_argument('--no-submit', action='store_true',
-                        help='When omega scans are requested, do not submit DAG. Used when hveto is run in condor '
-                             'vanilla universe')
+    parser.add_argument(
+        '--no-submit',
+        action='store_true',
+        help=(
+            'When omega scans are requested, do not submit DAG. '
+            'Used when hveto is run in condor vanilla universe',
+        )
 
     # output options
     pout = parser.add_argument_group('Output options')
