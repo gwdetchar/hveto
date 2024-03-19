@@ -194,9 +194,8 @@ def create_parser():
         action='store_true',
         help=(
             'When omega scans are requested, do not submit DAG. '
-            'Used when hveto is run in condor vanilla universe',
+            'Used when hveto is run in condor vanilla universe'),
         )
-    )
 
     # output options
     pout = parser.add_argument_group('Output options')
