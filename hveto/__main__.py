@@ -189,6 +189,13 @@ def create_parser():
               'this will launch automatically to condor, '
               'requires the gwdetchar package'),
     )
+    parser.add_argument(
+        '--no-submit',
+        action='store_true',
+        help=(
+            'When omega scans are requested, do not submit DAG. '
+            'Used when hveto is run in condor vanilla universe'),
+        )
 
     # output options
     pout = parser.add_argument_group('Output options')
@@ -924,10 +931,11 @@ def main(args=None):
                 timeout=4,
                 extra_commands=["request_disk=1G"],
                 gps=start)
+            do_submit = not args.no_submit
             batch.generate_dag(
                 newtimes,
                 flags=flags,
-                submit=True,
+                submit=do_submit,
                 outdir=omegadir,
                 condor_commands=condorcmds)
             LOGGER.info('Launched {} omega scans to condor'.format(
