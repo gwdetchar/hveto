@@ -36,7 +36,7 @@ BANNER = """<div class="page-header" role="banner">
 NAVBAR = """<nav class="navbar fixed-top navbar-expand-md navbar-h1 shadow-sm">
 <div class="container-fluid">
 <div class="navbar-brand border border-white rounded">H1 Hveto</div>
-<button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target=".navbar-collapse">
+<button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse" data-target=".navbar-collapse">
 <span class="navbar-toggler-icon"></span>
 </button>
 <div class="collapse navbar-collapse justify-content-between">
@@ -45,7 +45,7 @@ NAVBAR = """<nav class="navbar fixed-top navbar-expand-md navbar-h1 shadow-sm">
 <a href="#" class="nav-link">Summary</a>
 </li>
 <li class="nav-item dropdown">
-<a href="#" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">Rounds</a>
+<a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">Rounds</a>
 <div class="dropdown-menu dropdown-1-col shadow">
 <a href="#hveto-round-1" class="dropdown-item">1: H1:TEST-STRAIN</a>
 </div>
@@ -53,8 +53,8 @@ NAVBAR = """<nav class="navbar fixed-top navbar-expand-md navbar-h1 shadow-sm">
 </ul>
 <ul class="nav navbar-nav">
 <li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown">Links</a>
-<div class="dropdown-menu dropdown-menu-right shadow">
+<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Links</a>
+<div class="dropdown-menu dropdown-menu-end shadow">
 <h6 class="dropdown-header">Internal</h6>
 <a href="about" class="dropdown-item">About this page</a>
 <div class="dropdown-divider"></div>
