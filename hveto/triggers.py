@@ -48,6 +48,7 @@ DEFAULT_FORMAT = {
     "pycbc_live": "hdf5.pycbc_live",
     "kleinewelle": "ligolw",
     "dmt_omega": "ligolw",
+    "snax": "hdf5.snax",
 }
 
 DEFAULT_TRIGFIND_OPTIONS = {
@@ -66,6 +67,9 @@ DEFAULT_TRIGFIND_OPTIONS = {
     },
     ("omicron", "root.omicron"): {
         "ext": "root",
+    },
+    ("snax", "hdf5"): {
+        "ext": "h5",
     }
 }
 
@@ -88,6 +92,9 @@ DEFAULT_READ_OPTIONS = {
         "extended_metadata": False,
         "loudest": True,
         "columns": ["end_time", "template_duration", "new_snr"],
+    },
+    ("snax", "hdf5.snax"): {
+        "columns": ["time", "frequency", "snr"],
     },
 }
 
@@ -248,6 +255,8 @@ def _format_params(channel, etg, fmt, trigfind_kwargs, read_kwargs):
     # custom params for ETGs
     if etg == "pycbc_live":
         read_kwargs.setdefault("ifo", channel.split(":", 1)[0])
+    if etg == "snax":
+        read_kwargs.setdefault("channels", channel)
 
     return trigfind_kwargs, read_kwargs
 

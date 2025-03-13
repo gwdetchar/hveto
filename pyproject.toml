@@ -42,7 +42,7 @@ requires-python = ">=3.9"
 dependencies = [
   "gwdetchar >= 2.0.0",
   "gwpy >=2.0.0",
-  "gwtrigfind",
+  "gwtrigfind >= 0.8.3",
   "h5py",
   "lxml",
   "MarkupPy >=1.14",
