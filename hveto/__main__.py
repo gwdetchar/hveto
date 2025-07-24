@@ -292,7 +292,8 @@ def main(args=None):
     LOGGER.info(f"Trigger directory: {Path(trigdir).absolute()}")
     LOGGER.info(f"Omega scan directory: {Path(omegadir).absolute()}")
     LOGGER.info(f"Significance directory: {Path(signidir).absolute()}")
-    LOGGER.info(f"Configuration file(s): {Path(args.config_file).absolute()}")
+    for config_file in args.config_file:
+        LOGGER.info(f"Configuration file: {Path(config_file).absolute()}")
     LOGGER.info(f"GPS start time: {start} - {tconvert(start)}")
     LOGGER.info(f"GPS end time: {end} - {tconvert(end)}")
 
