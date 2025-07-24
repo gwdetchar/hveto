@@ -22,6 +22,8 @@
 import configparser
 import datetime
 import json
+import logging
+from logging.handlers import RotatingFileHandler
 import multiprocessing
 import numpy
 import os
@@ -42,7 +44,8 @@ from gwpy.table import EventTable
 from gwdetchar import cli
 from gwdetchar.io.html import (FancyPlot, cis_link)
 from gwdetchar.omega import batch
-from gwpy.time import tconvert
+from gwpy.time import tconvert, to_gps
+from pytz import reference
 
 from hveto import (__version__, config, core, html, utils)
 from hveto.segments import (write_ascii as write_ascii_segments,
@@ -63,11 +66,19 @@ JOBSTART = time.time()
 # set up logger
 PROG = ('python -m hveto' if sys.argv[0].endswith('.py')
         else os.path.basename(sys.argv[0]))
-LOGGER = cli.logger(name=PROG.split('python -m ').pop())
+NOW = datetime.datetime.now()
+TIMEZONE = reference.LocalTimezone().tzname(NOW)
+NOW_GPS = to_gps(NOW)
+DATEFMT = '%Y-%m-%d %H:%M:%S {}'.format(TIMEZONE)
+FMT = '%(name)s %(asctime)s %(levelname)+8s: %(filename)s:%(lineno)d:  %(message)s'
+logging.basicConfig(format=FMT, datefmt=DATEFMT)
+LOGGER =     logger = logging.getLogger('hveto')
+LOGGER.setLevel(logging.DEBUG)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = ('Joshua Smith <joshua.smith@ligo.org>, '
-               'Alex Urban <alexander.urban@ligo.org>')
+               'Alex Urban <alexander.urban@ligo.org>, '
+               'Joseph Areeda <joseph.areeda@ligo.org')
 
 
 # -- parse command line -------------------------------------------------------
@@ -256,8 +267,14 @@ def main(args=None):
     outdir = _abs_path(args.output_directory)
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
+    # add log file
+    log_file = os.path.join(outdir, 'hveto.log')
+    LOGGER.info("Logging to %s" % log_file)
+    logf_formatter = logging.Formatter(FMT, datefmt=DATEFMT)
+    logf_handler = logging.FileHandler(log_file)
+    logf_handler.setFormatter(logf_formatter)
+    LOGGER.addHandler(logf_handler)
     os.chdir(outdir)
-    LOGGER.info("Working directory: %s" % outdir)
     segdir = 'segments'
     plotdir = 'plots'
     trigdir = 'triggers'
@@ -266,6 +283,26 @@ def main(args=None):
     for d in [segdir, plotdir, trigdir, omegadir, signidir]:
         if not os.path.isdir(d):
             os.makedirs(d)
+    # log program info
+    LOGGER.info(f'Python: {sys.version.split()[0]}, hveto: {__version__}')
+    LOGGER.info(f"Working directory: {outdir}")
+    LOGGER.info(f"Output directory: {outdir}")
+    LOGGER.info(f"Segment directory: {Path(segdir)}")
+    LOGGER.info(f"Plot directory: {Path(plotdir)}")
+    LOGGER.info(f"Trigger directory: {Path(trigdir)}")
+    LOGGER.info(f"Omega scan directory: {Path(omegadir)}")
+    LOGGER.info(f"Significance directory: {Path(signidir)}")
+    LOGGER.info(f"Configuration file(s): {args.config_file}")
+    LOGGER.info(f"GPS start time: {start} - {tconvert(start)}")
+    LOGGER.info(f"GPS end time: {end} - {tconvert(end)}")
+
+    for k, v in vars(args).items():
+        if k == 'start' or k == 'end':
+            s = f', ({tconvert(v)})'
+        else:
+            s = ''
+        LOGGER.debug(f'arg: {k} = {v}{s}')
+
 
     # prepare html variables
     htmlv = {
@@ -276,6 +313,8 @@ def main(args=None):
     }
 
     # get segments
+    LOGGER.info("Retrieving segments...")
+    get_seg_start = datetime.datetime.now()
     aflag = cp.get('segments', 'analysis-flag')
     url = cp.get('segments', 'url')
     padding = tuple(cp.getfloats('segments', 'padding'))
@@ -298,8 +337,9 @@ def main(args=None):
         LOGGER.debug("Padding %s applied" % str(padding))
     livetime = int(abs(analysis.active))
     livetimepc = livetime / duration * 100.
-    LOGGER.info("Retrieved %d segments for %s with %ss (%.2f%%) livetime"
-                % (len(analysis.active), aflag, livetime, livetimepc))
+    get_seg_time = datetime.datetime.now() - get_seg_start
+    LOGGER.info(f"Retrieved {len(analysis.active)} segments for {aflag} with {livetime}s ({livetimepc:.2f}%) '"
+                f"livetime in {get_seg_time.total_seconds():.1f}s")
 
     # apply vetoes from veto-definer file
     try:
@@ -313,7 +353,7 @@ def main(args=None):
             categories = None
         # read file
         vdf = read_veto_definer_file(vetofile, start=start, end=end, ifo=ifo)
-        LOGGER.debug("Read veto-definer file from %s" % vetofile)
+        LOGGER.info("Read veto-definer file from %s" % vetofile)
         # get vetoes from segdb
         vdf.populate(source=url, segments=analysis.active, on_error='warn')
         # coalesce flags from chosen categories
@@ -334,8 +374,7 @@ def main(args=None):
         LOGGER.debug("Applied vetoes from veto-definer file")
         livetime = int(abs(analysis.active))
         livetimepc = livetime / duration * 100.
-        LOGGER.info("%ss (%.2f%%) livetime remaining after vetoes"
-                    % (livetime, livetimepc))
+        LOGGER.info(f"{livetime}s ({livetimepc:.2f}%) livetime remaining after vetoes")
 
     snrs = cp.getfloats('hveto', 'snr-thresholds')
     minsnr = min(snrs)
@@ -357,6 +396,7 @@ def main(args=None):
         acache = None
 
     # load auxiliary channels
+    aux_find_start = datetime.datetime.now()
     auxetg = cp.get('auxiliary', 'trigger-generator')
     auxfreq = cp.getfloats('auxiliary', 'frequency-range')
     try:
@@ -365,8 +405,8 @@ def main(args=None):
         auxchannels = find_auxiliary_channels(auxetg, (start, end), ifo=ifo,
                                               cache=acache)
         cp.set('auxiliary', 'channels', '\n'.join(auxchannels))
-        LOGGER.debug("Auto-discovered %d "
-                     "auxiliary channels" % len(auxchannels))
+        aux_find_time = datetime.datetime.now() - aux_find_start
+        LOGGER.debug(f"Auto-discovered {len(auxchannels)} auxiliary channels in {aux_find_time.total_seconds():.1f}s")
     else:
         auxchannels = sorted(set(auxchannels))
         LOGGER.debug("Read list of %d auxiliary channels" % len(auxchannels))

@@ -1,6 +1,7 @@
 # unwanted file-types
 *.pyc
 /*.patch
+.DS_Store
 
 # build products
 /hveto/_version.py
