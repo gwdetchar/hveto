@@ -285,14 +285,14 @@ def main(args=None):
             os.makedirs(d)
     # log program info
     LOGGER.info(f'Python: {sys.version.split()[0]}, hveto: {__version__}')
-    LOGGER.info(f"Working directory: {outdir}")
-    LOGGER.info(f"Output directory: {outdir}")
-    LOGGER.info(f"Segment directory: {Path(segdir)}")
-    LOGGER.info(f"Plot directory: {Path(plotdir)}")
-    LOGGER.info(f"Trigger directory: {Path(trigdir)}")
-    LOGGER.info(f"Omega scan directory: {Path(omegadir)}")
-    LOGGER.info(f"Significance directory: {Path(signidir)}")
-    LOGGER.info(f"Configuration file(s): {args.config_file}")
+    LOGGER.info(f"Working directory: {Path(outdir).absolute()}")
+    LOGGER.info(f"Output directory: {Path(outdir).absolute()}")
+    LOGGER.info(f"Segment directory: {Path(segdir).absolute()}")
+    LOGGER.info(f"Plot directory: {Path(plotdir).absolute()}")
+    LOGGER.info(f"Trigger directory: {Path(trigdir).absolute()}")
+    LOGGER.info(f"Omega scan directory: {Path(omegadir).absolute()}")
+    LOGGER.info(f"Significance directory: {Path(signidir).absolute()}")
+    LOGGER.info(f"Configuration file(s): {Path(args.config_file).absolute()}")
     LOGGER.info(f"GPS start time: {start} - {tconvert(start)}")
     LOGGER.info(f"GPS end time: {end} - {tconvert(end)}")
 
@@ -608,7 +608,7 @@ def main(args=None):
             sig_et = EventTable([sig_chans, sig_vals],
                                 names=['channels', 'significance'])
             sig_et.write(sigfile, format='ascii', overwrite=True)
-            LOGGER.info("Written significance files")
+            LOGGER.info(f"Significance events written to {Path(sigfile).absolute()}")
             svg = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
             plot.significance_drop(
                 svg, oldsignificances, newsignificances,  # noqa: F821
@@ -946,11 +946,11 @@ def main(args=None):
             # write to JSON
             results.append(('files', r.files))
             json_['rounds'].append(dict(results))
-    LOGGER.debug("Summary table written to %s" % f.name)
+    LOGGER.debug(f"Summary table written to {Path(f.name).absolute()}")
 
     with open('summary-stats.json', 'w') as f:
         json.dump(json_, f, sort_keys=True)
-    LOGGER.debug("Summary JSON written to %s" % f.name)
+    LOGGER.debug(f"Summary JSON written to {Path(f.name).absolute()}")
 
     # -- generate workflow for omega scans
 
@@ -988,7 +988,7 @@ def main(args=None):
     index = html.write_hveto_page(
         ifo, start, end, rounds, plots,
         winners=[r.winner.name for r in rounds], **htmlv)
-    LOGGER.debug("HTML written to %s" % index)
+    LOGGER.debug("HTML written to {Path(index).absolute()}")
     LOGGER.debug("Analysis completed in %d seconds" % (time.time() - JOBSTART))
     LOGGER.info("-- Hveto complete --")
 
