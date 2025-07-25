@@ -608,7 +608,7 @@ def main(args=None):
             sig_et = EventTable([sig_chans, sig_vals],
                                 names=['channels', 'significance'])
             sig_mask = sig_et['significance'] > 1.0
-            sig_et.remove_rows(sig_mask)
+            sig_et = sig_et[sig_mask]
             sig_et.sort('significance', reverse=True)
             sig_et.write(sigfile, format='ascii', overwrite=True)
             rounds[-1].files['SIG_TBL'] = sigfile
