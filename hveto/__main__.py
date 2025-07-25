@@ -543,7 +543,8 @@ def main(args=None):
     with open(chanfile, 'w') as f:
         for chan in auxchannels:
             print(chan, file=f)
-    LOGGER.info("Recorded list of valid auxiliary channels in %s" % chanfile)
+
+    LOGGER.info(f"Recorded list of {len(auxchannels)}valid auxiliary channels in {chanfile}")
 
     # -- execute hveto analysis -----------------
 
@@ -610,7 +611,7 @@ def main(args=None):
             sig_et.remove_rows(sig_mask)
             sig_et.sort('significance', reverse=True)
             sig_et.write(sigfile, format='ascii', overwrite=True)
-            rounds[-1].files['SIG_TBL'] = (sigfile,)
+            rounds[-1].files['SIG_TBL'] = sigfile
             LOGGER.info(f"Significance events written to {Path(sigfile).absolute()}")
             svg = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
             plot.significance_drop(
