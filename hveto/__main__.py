@@ -610,7 +610,7 @@ def main(args=None):
             sig_et.remove_rows(sig_mask)
             sig_et.sort('significance', reverse=True)
             sig_et.write(sigfile, format='ascii', overwrite=True)
-            rnd.files['SIG_TBL'] = (sigfile,)
+            rounds[-1].files['SIG_TBL'] = (sigfile,)
             LOGGER.info(f"Significance events written to {Path(sigfile).absolute()}")
             svg = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
             plot.significance_drop(
