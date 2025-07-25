@@ -23,7 +23,6 @@ import configparser
 import datetime
 import json
 import logging
-from logging.handlers import RotatingFileHandler
 import multiprocessing
 import numpy
 import os
@@ -72,7 +71,7 @@ NOW_GPS = to_gps(NOW)
 DATEFMT = '%Y-%m-%d %H:%M:%S {}'.format(TIMEZONE)
 FMT = '%(name)s %(asctime)s %(levelname)+8s: %(filename)s:%(lineno)d:  %(message)s'
 logging.basicConfig(format=FMT, datefmt=DATEFMT)
-LOGGER =     logger = logging.getLogger('hveto')
+LOGGER = logging.getLogger('hveto')
 LOGGER.setLevel(logging.DEBUG)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -206,7 +205,7 @@ def create_parser():
         help=(
             'When omega scans are requested, do not submit DAG. '
             'Used when hveto is run in condor vanilla universe'),
-        )
+    )
 
     # output options
     pout = parser.add_argument_group('Output options')
@@ -303,7 +302,6 @@ def main(args=None):
         else:
             s = ''
         LOGGER.debug(f'arg: {k} = {v}{s}')
-
 
     # prepare html variables
     htmlv = {
@@ -608,7 +606,11 @@ def main(args=None):
                         i in list(oldsignificances.values())]  # noqa: F821
             sig_et = EventTable([sig_chans, sig_vals],
                                 names=['channels', 'significance'])
+            sig_mask = sig_et['significance'] > 1.0
+            sig_et.remove_rows(sig_mask)
+            sig_et.sort('significance', reverse=True)
             sig_et.write(sigfile, format='ascii', overwrite=True)
+            rnd.files['SIG_TBL'] = (sigfile,)
             LOGGER.info(f"Significance events written to {Path(sigfile).absolute()}")
             svg = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
             plot.significance_drop(
@@ -989,8 +991,8 @@ def main(args=None):
     index = html.write_hveto_page(
         ifo, start, end, rounds, plots,
         winners=[r.winner.name for r in rounds], **htmlv)
-    LOGGER.debug("HTML written to {Path(index).absolute()}")
-    LOGGER.debug("Analysis completed in %d seconds" % (time.time() - JOBSTART))
+    LOGGER.debug(f"HTML written to {Path(index).absolute()}")
+    LOGGER.debug(f"Analysis completed in {time.time() - JOBSTART}")
     LOGGER.info("-- Hveto complete --")
 
 
