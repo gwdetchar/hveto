@@ -296,7 +296,7 @@ def write_round(round_, context):
     page.add(bold_param('Significance', '%.2f' % round_.winner.significance))
     for desc, tag in zip(
             ['Veto segments', 'Veto triggers', 'Vetoed primary triggers',
-             'Unvetoed primary triggers', 'Channel significancs'],
+             'Unvetoed primary triggers', 'Channel significances'],
             ['VETO_SEGS', 'WINNER', 'VETOED', 'RAW', 'SIG_TBL']):
         if isinstance(round_.files[tag], str):
             files = [round_.files[tag]]

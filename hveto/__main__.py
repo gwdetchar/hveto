@@ -230,6 +230,41 @@ def create_parser():
     return parser
 
 
+def make_drop_table(oldsignificances, newsignificances, cutoff=1.0):
+    """
+    Generates a table of channels showing their significance reduction with
+    asignificance greater than the cutoff
+    value. The method filters channels with significance above the provided cutoff
+    from the old significance values and creates a comparison table including pre and
+    post significance values. The output table is sorted in descending order based on
+    the pre-significance scores.
+
+    :param EventTable oldsignificances: A sequence of records containing 'channels'
+        and 'significance' fields sorted by channels.
+    :param EventTable newsignificances: A sequence of records containing 'channels'
+        and 'significance' fields sorted by channels.
+    :param float cutoff: A float representing the minimum significance value
+        to consider for filtering channels. Default is 1.0.
+    :return: An `EventTable` object with columns ['channels', 'pre_significance',
+        'post_significance'], sorted by 'pre_significance' in descending order.
+    """
+    oldsignificances.sort('channels')
+    newsignificances.sort('channels')
+    channels = list()
+    pre = list()
+    post = list()
+
+    for idx, chan in enumerate(oldsignificances):
+        if chan['significance'] >= cutoff:
+            channels.append(chan['channels'])
+            pre.append(chan['significance'])
+            post.append(newsignificances[idx]['significance'])
+
+    drop_table = EventTable([channels, pre, post], names=['channels', 'pre_significance', 'post_significance'])
+    drop_table.sort('pre_significance', reverse=True)
+    return drop_table
+
+
 # -- main code block ----------------------------------------------------------
 
 def main(args=None):
@@ -600,17 +635,8 @@ def main(args=None):
             sigfile = os.path.join(
                 signidir,
                 '%s-HVETO_SIGNIFICANT_CHANNELS_ROUND_%d-%d-%d.txt' % (ifo, rnd.n - 1, start, duration))
-            # These are the channel names
-            sig_chans = list(oldsignificances.keys())  # noqa: F821
-            # These are the significance values
-            sig_vals = [round(i, 4) for
-                        i in list(oldsignificances.values())]  # noqa: F821
-            sig_et = EventTable([sig_chans, sig_vals],
-                                names=['channels', 'significance'])
-            sig_mask = sig_et['significance'] > 1.0
-            sig_et = sig_et[sig_mask]
-            sig_et.sort('significance', reverse=True)
-            sig_et.write(sigfile, format='ascii', overwrite=True)
+            sig_drop_table = make_drop_table(oldsignificances, newsignificances)
+            sig_drop_table.write(sigfile, format='ascii', overwrite=True)
             rounds[-1].files['SIG_TBL'] = sigfile
             LOGGER.info(f"Significance events written to {Path(sigfile).absolute()}")
             svg = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
