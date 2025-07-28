@@ -239,26 +239,28 @@ def make_drop_table(oldsignificances, newsignificances, cutoff=1.0):
     post significance values. The output table is sorted in descending order based on
     the pre-significance scores.
 
-    :param EventTable oldsignificances: A sequence of records containing 'channels'
+    :param dict oldsignificances: A sequence of records containing 'channels'
         and 'significance' fields sorted by channels.
-    :param EventTable newsignificances: A sequence of records containing 'channels'
+    :param dict newsignificances: A sequence of records containing 'channels'
         and 'significance' fields sorted by channels.
     :param float cutoff: A float representing the minimum significance value
         to consider for filtering channels. Default is 1.0.
     :return: An `EventTable` object with columns ['channels', 'pre_significance',
         'post_significance'], sorted by 'pre_significance' in descending order.
     """
-    oldsignificances.sort('channels')
-    newsignificances.sort('channels')
+
     channels = list()
     pre = list()
     post = list()
 
-    for idx, chan in enumerate(oldsignificances):
-        if chan['significance'] >= cutoff:
-            channels.append(chan['channels'])
-            pre.append(chan['significance'])
-            post.append(newsignificances[idx]['significance'])
+    for chan, sig in oldsignificances.items():
+        if sig >= cutoff:
+            channels.append(chan)
+            pre.append(sig)
+            if chan in newsignificances:
+                post.append(newsignificances[chan])
+            else:
+                post.append(float('nan'))
 
     drop_table = EventTable([channels, pre, post], names=['channels', 'pre_significance', 'post_significance'])
     drop_table.sort('pre_significance', reverse=True)
@@ -597,6 +599,7 @@ def main(args=None):
     rounds = []
     rnd = core.HvetoRound(1, pchannel, rank=scol)
     rnd.segments = analysis.active
+    oldsignificances = None
 
     while True:
         LOGGER.info("-- Processing round %d --" % rnd.n)
