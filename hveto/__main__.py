@@ -270,7 +270,7 @@ def make_drop_table(oldsignificances, newsignificances, out_file=None, cutoff=1.
                             dtype=[f'<U{chan_max_chars}', np.float64, np.float64]   )
     drop_table.sort('pre_significance', reverse=True)
     col_formats = {'channels': f'{chan_max_chars}s', 'pre_significance': '{:8.2f}', 'post_significance': '{:8.2f}'}
-    drop_table.write(out_file, format='ascii.csv', overwrite=True, formats=col_formats)
+    drop_table.write(out_file, format='ascii.fixed_width', overwrite=True, formats=col_formats)
 
     return drop_table
 
