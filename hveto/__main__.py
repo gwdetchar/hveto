@@ -230,7 +230,7 @@ def create_parser():
     return parser
 
 
-def make_drop_table(oldsignificances, newsignificances, cutoff=1.0):
+def make_drop_table(oldsignificances, newsignificances, out_file=None, cutoff=1.0):
     """
     Generates a table of channels showing their significance reduction with
     asignificance greater than the cutoff
@@ -243,6 +243,7 @@ def make_drop_table(oldsignificances, newsignificances, cutoff=1.0):
         and 'significance' fields sorted by channels.
     :param dict newsignificances: A sequence of records containing 'channels'
         and 'significance' fields sorted by channels.
+    :param str out_file: The path to the output file. If not provided, the
     :param float cutoff: A float representing the minimum significance value
         to consider for filtering channels. Default is 1.0.
     :return: An `EventTable` object with columns ['channels', 'pre_significance',
@@ -252,9 +253,11 @@ def make_drop_table(oldsignificances, newsignificances, cutoff=1.0):
     channels = list()
     pre = list()
     post = list()
+    chan_max_chars = 0
 
     for chan, sig in oldsignificances.items():
         if sig >= cutoff:
+            chan_max_chars = max(chan_max_chars, len(chan))
             channels.append(chan)
             pre.append(sig)
             if chan in newsignificances:
@@ -264,6 +267,9 @@ def make_drop_table(oldsignificances, newsignificances, cutoff=1.0):
 
     drop_table = EventTable([channels, pre, post], names=['channels', 'pre_significance', 'post_significance'])
     drop_table.sort('pre_significance', reverse=True)
+    col_formats = {'channels': f'{chan_max_chars}s', 'pre_significance': '{8.2f}', 'post_significance': '{:8.2f}'}
+    drop_table.write(out_file, format='ascii.csvc', overwrite=True, formats=col_formats)
+
     return drop_table
 
 
@@ -638,8 +644,7 @@ def main(args=None):
             sigfile = os.path.join(
                 signidir,
                 '%s-HVETO_SIGNIFICANT_CHANNELS_ROUND_%d-%d-%d.txt' % (ifo, rnd.n - 1, start, duration))
-            sig_drop_table = make_drop_table(oldsignificances, newsignificances)
-            sig_drop_table.write(sigfile, format='ascii', overwrite=True)
+            sig_drop_table = make_drop_table(oldsignificances, newsignificances, sigfile)
             rounds[-1].files['SIG_TBL'] = sigfile
             LOGGER.info(f"Significance events written to {Path(sigfile).absolute()}")
             svg = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
