@@ -35,6 +35,7 @@ from getpass import getuser
 from pathlib import Path
 from socket import getfqdn
 
+import numpy as np
 from gwpy.io.cache import read_cache
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
@@ -265,7 +266,8 @@ def make_drop_table(oldsignificances, newsignificances, out_file=None, cutoff=1.
             else:
                 post.append(float('nan'))
 
-    drop_table = EventTable([channels, pre, post], names=['channels', 'pre_significance', 'post_significance'])
+    drop_table = EventTable([channels, pre, post], names=['channels', 'pre_significance', 'post_significance'],
+                            dtype=[f'<U{chan_max_chars}', np.float64, np.float64])
     drop_table.sort('pre_significance', reverse=True)
     col_formats = {'channels': f'{chan_max_chars}s', 'pre_significance': '{8.2f}', 'post_significance': '{:8.2f}'}
     drop_table.write(out_file, format='ascii.csv', overwrite=True, formats=col_formats)
