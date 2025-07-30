@@ -206,8 +206,8 @@ def find_auxiliary_channels(etg, gps='*', ifo='*', cache=None):
         gps5 = int(str(gps[0])[:5])
         gpse = int(str(gps[-1])[:5])
         while gps5 <= gpse and gps5 * 1e5 < gps[-1]:
-            channels = glob.glob(os.path.join(
-                '/home/detchar/triggers', ifo, '*', str(gps5)))
+            aux_chan_glob = f'/home/detchar/triggers/{ifo}/*/{gps5}'
+            channels = glob.glob(aux_chan_glob)
             if len(channels) == 0:  # try old convention
                 channels = glob.glob(os.path.join(
                     '/home/detchar/triggers', '*', ifo, '*', str(gps5)))

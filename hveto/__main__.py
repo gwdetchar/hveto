@@ -22,6 +22,7 @@
 import configparser
 import datetime
 import json
+import logging
 import multiprocessing
 import numpy
 import os
@@ -34,6 +35,7 @@ from getpass import getuser
 from pathlib import Path
 from socket import getfqdn
 
+import numpy as np
 from gwpy.io.cache import read_cache
 from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
@@ -42,7 +44,8 @@ from gwpy.table import EventTable
 from gwdetchar import cli
 from gwdetchar.io.html import (FancyPlot, cis_link)
 from gwdetchar.omega import batch
-from gwpy.time import tconvert
+from gwpy.time import tconvert, to_gps
+from pytz import reference
 
 from hveto import (__version__, config, core, html, utils)
 from hveto.segments import (write_ascii as write_ascii_segments,
@@ -63,11 +66,19 @@ JOBSTART = time.time()
 # set up logger
 PROG = ('python -m hveto' if sys.argv[0].endswith('.py')
         else os.path.basename(sys.argv[0]))
-LOGGER = cli.logger(name=PROG.split('python -m ').pop())
+NOW = datetime.datetime.now()
+TIMEZONE = reference.LocalTimezone().tzname(NOW)
+NOW_GPS = to_gps(NOW)
+DATEFMT = '%Y-%m-%d %H:%M:%S {}'.format(TIMEZONE)
+FMT = '%(name)s %(asctime)s %(levelname)+8s: %(filename)s:%(lineno)d:  %(message)s'
+logging.basicConfig(format=FMT, datefmt=DATEFMT)
+LOGGER = logging.getLogger('hveto')
+LOGGER.setLevel(logging.DEBUG)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = ('Joshua Smith <joshua.smith@ligo.org>, '
-               'Alex Urban <alexander.urban@ligo.org>')
+               'Alex Urban <alexander.urban@ligo.org>, '
+               'Joseph Areeda <joseph.areeda@ligo.org')
 
 
 # -- parse command line -------------------------------------------------------
@@ -195,7 +206,7 @@ def create_parser():
         help=(
             'When omega scans are requested, do not submit DAG. '
             'Used when hveto is run in condor vanilla universe'),
-        )
+    )
 
     # output options
     pout = parser.add_argument_group('Output options')
@@ -218,6 +229,50 @@ def create_parser():
 
     # return the parser
     return parser
+
+
+def make_drop_table(oldsignificances, newsignificances, out_file=None, cutoff=1.0):
+    """
+    Generates a table of channels showing their significance reduction with
+    asignificance greater than the cutoff
+    value. The method filters channels with significance above the provided cutoff
+    from the old significance values and creates a comparison table including pre and
+    post significance values. The output table is sorted in descending order based on
+    the pre-significance scores.
+
+    :param dict oldsignificances: A sequence of records containing 'channels'
+        and 'significance' fields sorted by channels.
+    :param dict newsignificances: A sequence of records containing 'channels'
+        and 'significance' fields sorted by channels.
+    :param str out_file: The path to the output file. If not provided, the
+    :param float cutoff: A float representing the minimum significance value
+        to consider for filtering channels. Default is 1.0.
+    :return: An `EventTable` object with columns ['channels', 'pre_significance',
+        'post_significance'], sorted by 'pre_significance' in descending order.
+    """
+
+    channels = list()
+    pre = list()
+    post = list()
+    chan_max_chars = 0
+
+    for chan, sig in oldsignificances.items():
+        if sig >= cutoff:
+            chan_max_chars = max(chan_max_chars, len(chan))
+            channels.append(chan)
+            pre.append(sig)
+            if chan in newsignificances:
+                post.append(newsignificances[chan])
+            else:
+                post.append(float('nan'))
+
+    drop_table = EventTable([channels, pre, post], names=['channels', 'pre_significance', 'post_significance'],
+                            dtype=[f'<U{chan_max_chars}', np.float64, np.float64]   )
+    drop_table.sort('pre_significance', reverse=True)
+    col_formats = {'channels': f'{chan_max_chars}s', 'pre_significance': '{:8.2f}', 'post_significance': '{:8.2f}'}
+    drop_table.write(out_file, format='ascii.fixed_width', overwrite=True, formats=col_formats)
+
+    return drop_table
 
 
 # -- main code block ----------------------------------------------------------
@@ -256,8 +311,14 @@ def main(args=None):
     outdir = _abs_path(args.output_directory)
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
+    # add log file
+    log_file = os.path.join(outdir, 'hveto.log')
+    LOGGER.info("Logging to %s" % log_file)
+    logf_formatter = logging.Formatter(FMT, datefmt=DATEFMT)
+    logf_handler = logging.FileHandler(log_file)
+    logf_handler.setFormatter(logf_formatter)
+    LOGGER.addHandler(logf_handler)
     os.chdir(outdir)
-    LOGGER.info("Working directory: %s" % outdir)
     segdir = 'segments'
     plotdir = 'plots'
     trigdir = 'triggers'
@@ -266,6 +327,26 @@ def main(args=None):
     for d in [segdir, plotdir, trigdir, omegadir, signidir]:
         if not os.path.isdir(d):
             os.makedirs(d)
+    # log program info
+    LOGGER.info(f'Python: {sys.version.split()[0]}, hveto: {__version__}')
+    LOGGER.info(f"Working directory: {Path(outdir).absolute()}")
+    LOGGER.info(f"Output directory: {Path(outdir).absolute()}")
+    LOGGER.info(f"Segment directory: {Path(segdir).absolute()}")
+    LOGGER.info(f"Plot directory: {Path(plotdir).absolute()}")
+    LOGGER.info(f"Trigger directory: {Path(trigdir).absolute()}")
+    LOGGER.info(f"Omega scan directory: {Path(omegadir).absolute()}")
+    LOGGER.info(f"Significance directory: {Path(signidir).absolute()}")
+    for config_file in args.config_file:
+        LOGGER.info(f"Configuration file: {Path(config_file).absolute()}")
+    LOGGER.info(f"GPS start time: {start} - {tconvert(start)}")
+    LOGGER.info(f"GPS end time: {end} - {tconvert(end)}")
+
+    for k, v in vars(args).items():
+        if k == 'start' or k == 'end':
+            s = f', ({tconvert(v)})'
+        else:
+            s = ''
+        LOGGER.debug(f'arg: {k} = {v}{s}')
 
     # prepare html variables
     htmlv = {
@@ -276,6 +357,8 @@ def main(args=None):
     }
 
     # get segments
+    LOGGER.info("Retrieving segments...")
+    get_seg_start = datetime.datetime.now()
     aflag = cp.get('segments', 'analysis-flag')
     url = cp.get('segments', 'url')
     padding = tuple(cp.getfloats('segments', 'padding'))
@@ -298,8 +381,9 @@ def main(args=None):
         LOGGER.debug("Padding %s applied" % str(padding))
     livetime = int(abs(analysis.active))
     livetimepc = livetime / duration * 100.
-    LOGGER.info("Retrieved %d segments for %s with %ss (%.2f%%) livetime"
-                % (len(analysis.active), aflag, livetime, livetimepc))
+    get_seg_time = datetime.datetime.now() - get_seg_start
+    LOGGER.info(f"Retrieved {len(analysis.active)} segments for {aflag} with {livetime}s ({livetimepc:.2f}%) '"
+                f"livetime in {get_seg_time.total_seconds():.1f}s")
 
     # apply vetoes from veto-definer file
     try:
@@ -313,7 +397,7 @@ def main(args=None):
             categories = None
         # read file
         vdf = read_veto_definer_file(vetofile, start=start, end=end, ifo=ifo)
-        LOGGER.debug("Read veto-definer file from %s" % vetofile)
+        LOGGER.info("Read veto-definer file from %s" % vetofile)
         # get vetoes from segdb
         vdf.populate(source=url, segments=analysis.active, on_error='warn')
         # coalesce flags from chosen categories
@@ -334,8 +418,7 @@ def main(args=None):
         LOGGER.debug("Applied vetoes from veto-definer file")
         livetime = int(abs(analysis.active))
         livetimepc = livetime / duration * 100.
-        LOGGER.info("%ss (%.2f%%) livetime remaining after vetoes"
-                    % (livetime, livetimepc))
+        LOGGER.info(f"{livetime}s ({livetimepc:.2f}%) livetime remaining after vetoes")
 
     snrs = cp.getfloats('hveto', 'snr-thresholds')
     minsnr = min(snrs)
@@ -357,6 +440,7 @@ def main(args=None):
         acache = None
 
     # load auxiliary channels
+    aux_find_start = datetime.datetime.now()
     auxetg = cp.get('auxiliary', 'trigger-generator')
     auxfreq = cp.getfloats('auxiliary', 'frequency-range')
     try:
@@ -365,8 +449,8 @@ def main(args=None):
         auxchannels = find_auxiliary_channels(auxetg, (start, end), ifo=ifo,
                                               cache=acache)
         cp.set('auxiliary', 'channels', '\n'.join(auxchannels))
-        LOGGER.debug("Auto-discovered %d "
-                     "auxiliary channels" % len(auxchannels))
+        aux_find_time = datetime.datetime.now() - aux_find_start
+        LOGGER.debug(f"Auto-discovered {len(auxchannels)} auxiliary channels in {aux_find_time.total_seconds():.1f}s")
     else:
         auxchannels = sorted(set(auxchannels))
         LOGGER.debug("Read list of %d auxiliary channels" % len(auxchannels))
@@ -504,7 +588,8 @@ def main(args=None):
     with open(chanfile, 'w') as f:
         for chan in auxchannels:
             print(chan, file=f)
-    LOGGER.info("Recorded list of valid auxiliary channels in %s" % chanfile)
+
+    LOGGER.info(f"Recorded list of {len(auxchannels)}valid auxiliary channels in {chanfile}")
 
     # -- execute hveto analysis -----------------
 
@@ -522,6 +607,7 @@ def main(args=None):
     rounds = []
     rnd = core.HvetoRound(1, pchannel, rank=scol)
     rnd.segments = analysis.active
+    oldsignificances = None
 
     while True:
         LOGGER.info("-- Processing round %d --" % rnd.n)
@@ -560,15 +646,9 @@ def main(args=None):
             sigfile = os.path.join(
                 signidir,
                 '%s-HVETO_SIGNIFICANT_CHANNELS_ROUND_%d-%d-%d.txt' % (ifo, rnd.n - 1, start, duration))
-            # These are the channel names
-            sig_chans = list(oldsignificances.keys())  # noqa: F821
-            # These are the significance values
-            sig_vals = [round(i, 4) for
-                        i in list(oldsignificances.values())]  # noqa: F821
-            sig_et = EventTable([sig_chans, sig_vals],
-                                names=['channels', 'significance'])
-            sig_et.write(sigfile, format='ascii', overwrite=True)
-            LOGGER.info("Written significance files")
+            sig_drop_table = make_drop_table(oldsignificances, newsignificances, sigfile)
+            rounds[-1].files['SIG_TBL'] = sigfile
+            LOGGER.info(f"Significance events written to {Path(sigfile).absolute()}")
             svg = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
             plot.significance_drop(
                 svg, oldsignificances, newsignificances,  # noqa: F821
@@ -906,11 +986,11 @@ def main(args=None):
             # write to JSON
             results.append(('files', r.files))
             json_['rounds'].append(dict(results))
-    LOGGER.debug("Summary table written to %s" % f.name)
+    LOGGER.debug(f"Summary table written to {Path(f.name).absolute()}")
 
     with open('summary-stats.json', 'w') as f:
         json.dump(json_, f, sort_keys=True)
-    LOGGER.debug("Summary JSON written to %s" % f.name)
+    LOGGER.debug(f"Summary JSON written to {Path(f.name).absolute()}")
 
     # -- generate workflow for omega scans
 
@@ -948,8 +1028,8 @@ def main(args=None):
     index = html.write_hveto_page(
         ifo, start, end, rounds, plots,
         winners=[r.winner.name for r in rounds], **htmlv)
-    LOGGER.debug("HTML written to %s" % index)
-    LOGGER.debug("Analysis completed in %d seconds" % (time.time() - JOBSTART))
+    LOGGER.debug(f"HTML written to {Path(index).absolute()}")
+    LOGGER.debug(f"Analysis completed in {time.time() - JOBSTART}")
     LOGGER.info("-- Hveto complete --")
 
 
