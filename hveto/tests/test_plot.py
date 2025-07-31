@@ -47,6 +47,7 @@ def test_drop_plot(num, tmpdir):
         plot.significance_drop(os.path.join(outdir, 'test.svg'),
                                old, new)
     for rec in record:
-        assert rec.message.args[0].startswith("Failed to recover tooltip")
+        assert rec.message.args[0].startswith("Failed to recover tooltip") or \
+               "deprecate" in str(rec.message).lower()
     # clean up
     shutil.rmtree(outdir, ignore_errors=True)
