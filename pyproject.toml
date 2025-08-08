@@ -76,6 +76,7 @@ docs = [
 hveto = "hveto.__main__:main"
 hveto-cache-events = "hveto.cli.cache_events:main"
 hveto-trace = "hveto.cli.trace:main"
+hveto-weekly = "hveto.cli.weekly_hveto:main"
 
 [project.urls]
 "Bug Tracker" = "https://github.com/gwdetchar/hveto/issues"
