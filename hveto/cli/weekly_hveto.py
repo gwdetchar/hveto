@@ -206,7 +206,6 @@ def make_job(job_name, job_args):
     Creates and prepares the directory and condor files for a single hveto job.
 
     :param str job_name: The name of the job to create
-    :param Path job_dir: The directory where the job will be generated or executed
     :param dict job_args: The arguments to use for the job
     :return Path: Path to the submit file
     """
@@ -329,9 +328,10 @@ def main():
         print(f'# Created by {__process_name__}, version {__version__}\n', file=dag_fh)
         print('CATEGORY ALL_NODES LIMIT', file=dag_fh)
         print('MAXJOBS LIMIT 3', file=dag_fh)
+        print('RETRY LIMIT 2\n', file=dag_fh)
         print('', file=dag_fh)
 
-        njobs = int((end_dt - start_dt).days / stride)
+        njobs = int((end_dt - start_dt).days / stride) + 1
         current_job = 1
 
         while start_dt <= next_dt:
