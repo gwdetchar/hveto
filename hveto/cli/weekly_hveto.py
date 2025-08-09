@@ -328,7 +328,7 @@ def main():
         print(f'# Created by {__process_name__}, version {__version__}\n', file=dag_fh)
         print('CATEGORY ALL_NODES LIMIT', file=dag_fh)
         print('MAXJOBS LIMIT 3', file=dag_fh)
-        print('RETRY LIMIT 2\n', file=dag_fh)
+        print('RETRY ALL_NODES 2\n', file=dag_fh)
         print('', file=dag_fh)
 
         njobs = int((end_dt - start_dt).days / stride) + 1
