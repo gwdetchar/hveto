@@ -62,7 +62,7 @@ hveto_run_sh = textwrap.dedent('''\
     outer_dir="%outer_dir%"
     prefix="%prefix%"
 
-    condaRun="/cvmfs/software.igwn.org/conda/condabin/conda run --prefix $%prefix% --no-capture-output --no-capture-error "
+    condaRun="/cvmfs/software.igwn.org/conda/condabin/conda run --prefix ${prefix} --no-capture-output  "
 
 
     cmd="python -m hveto ${gpsstart} ${gpsend} --ifo ${ifo} --config-file ${configuration} --nproc ${nproc} \
@@ -279,7 +279,7 @@ def main():
     dag_file = dag_dir / 'hveto.dag'
 
     # add logging too a file
-    NOW = datetime.datetime.now()
+    NOW = datetime.now()
     TIMEZONE = reference.LocalTimezone().tzname(NOW)
     DATEFMT = '%Y-%m-%d %H:%M:%S {}'.format(TIMEZONE)
     FMT = '%(name)s %(asctime)s %(levelname)+8s: %(filename)s:%(lineno)d:  %(message)s'
@@ -297,6 +297,13 @@ def main():
     if config is None:
         logger.critical('Configuration file not specified')
         raise ValueError('Configuration file not specified')
+
+    if args.ifo == 'UK':
+        logger.critical('IFO must be specified on command line or in the environment, if not running at LLO or LHO')
+        raise ValueError('IFO must be specified')
+    elif args.ifo not in ['L1', 'H1']:
+        logger.critical(f'IFO {args.ifo} not in ["L1", "H1"]')
+        raise ValueError(f'IFO {args.ifo} not in ["L1", "H1"]')
 
     start_day = args.start
     start_gps = to_gps(start_day)
@@ -319,8 +326,9 @@ def main():
     with dag_file.open('w') as dag_fh:
         print(f'# process long duration hveto for {start_day} to {end_day} each {duration} days', file=dag_fh)
         print(f'# stride = {stride} days', file=dag_fh)
-        print(f'# Created by {__process_name__}, version {__version__}\\n', file=dag_fh)
+        print(f'# Created by {__process_name__}, version {__version__}\n', file=dag_fh)
         print('CATEGORY ALL_NODES LIMIT', file=dag_fh)
+        print('MAXJOBS LIMIT 3', file=dag_fh)
         print('', file=dag_fh)
 
         njobs = int((end_dt - start_dt).days / stride)
