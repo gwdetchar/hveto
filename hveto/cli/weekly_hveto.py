@@ -26,6 +26,8 @@ import time
 from datetime import datetime, timedelta, timezone
 import socket
 
+from pytz import reference
+
 start_time = time.time()
 
 import argparse
@@ -165,7 +167,7 @@ def parser_add_args(parser):
                              'will create 4 hveto reports ending on 7/28, 7/21, 7/14, 7/1 each covering 7 days')
     parser.add_argument('--no-submit', action='store_true',
                         help='Create directory, script and submit file but do not submit to Condor')
-    parser.add_argument('-o', '--output-directory', default='/home/detchar/public_html/hveto-weekly',
+    parser.add_argument('-o', '--output-directory', default=f'/home/{os.getenv("USER")}/public_html/hveto-weekly',
                         help='Parent directory for what may be multiple hveto runs')
 
     prefix = os.getenv('CONDA_PREFIX', '/home/detchar/.conda/envs/ligo-summary-3.10')
@@ -268,6 +270,24 @@ def main():
     else:
         logger.setLevel(logging.DEBUG)
 
+    output_directory = Path(args.output_directory)
+    now_time = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+    dag_dir = output_directory / f'DAG-{now_time}'
+    dag_dir.mkdir(parents=True, exist_ok=True)
+
+    dag_log = dag_dir / 'weekly-dag.log'
+    dag_file = dag_dir / 'hveto.dag'
+
+    # add logging too a file
+    NOW = datetime.datetime.now()
+    TIMEZONE = reference.LocalTimezone().tzname(NOW)
+    DATEFMT = '%Y-%m-%d %H:%M:%S {}'.format(TIMEZONE)
+    FMT = '%(name)s %(asctime)s %(levelname)+8s: %(filename)s:%(lineno)d:  %(message)s'
+    logf_formatter = logging.Formatter(FMT, datefmt=DATEFMT)
+    logf_handler = logging.FileHandler(dag_log, mode='w')
+    logf_handler.setFormatter(logf_formatter)
+    logger.addHandler(logf_handler)
+
     # debugging?
     logger.debug(f'{__process_name__} version: {__version__} called with arguments:')
     for k, v in args.__dict__.items():
@@ -293,9 +313,6 @@ def main():
     stride = args.stride
     stride_dt = timedelta(days=stride)
 
-    output_directory = Path(args.output_directory)
-    now_time = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
-    dag_file = output_directory / f'DAG-{now_time}' / 'hveto.dag'
     logger.info(f'DAG file  will be written to {dag_file}')
     dag_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -303,7 +320,8 @@ def main():
         print(f'# process long duration hveto for {start_day} to {end_day} each {duration} days', file=dag_fh)
         print(f'# stride = {stride} days', file=dag_fh)
         print(f'# Created by {__process_name__}, version {__version__}\\n', file=dag_fh)
-        print('max_jobs = 3', file=dag_fh)
+        print('CATEGORY ALL_NODES LIMIT', file=dag_fh)
+        print('', file=dag_fh)
 
         njobs = int((end_dt - start_dt).days / stride)
         current_job = 1
