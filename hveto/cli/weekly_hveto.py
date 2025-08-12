@@ -21,6 +21,7 @@
 
 """"""
 import os
+import subprocess
 import textwrap
 import time
 from datetime import datetime, timedelta, timezone
@@ -54,6 +55,7 @@ hveto_run_sh = textwrap.dedent('''\
     # script used by %program_name% condor DAG to run one analysis
     # Created by %program_name% version %program_version% on %date%
 
+    # Run specific variables
     configuration="%configuration%"
     nproc=%nproc%
     ifo=%ifo%
@@ -61,21 +63,26 @@ hveto_run_sh = textwrap.dedent('''\
     gpsend="%gpsend%"
     outer_dir="%outer_dir%"
     prefix="%prefix%"
+    timeout=%timeout%
 
+    # run proram in conda environment
     condaRun="/cvmfs/software.igwn.org/conda/condabin/conda run --prefix ${prefix} --no-capture-output  "
 
+    # use a 3 hour timeout to prevent hanging jobs
+    timeout_cmd="timeout --kill-after=${timeout}s ${timeout}"
 
     cmd="python -m hveto ${gpsstart} ${gpsend} --ifo ${ifo} --config-file ${configuration} --nproc ${nproc} \
         --output-directory ${outer_dir}"
 
-    ${condaRun} ${cmd}
+    ${condaRun} ${timeout_cmd} ${cmd}
 
     ''')
 
 hveto_job_submit_sh = textwrap.dedent('''
 #!/usr/bin/env condor_submit
 #
-# Condor submit file for %program_name% processing
+# Condor submit file for hveto processing in batch mode
+#
 # Created by %program_name% version %program_version% on %date%
 #
 
@@ -346,7 +353,7 @@ def main():
             #  create the results directory and add the condor submit file and bash script
             job_dir = output_directory / job_month / job_day
 
-            # rutiime args are sed to create the obs bash script
+            # runtime args are used to create the job's bash script
             job_args = {
                 "configuration": config,
                 "nproc": args.nproc,
@@ -359,9 +366,10 @@ def main():
                 "program_version": __version__,
                 "date": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 "condor_dir": job_dir / 'condor',
-                "request_memory": 32768,
+                "request_memory": 15384,
                 "end_day": next_day,
                 "out_of": f'{current_job:02d}_of_{njobs:02d}',
+                "timeout": 3 * 3600,
 
             }
             job_submit_file = make_job(job_name, job_args)
@@ -373,6 +381,13 @@ def main():
             next_dt -= stride_dt
 
     logger.info(f'DAG file with {njobs} jobs written to {dag_file}')
+    if not args.no_submit:
+        logger.info(f'Submitting {dag_file} to Condor')
+        cmd = f'condor_submit_dag -import_env {dag_file}'
+        logger.debug(f'Running: {cmd}')
+        subprocess.run(cmd, shell=True, check=True)
+    else:
+        logger.info('DAG file written but not submitted to Condor')
 
 
 if __name__ == "__main__":
