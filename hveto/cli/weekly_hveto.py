@@ -40,7 +40,7 @@ import traceback
 from gwpy.time import to_gps, from_gps
 
 try:
-    from ._version import __version__
+    from .._version import __version__
 except ImportError:
     __version__ = '0.0.0'
 
@@ -383,11 +383,15 @@ def main():
     logger.info(f'DAG file with {njobs} jobs written to {dag_file}')
     if not args.no_submit:
         logger.info(f'Submitting {dag_file} to Condor')
-        cmd = f'condor_submit_dag -import_env {dag_file}'
+        batch_name = f'hveto {start_dt.strftime("%m/%d")} to {next_dt.strftime("%m/%d")} $(ClusterId)'
+        cmd = f'condor_submit_dag -import_env {dag_file} -batch-name "{batch_name}"'
         logger.debug(f'Running: {cmd}')
         subprocess.run(cmd, shell=True, check=True)
     else:
         logger.info('DAG file written but not submitted to Condor')
+
+    # report our run time
+    logger.info(f'Elapsed time: {time.time() - start_time:.1f}s')
 
 
 if __name__ == "__main__":
@@ -401,5 +405,3 @@ if __name__ == "__main__":
         logging.basicConfig()
         logger = logging.getLogger(__process_name__)
         logger.setLevel(logging.DEBUG)
-    # report our run time
-    logger.info(f'Elapsed time: {time.time() - start_time:.1f}s')

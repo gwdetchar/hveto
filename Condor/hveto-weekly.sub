@@ -1,0 +1,40 @@
+#!/usr/bin/env condor_submit
+#
+# Condor submit file for Hveto weekly processing
+# it runs inn the local universe creates and submits a DAG to the vbanilla universe
+#
+
+universe = local
+my.conda_exe = /cvmfs/software.igwn.org/conda/condabin/conda
+my.conda_prefix = prefix="/home/detchar.dev/.conda/envs/ligo-summary-3.11-test"
+
+executable = $(my.conda_exe)
+arguments = 'run --prefix $(my.conda_prefix)) timeout 30m hveto-weekly -vv'
+accounting_group = ligo.prod.o4.detchar.dqtriggers.hveto
+accounting_group_user = <user name valid for account>
+
+request_memory = 20GB
+request_disk = 5GB
+
+output = $ENV(HOME)/public_html/hveto-weekly/logs/hveto-weekly.out
+error = $ENV(HOME)/public_html/hveto-weekly/logs/hveto-weekly.err
+log = $ENV(HOME)/public_html/hveto-weekly/logs/hveto-weekly.log
+
+batch_name = "weekly hveto [cron] ID: $(ClusterId)"
+
+on_exit_remove = false
+periodic_hold = false
+
+# We run ths in the Central and Pacific time zones standard and daylght savings
+# We want to give the daily gap filler
+cron_hour = 23
+cron_day_of_month = *
+cron_month = *
+cron_day_of_week = *
+cron_window = 2400
+
+use_oauth_services = scitokens
+environment = BEARER_TOKEN_FILE=$$(CondorScratchDir)/.condor_creds/scitokens.use
+
+getenv = DEFAULT_SEGMENT_SERVER ECP_IDP GWDATAFIND_SERVER HDF5_USE_FILE_LOCKING HOME KRB5CCNAME NDSSERVER KRB5_KTNAME CONDA_PREFIX IFO USER
+queue

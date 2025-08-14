@@ -1,0 +1,36 @@
+#!/usr/bin/env condor_submit
+#
+# Condor submit file for Hveto daily processing
+#
+
+universe = local
+executable = $ENV(HOME)/etc/ligo-monitors/scripts/daily-hveto.sh
+accounting_group = ligo.prod.o4.detchar.dqtriggers.hveto
+accounting_group_user = <user name valid for account>
+
+request_memory = 20GB
+request_disk = 5GB
+
+output = $ENV(HOME)/public_html/hveto/logs/daily-hveto.out
+error = $ENV(HOME)/public_html/hveto/logs/daily-hveto.err
+log = $ENV(HOME)/public_html/hveto/logs/daily-hveto.log
+
+batch_name = "daily hveto [cron] ID: $(ClusterId)"
+
+on_exit_remove = false
+periodic_hold = false
+cron_minute = 30
+# we want run to be 8, 16 24 UTC with enough slack for omicron selected by local time at LLO (UTC -5 CDT)
+# so LLO CDT -> 10, 18, 1 UTC. CST -> 11, 19, 2 UTC
+# LHO PDT (UTC - 7) -> 12, 20, 4 UC. PST - 13, 21, 5 TC
+cron_hour = 5, 13, 21
+cron_day_of_month = *
+cron_month = *
+cron_day_of_week = *
+cron_window = 2400
+
+use_oauth_services = scitokens
+environment = BEARER_TOKEN_FILE=$$(CondorScratchDir)/.condor_creds/scitokens.use
+
+getenv = DEFAULT_SEGMENT_SERVER ECP_IDP GWDATAFIND_SERVER HDF5_USE_FILE_LOCKING HOME KRB5CCNAME NDSSERVER KRB5_KTNAME CONDA_PREFIX IFO USER
+queue
