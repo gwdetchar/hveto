@@ -40,7 +40,7 @@ classifiers = [
 
 # requirements
 requires-python = ">=3.9"
-dependencies = [0
+dependencies = [
   "gwdetchar >= 2.0.0",
   "gwpy >=2.0.0",
   "gwtrigfind >= 0.8.3",
