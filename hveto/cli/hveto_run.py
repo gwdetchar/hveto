@@ -81,7 +81,7 @@ hveto_run_sh = textwrap.dedent('''\
     cmd="python -m hveto ${gpsstart} ${gpsend} --ifo ${ifo} --config-file ${configuration} --nproc ${nproc} \
         --output-directory ${outer_dir} ${omega_arg}"
 
-    ${condaRun} ${timeout_cmd} ${cmd}
+    ${condaRun} ${timeout_cmd} ${cmd} %create_link%
 
     ''')
 
@@ -483,12 +483,20 @@ def main():
         print('MAXJOBS LIMIT 3', file=dag_fh)
         print('RETRY ALL_NODES 2\n', file=dag_fh)
 
+        # For daily hveto or a 24 hr rerun we have day directory that may have 8, 16 and 24 hr subdirectories
+        # Then a symbolic link called latest pointing to the relevant results directory
+        job_day_dir = None
+
         if args.today:
             job_day, job_dt, duration = get_today_start()
             job_name = f'hveto_{job_day}_{duration:02d}hr'
+            job_start_gps = to_gps(job_dt)
+            job_end_gps = to_gps(job_dt + timedelta(hours=duration))
 
             #  create the results directory and add the condor submit file and bash script
-            job_dir = output_directory / job_day
+            job_day_dir = output_directory / job_day
+            job_dir = job_day_dir / f'{int(job_start_gps)}-{int(job_end_gps)}'
+
             condor_dir = job_dir / 'condor'
             if duration == 24:
                 job_end_dt = job_dt + timedelta(hours=duration)
@@ -508,6 +516,7 @@ def main():
                 "job_day": job_day,
                 "duration": duration,
                 "request_memory": 9216,
+                "create_link": f' && ln -s {job_dir} {job_day_dir}/latest'
             }
             job_args = {**job_args_common, **job_args_today}
             job_submit_file = make_job(job_name, job_args)
@@ -532,7 +541,10 @@ def main():
 
                 #  create the results directory and add the condor submit file and bash script
                 if duration == 1:
-                    job_dir = output_directory / job_day
+                    job_start_gps = to_gps(job_dt)
+                    job_end_gps = to_gps(job_dt + timedelta(hours=24))
+                    job_day_dir = output_directory / job_day
+                    job_dir = job_day_dir / f'{int(job_start_gps)}-{int(job_end_gps)}'
                 else:
                     job_dir = output_directory / job_month / job_day
 
@@ -549,6 +561,11 @@ def main():
                     "omega_scans": args.omega_scans,
                     "request_memory": 10240,
                 }
+                if duration == 1:
+                    job_args_multi_day["create_link"] = f' && ln -s {job_dir} {job_day_dir}/latest'
+                else:
+                    job_args_multi_day["create_link"] = ''
+
                 job_args = {**job_args_common, **job_args_multi_day}
                 job_submit_file = make_job(job_name, job_args)
 
