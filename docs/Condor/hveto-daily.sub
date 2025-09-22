@@ -1,29 +1,34 @@
-#!/usr/bin/env condor_submit
 #
-# Condor submit file for Hveto daily processing
+# Condor submit file for Hveto weekly processing
+# it runs inn the local universe creates and submits a DAG to the vbanilla universe
 #
 
 universe = local
-executable = $ENV(HOME)/etc/ligo-monitors/scripts/daily-hveto.sh
-accounting_group = ligo.prod.o4.detchar.dqtriggers.hveto
-accounting_group_user = <user name valid for account>
 
-request_memory = 20GB
+executable = /cvmfs/software.igwn.org/conda/condabin/conda
+arguments = 'run --prefix /home/detchar.dev/.conda/envs/ligo-summary-3.11-test timeout 30m hveto-run -vv --today'
+
+accounting_group = ligo.prod.o4.detchar.dqtriggers.hveto
+accounting_group_user = joseph.areeda
+
+request_memory = 2GB
 request_disk = 5GB
 
-output = $ENV(HOME)/public_html/hveto/logs/daily-hveto.out
-error = $ENV(HOME)/public_html/hveto/logs/daily-hveto.err
-log = $ENV(HOME)/public_html/hveto/logs/daily-hveto.log
+output = $ENV(HOME)/public_html/hveto-weekly/logs/hveto-weekly.out
+error = $ENV(HOME)/public_html/hveto-weekly/logs/hveto-weekly.err
+log = $ENV(HOME)/public_html/hveto-weekly/logs/hveto-weekly.log
 
 batch_name = "daily hveto [cron] ID: $(ClusterId)"
 
 on_exit_remove = false
 periodic_hold = false
+
 cron_minute = 30
 # we want run to be 8, 16 24 UTC with enough slack for omicron selected by local time at LLO (UTC -5 CDT)
 # so LLO CDT -> 10, 18, 1 UTC. CST -> 11, 19, 2 UTC
 # LHO PDT (UTC - 7) -> 12, 20, 4 UC. PST - 13, 21, 5 TC
 cron_hour = 5, 13, 21
+
 cron_day_of_month = *
 cron_month = *
 cron_day_of_week = *

@@ -566,7 +566,7 @@ def main():
         if not args.no_submit:
             logger.info(f'Submitting {dag_file} to Condor')
             batch_name = f'hveto {start_dt.strftime("%m/%d")} to {next_dt.strftime("%m/%d")} $(ClusterId)'
-            cmd = f'condor_submit_dag -import_env -batch-name "{batch_name}"  {dag_file}'
+            cmd = f'condor_submit_dag -import_env -batch-name \'{batch_name}\'  {dag_file}'
             logger.debug(f'Running: {cmd}')
             subprocess.run(cmd, shell=True, check=True)
         else:
