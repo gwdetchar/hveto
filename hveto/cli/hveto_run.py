@@ -323,6 +323,7 @@ def process_omega_scans(job_args_in):
         job_args = {**job_args_in, **job_args_omega}
         check_dag_str = apply_symbols(check_dag_txt, job_args)
         check_dag_file.write_text(check_dag_str)
+        check_dag_file.chmod(0o755)
 
         dag_fh = job_args_in['dag_fh']
         job_day = job_args_in['job_day']
