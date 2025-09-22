@@ -325,7 +325,7 @@ def process_omega_scans(job_args_in):
         dag_fh = job_args_in['dag_fh']
         job_day = job_args_in['job_day']
         print(f'SUBDAG EXTERNAL {job_name} "{omega_dag_file}"\n', file=dag_fh)
-        print(f'PRE SCRIPT {job_name} "{check_dag_file}" "{omega_dag_file}"', file=dag_fh)
+        print(f'SCRIPT PRE {job_name} "{check_dag_file}" "{omega_dag_file}"', file=dag_fh)
         print(f'PRE_SKIP {job_name} 12', file=dag_fh)
         print(f'PARENT {job_name} CHILD hveto_{job_day}_{duration_label}', file=dag_fh)
 
