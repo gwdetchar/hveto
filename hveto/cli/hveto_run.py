@@ -578,7 +578,7 @@ def main():
                 if job_args['omega_scans'] > 0:
                     process_omega_scans(job_args)
 
-                print('---\n', file=dag_fh)
+                print('# ---\n', file=dag_fh)
                 next_dt -= stride_dt
 
         logger.info(f'DAG file with {njobs} jobs written to {dag_file}')
