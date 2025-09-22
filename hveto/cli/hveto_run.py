@@ -541,8 +541,8 @@ def main():
 
                 #  create the results directory and add the condor submit file and bash script
                 if duration == 1:
-                    job_start_gps = to_gps(job_dt)
-                    job_end_gps = to_gps(job_dt + timedelta(hours=24))
+                    job_start_gps = to_gps(next_dt)
+                    job_end_gps = to_gps(next_dt + timedelta(hours=24))
                     job_day_dir = output_directory / job_day
                     job_dir = job_day_dir / f'{int(job_start_gps)}-{int(job_end_gps)}'
                 else:
