@@ -27,6 +27,7 @@ import time
 from datetime import datetime, timedelta, timezone
 import socket
 
+from gwpy.detector.io.omega import omega_param
 from pytz import reference
 
 start_time = time.time()
@@ -310,24 +311,25 @@ def get_today_start():
 def process_omega_scans(job_args_in):
     if job_args_in['omega_scans'] > 0:
         duration_label = job_args_in['duration_label']
-        job_name = f'omega_{job_args_in["job_day"]}_{duration_label}'
+        job_name  = job_args_in['job_name']
+        omega_job_name = f'omega_{job_args_in["job_day"]}_{duration_label}'
         # Create a script to check whether omega scans DAG ha been made by hveto
         omega_dag_file = job_args_in["omega_dag_file"]
         omega_dag_file.parent.mkdir(parents=True, exist_ok=True)
         dag_log = job_args_in["dag_log"]
-        job_args_omega = {'omega_dag_file': omega_dag_file, 'log_file': dag_log, 'job_name': job_name}
+        job_args_omega = {'omega_dag_file': omega_dag_file, 'log_file': dag_log, 'job_name': omega_job_name}
         dag_dir = job_args_in['dag_dir']
-        check_dag_file = dag_dir / f'check_{job_name}.sh'
+        check_dag_file = dag_dir / f'check_{omega_job_name}.sh'
         job_args = {**job_args_in, **job_args_omega}
         check_dag_str = apply_symbols(check_dag_txt, job_args)
         check_dag_file.write_text(check_dag_str)
 
         dag_fh = job_args_in['dag_fh']
         job_day = job_args_in['job_day']
-        print(f'SUBDAG EXTERNAL {job_name} "{omega_dag_file}"\n', file=dag_fh)
-        print(f'SCRIPT PRE {job_name} "{check_dag_file}" "{omega_dag_file}"', file=dag_fh)
-        print(f'PRE_SKIP {job_name} 12', file=dag_fh)
-        print(f'PARENT {job_name} CHILD hveto_{job_day}_{duration_label}', file=dag_fh)
+        print(f'SUBDAG EXTERNAL {omega_job_name} "{omega_dag_file}"', file=dag_fh)
+        print(f'SCRIPT PRE {omega_job_name} "{check_dag_file}" "{omega_dag_file}"', file=dag_fh)
+        print(f'PRE_SKIP {omega_job_name} 12', file=dag_fh)
+        print(f'PARENT {job_name} CHILD {omega_job_name}', file=dag_fh)
 
 
 def main():
@@ -574,9 +576,9 @@ def main():
                 current_job += 1
 
                 if job_args['omega_scans'] > 0:
-
                     process_omega_scans(job_args)
 
+                print('---\n', file=dag_fh)
                 next_dt -= stride_dt
 
         logger.info(f'DAG file with {njobs} jobs written to {dag_file}')
