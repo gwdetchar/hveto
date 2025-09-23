@@ -98,7 +98,7 @@ hveto_job_submit = textwrap.dedent('''\
     executable = %exec%
 
     accounting_group = ligo.dev.o4.detchar.dqtriggers.hveto
-    accounting_group_user = joseph.areeda
+    accounting_group_user = %accounting_group_user%
 
     request_memory = %request_memory%M
     request_disk = 10GB
@@ -111,7 +111,7 @@ hveto_job_submit = textwrap.dedent('''\
 
     use_oauth_services = scitokens
     environment = BEARER_TOKEN_FILE=$$(CondorScratchDir)/.condor_creds/scitokens.use
-
+    environment = ACCOUNTING_GROUP_USER=%accounting_group_user%
     queue
 ''')
 
@@ -228,6 +228,12 @@ def parser_add_args(parser):
     parser.add_argument('--omega-scans', type=int, default=0,
                         help='Number of omega scans per round.'
                              ' Small numbers arerecommended for weekly runs because of the high number of rounds')
+
+    default_accounting_group_user = os.getenv('ACCOUNTING_GROUP_USER', os.getenv('USER'))
+    if default_accounting_group_user is None or 'detchar' in default_accounting_group_user:
+        default_accounting_group_user = 'joseph.areeda'
+    parser.add_argument('--accounting-group-user', default=default_accounting_group_user,
+                        help='User to use for accounting group. ')
 
 
 def apply_symbols(txt, symbols):
@@ -472,6 +478,8 @@ def main():
         "date": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         "request_disk": 100000,
         "timeout": 3 * 3600,
+        'accounting_group_user': args.accounting_group_user,
+
     }
 
     # create a DAG file for each day in the range
