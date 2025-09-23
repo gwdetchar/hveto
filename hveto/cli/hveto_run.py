@@ -329,7 +329,7 @@ def process_omega_scans(job_args_in):
         dag_fh = job_args_in['dag_fh']
         job_day = job_args_in['job_day']
         job_dir: Path = job_args_in['job_dir']
-        print(f'\nSUBDAG EXTERNAL {omega_job_name} DIR "{job_dir.absolute()}" "{omega_dag_file}"\n', file=dag_fh)
+        print(f'\nSUBDAG EXTERNAL {omega_job_name} DIR {job_dir.absolute()} {omega_dag_file}\n', file=dag_fh)
         print(f'SCRIPT PRE {omega_job_name} {check_dag_file} {omega_dag_file}', file=dag_fh)
         print(f'PRE_SKIP {omega_job_name} 12', file=dag_fh)
         print(f'PARENT {job_name} CHILD {omega_job_name}', file=dag_fh)
