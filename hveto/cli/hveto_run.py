@@ -119,7 +119,8 @@ check_dag_txt = textwrap.dedent('''\
     #!/bin/bash
     # check whether the omega DAG file exists
     # Created by %program_name% version %program_version% on %date%
-
+    echo -n $(date) >>%log_file%
+    
     if [ -f %omega_dag_file% ]
     then
         echo "Omega DAG file %omega_dag_file% exists" >> %log_file%
@@ -328,7 +329,7 @@ def process_omega_scans(job_args_in):
         dag_fh = job_args_in['dag_fh']
         job_day = job_args_in['job_day']
         print(f'SUBDAG EXTERNAL {omega_job_name} "{omega_dag_file}"', file=dag_fh)
-        print(f'SCRIPT PRE {omega_job_name} "{check_dag_file}" "{omega_dag_file}"', file=dag_fh)
+        print(f'SCRIPT PRE {omega_job_name} {check_dag_file} {omega_dag_file}', file=dag_fh)
         print(f'PRE_SKIP {omega_job_name} 12', file=dag_fh)
         print(f'PARENT {job_name} CHILD {omega_job_name}', file=dag_fh)
 
