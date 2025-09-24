@@ -7,7 +7,7 @@
 universe = local
 
 executable = $(my.conda_exe)
-arguments = 'run --prefix $(my.conda_prefix)) timeout 30m hveto-run -vv'
+arguments = 'run --prefix $(my.conda_prefix)) timeout 30m hveto-run -vv --omega-scans 2'
 
 accounting_group = ligo.prod.o4.detchar.dqtriggers.hveto
 accounting_group_user = <user name valid for account>

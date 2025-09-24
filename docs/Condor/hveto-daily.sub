@@ -6,7 +6,7 @@
 universe = local
 
 executable = /cvmfs/software.igwn.org/conda/condabin/conda
-arguments = 'run --prefix /home/detchar.dev/.conda/envs/ligo-summary-3.11-test timeout 30m hveto-run -vv --today'
+arguments = 'run --prefix /home/detchar.dev/.conda/envs/ligo-summary-3.11-test timeout 30m hveto-run -vv --today --omega-scans 5'
 
 accounting_group = ligo.prod.o4.detchar.dqtriggers.hveto
 accounting_group_user = joseph.areeda

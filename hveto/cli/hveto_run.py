@@ -27,7 +27,6 @@ import time
 from datetime import datetime, timedelta, timezone
 import socket
 
-from gwpy.detector.io.omega import omega_param
 from pytz import reference
 
 start_time = time.time()
@@ -120,7 +119,7 @@ check_dag_txt = textwrap.dedent('''\
     # check whether the omega DAG file exists
     # Created by %program_name% version %program_version% on %date%
     echo -n $(date) >>%log_file%
-    
+
     if [ -f %omega_dag_file% ]
     then
         echo "Omega DAG file %omega_dag_file% exists" >> %log_file%
@@ -282,9 +281,9 @@ def make_job(job_name, job_args):
 
     job_submit = apply_symbols(hveto_job_submit, job_args)
     job_submit_file.write_text(job_submit)
-    logger.info(f'Job name {job_name} created in {job_condordir}')
-    logger.info(f'Created condor submit file {job_submit_file} ')
-    logger.info(f' script {job_run_sh}')
+    logger.info(f'Job name: "{job_name}" created in {job_condordir}')
+    logger.info(f'Created condor submit file: {job_submit_file} ')
+    logger.info(f' script: {job_run_sh}')
     return job_submit_file
 
 
@@ -318,7 +317,7 @@ def get_today_start():
 def process_omega_scans(job_args_in):
     if job_args_in['omega_scans'] > 0:
         duration_label = job_args_in['duration_label']
-        job_name  = job_args_in['job_name']
+        job_name = job_args_in['job_name']
         omega_job_name = f'omega_{job_args_in["job_day"]}_{duration_label}'
         # Create a script to check whether omega scans DAG ha been made by hveto
         omega_dag_file = job_args_in["omega_dag_file"]
@@ -333,7 +332,6 @@ def process_omega_scans(job_args_in):
         check_dag_file.chmod(0o755)
 
         dag_fh = job_args_in['dag_fh']
-        job_day = job_args_in['job_day']
         job_dir: Path = job_args_in['job_dir']
         print(f'\nSUBDAG EXTERNAL {omega_job_name} {omega_dag_file} DIR {job_dir.absolute()}\n', file=dag_fh)
         print(f'SCRIPT PRE {omega_job_name} {check_dag_file} {omega_dag_file}', file=dag_fh)
@@ -392,7 +390,7 @@ def main():
     dur_str = ''
     if args.output_directory_exact:
         output_directory = Path(args.output_directory_exact)
-    elif args.output_directory:
+    else:
         output_directory = Path(args.output_directory)
         if duration == 1 or args.today:
             dur_str = 'day'
@@ -412,9 +410,14 @@ def main():
         dag_dir = output_directory / job_day / 'condor'
     elif args.start == args.end:
         run_dt = datetime.strptime(args.start, '%Y-%m-%d')
-        # if we are only doing one run then we use the condor directory for the DAG file
-        dag_dir = output_directory / run_dt.strftime('%Y%m%d') / 'condor'
+        if duration == 1:
+            # hveto daily puts all days in a single directory
+            dag_dir = output_directory / run_dt.strftime('%Y%m%d') / 'condor'
+        else:
+            #  All other duration add another level of subdirectories, each containing one month
+            dag_dir = output_directory / run_dt.strftime('%Y%m') / run_dt.strftime('%Y%m%d') / 'condor'
     else:
+        # if we are back filling multiple days, regardless of duration the DAG that controls each day s in a separate directory
         dag_dir = output_directory / f'{__process_name__}-DAG' / now_month / f'DAG-{now_time}'
 
     dag_dir.mkdir(parents=True, exist_ok=True)
@@ -424,11 +427,11 @@ def main():
     dag_file.parent.mkdir(parents=True, exist_ok=True)
 
     # add a copy of our logging to a file
-    NOW = datetime.now()
-    TIMEZONE = reference.LocalTimezone().tzname(NOW)
-    DATEFMT = '%Y-%m-%d %H:%M:%S {}'.format(TIMEZONE)
-    FMT = '%(name)s %(asctime)s %(levelname)+8s: %(filename)s:%(lineno)d:  %(message)s'
-    logf_formatter = logging.Formatter(FMT, datefmt=DATEFMT)
+    now = datetime.now()
+    log_timezone = reference.LocalTimezone().tzname(now)
+    datefmt = '%Y-%m-%d %H:%M:%S {}'.format(log_timezone)
+    fmt = '%(name)s %(asctime)s %(levelname)+8s: %(filename)s:%(lineno)d:  %(message)s'
+    logf_formatter = logging.Formatter(fmt, datefmt=datefmt)
     logf_handler = logging.FileHandler(dag_log, mode='w')
     logf_handler.setFormatter(logf_formatter)
     logger.addHandler(logf_handler)
@@ -592,8 +595,8 @@ def main():
 
                 print('# ---\n', file=dag_fh)
                 next_dt -= stride_dt
-
-        logger.info(f'DAG file with {njobs} jobs written to {dag_file}')
+        job_is_plural = 's' if njobs > 1 else ''
+        logger.info(f'DAG file with {njobs} job{job_is_plural} written to {dag_file}')
         if not args.no_submit:
             logger.info(f'Submitting {dag_file} to Condor')
             batch_name = f'hveto {start_dt.strftime("%m/%d")} to {next_dt.strftime("%m/%d")} $(ClusterId)'
