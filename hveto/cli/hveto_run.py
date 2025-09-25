@@ -110,7 +110,7 @@ hveto_job_submit = textwrap.dedent('''\
 
     use_oauth_services = scitokens
     environment = BEARER_TOKEN_FILE=$$(CondorScratchDir)/.condor_creds/scitokens.use
-    environment = ACCOUNTING_GROUP_USER=%accounting_group_user%
+    environment = _CONDOR_ACCOUNTING_USER=%accounting_group_user%
     queue
 ''')
 
