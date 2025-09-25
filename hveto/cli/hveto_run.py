@@ -532,7 +532,8 @@ def main():
                 "job_day": job_day,
                 "duration": duration,
                 "request_memory": 9216,
-                "create_link": f' && ln -s {job_dir} {job_day_dir}/latest'
+                "create_link": f' && ln -s {job_dir} {job_day_dir}/latest',
+                'job_dir':job_dir,
             }
             job_args = {**job_args_common, **job_args_today}
             job_submit_file = make_job(job_name, job_args)
@@ -597,7 +598,9 @@ def main():
                 next_dt -= stride_dt
         job_is_plural = 's' if njobs > 1 else ''
         logger.info(f'DAG file with {njobs} job{job_is_plural} written to {dag_file}')
-        batch_name = f'hveto {start_dt.strftime("%m/%d")} to {end_dt.strftime("%m/%d")} $(ClusterId)'
+        dur_abv = f'{duration}'
+        dur_abv += 'h' if args.today else 'd'
+        batch_name = f'hveto {start_dt.strftime("%m/%d")} to {end_dt.strftime("%m/%d")} [{dur_abv}] $(ClusterId)'
         cmd = f'condor_submit_dag -import_env -batch-name \'{batch_name}\'  {dag_file}'
         logger.info(f'Condor submit command: {cmd}')
         if not args.no_submit:
