@@ -597,11 +597,11 @@ def main():
                 next_dt -= stride_dt
         job_is_plural = 's' if njobs > 1 else ''
         logger.info(f'DAG file with {njobs} job{job_is_plural} written to {dag_file}')
+        batch_name = f'hveto {start_dt.strftime("%m/%d")} to {end_dt.strftime("%m/%d")} $(ClusterId)'
+        cmd = f'condor_submit_dag -import_env -batch-name \'{batch_name}\'  {dag_file}'
+        logger.info(f'Condor submit command: {cmd}')
         if not args.no_submit:
             logger.info(f'Submitting {dag_file} to Condor')
-            batch_name = f'hveto {start_dt.strftime("%m/%d")} to {next_dt.strftime("%m/%d")} $(ClusterId)'
-            cmd = f'condor_submit_dag -import_env -batch-name \'{batch_name}\'  {dag_file}'
-            logger.debug(f'Running: {cmd}')
             subprocess.run(cmd, shell=True, check=True)
         else:
             logger.info('DAG file written but not submitted to Condor')
