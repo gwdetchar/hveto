@@ -67,3 +67,5 @@ proposing additions/changes.
    :target: https://codecov.io/gh/gwdetchar/hveto
 .. |Documentation Status| image:: https://readthedocs.org/projects/hveto/badge/?version=stable
    :target: https://hveto.readthedocs.io/en/stable/?badge=stable
+
+.. inlcude README_hveto_run.rst
