@@ -520,8 +520,8 @@ def main():
             else:
                 job_end_str = f'{job_dt.strftime("%Y-%m-%d")} {duration:02d}:00:00'
             job_args_today = {
-                "gpsstart": f'{job_dt.strftime("%Y-%m-%d")}',
-                "gpsend": job_end_str,
+                "gpsstart": int(to_gps(f'{job_dt.strftime("%Y-%m-%d")}')),
+                "gpsend": int(to_gps(job_end_str)),
                 'duration_label': f'{duration:02d}_hr',
                 "outer_dir": job_dir,
                 "condor_dir": condor_dir,
@@ -533,7 +533,7 @@ def main():
                 "duration": duration,
                 "request_memory": 9216,
                 "create_link": f' && ln -s {job_dir} {job_day_dir}/latest',
-                'job_dir':job_dir,
+                'job_dir': job_dir,
             }
             job_args = {**job_args_common, **job_args_today}
             job_submit_file = make_job(job_name, job_args)
