@@ -24,7 +24,7 @@ import shutil
 
 import pytest
 
-from gwdetchar.utils import parse_html
+from gwdetchar.utils.utils import parse_html
 
 from .. import html
 

@@ -41,7 +41,7 @@ from gwpy.segments import (Segment, SegmentList,
                            DataQualityFlag, DataQualityDict)
 from gwpy.table import EventTable
 
-from gwdetchar import cli
+from gwdetchar.utils import cli
 from gwdetchar.io.html import (FancyPlot, cis_link)
 from gwdetchar.omega import batch
 from gwpy.time import tconvert, to_gps
@@ -57,7 +57,7 @@ from matplotlib import use
 use("Agg")
 
 # backend-dependent imports
-from gwdetchar.plot import texify  # noqa: E402
+from gwdetchar.utils.plot import texify  # noqa: E402
 from hveto import plot  # noqa: E402
 
 IFO = os.getenv('IFO')

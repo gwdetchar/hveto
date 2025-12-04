@@ -44,7 +44,7 @@ from gwpy.segments import (
     DataQualityDict,
 )
 
-from gwdetchar import cli
+from gwdetchar.utils import cli
 
 from .. import (__version__, config)
 from ..triggers import (
