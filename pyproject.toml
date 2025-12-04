@@ -29,7 +29,6 @@ classifiers = [
   "Operating System :: MacOS",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Topic :: Scientific/Engineering",
@@ -38,17 +37,17 @@ classifiers = [
 ]
 
 # requirements
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-  "gwdetchar >= 2.0.0",
+  "gwdetchar >= 2.3.2",
   "gwpy >=2.0.0",
   "gwtrigfind >= 0.8.3",
   "h5py",
+  "igwn-ligolw",
   "lxml",
   "MarkupPy >=1.14",
   "matplotlib >=3.1",
   "numpy >=1.10",
-  "python-ligo-lw >= 1.5.0",
   "scipy",
 ]
 

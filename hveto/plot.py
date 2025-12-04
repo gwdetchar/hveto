@@ -32,7 +32,7 @@ from matplotlib.colors import LogNorm
 
 from gwpy.plot import Plot
 
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Josh Smith, Joe Areeda, Alex Urban'

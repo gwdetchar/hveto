@@ -25,7 +25,7 @@ import json
 
 from gwpy.segments import SegmentList
 
-from gwdetchar import cli
+from gwdetchar.utils import cli
 
 from .. import __version__
 
