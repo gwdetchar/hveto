@@ -62,6 +62,8 @@ def write_ascii(outfile, segmentlist, ncol=4):
     if ncol not in [2, 4]:
         raise ValueError("Invalid number of columns: %r" % ncol)
     with open(outfile, 'w') as f:
+        if ncol == 4:
+            print("# seg\tstart\tstop\tduration", file=f)
         for i, seg in enumerate(segmentlist):
             if ncol == 2:
                 print("%f %f" % seg, file=f)

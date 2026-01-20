@@ -107,7 +107,10 @@ def main(args=None):
             lambda f_name: '.txt' in f_name,
             cround[u'files'][u'VETO_SEGS'])
         for f in seg_files:
-            segments = SegmentList.read(os.path.join(args.directory, f))
+            segments = SegmentList.read(
+                os.path.join(args.directory, f),
+                format="segwizard",
+            )
             if time in segments:
                 segment = segments[segments.find(time)]
                 logger.info('Trigger time {0} was vetoed in round {1} by '
