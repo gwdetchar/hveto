@@ -33,11 +33,14 @@ import gwtrigfind
 
 from gwpy.io import cache as io_cache
 from gwpy.io.utils import file_list
-from gwpy.io.registry import get_read_format
 from gwpy.table import EventTable
 from gwpy.table.filters import in_segmentlist
 from gwpy.table.io.pycbc import filter_empty_files as filter_empty_pycbc_files
 from gwpy.segments import SegmentList
+try:
+    from gwpy.io.registry import default_registry
+except ImportError:  # gwpy < 4.0.0
+    from astropy.io.registry.compat import default_registry
 
 # Table metadata keys to keep
 TABLE_META = ('tablename',)
@@ -261,6 +264,19 @@ def _format_params(channel, etg, fmt, trigfind_kwargs, read_kwargs):
     return trigfind_kwargs, read_kwargs
 
 
+def get_read_format(cls, source, args, kwargs):
+    """Get the read format for the given type and input source.
+    """
+    return default_registry._get_valid_format(
+        "read",
+        cls,
+        source,
+        None,
+        args,
+        kwargs,
+    )
+
+
 def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
                  raw=False, extra_times=None, trigfind_kwargs={}, **read_kwargs):
     """Get triggers for the given channel
@@ -273,7 +289,7 @@ def get_triggers(channel, etg, segments, cache=None, snr=None, frange=None,
         raise ValueError("unsupported ETG {!r}".format(etg))
     if not readfmt and cache:
         # try to identify format from files in cache
-        readfmt = get_read_format(EventTable, cache[0], {}, {})
+        readfmt = get_read_format(EventTable, cache[0], (), {})
     trigfind_kwargs, read_kwargs = _format_params(
         channel,
         etg,
