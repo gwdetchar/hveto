@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-  "setuptools",
+  "setuptools>=77.0.0",
   "setuptools_scm[toml]>=3.4.3",
   "wheel",
 ]
@@ -17,12 +17,13 @@ authors = [
 maintainers = [
   { name = "Joe Areeda", email = "joseph.areeda@ligo.org" },
 ]
+license-files = [ "LICENSE" ]
+
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "Intended Audience :: End Users/Desktop",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
   "Natural Language :: English",
   "Operating System :: POSIX",
   "Operating System :: Unix",
@@ -75,14 +76,12 @@ docs = [
 hveto = "hveto.__main__:main"
 hveto-cache-events = "hveto.cli.cache_events:main"
 hveto-trace = "hveto.cli.trace:main"
+hveto-run = "hveto.cli.hveto_run:main"
 
 [project.urls]
 "Bug Tracker" = "https://github.com/gwdetchar/hveto/issues"
 "Documentation" = "https://hveto.readthedocs.io"
 "Source Code" = "https://github.com/gwdetchar/hveto"
-
-[tool.setuptools]
-license-files = [ "LICENSE" ]
 
 [tool.setuptools_scm]
 write_to = "hveto/_version.py"

@@ -267,7 +267,8 @@ def make_drop_table(oldsignificances, newsignificances, out_file=None, cutoff=1.
                 post.append(float('nan'))
 
     drop_table = EventTable([channels, pre, post], names=['channels', 'pre_significance', 'post_significance'],
-                            dtype=[f'<U{chan_max_chars}', np.float64, np.float64]   )
+
+                            dtype=[f'<U{chan_max_chars}', np.float64, np.float64])
     drop_table.sort('pre_significance', reverse=True)
     col_formats = {'channels': f'{chan_max_chars}s', 'pre_significance': '{:8.2f}', 'post_significance': '{:8.2f}'}
     drop_table.write(out_file, format='ascii.fixed_width', overwrite=True, formats=col_formats)
@@ -647,6 +648,7 @@ def main(args=None):
                 signidir,
                 '%s-HVETO_SIGNIFICANT_CHANNELS_ROUND_%d-%d-%d.txt' % (ifo, rnd.n - 1, start, duration))
             sig_drop_table = make_drop_table(oldsignificances, newsignificances, sigfile)
+            LOGGER.debug(f"Significance drop table written to {sigfile} with {len(sig_drop_table)} rows")
             rounds[-1].files['SIG_TBL'] = sigfile
             LOGGER.info(f"Significance events written to {Path(sigfile).absolute()}")
             svg = (pngname % 'SIG_DROP').replace('.png', '.svg')  # noqa: F821
