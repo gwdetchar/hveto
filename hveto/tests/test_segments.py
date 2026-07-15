@@ -60,7 +60,7 @@ def test_write_segments_ascii(ncol, tmpdir):
     outdir = str(tmpdir)
     out = os.path.join(outdir, 'test.txt')
     segments.write_ascii(out, TEST_SEGMENTS, ncol=ncol)
-    a = SegmentList.read(out, gpstype=float, strict=False)
+    a = SegmentList.read(out, gpstype=float, strict=False, format="segwizard")
     assert a == TEST_SEGMENTS_2
     # clean up
     shutil.rmtree(outdir, ignore_errors=True)

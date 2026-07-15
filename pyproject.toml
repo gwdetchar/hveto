@@ -39,6 +39,7 @@ classifiers = [
 # requirements
 requires-python = ">=3.10"
 dependencies = [
+  "astropy >=5.0",
   "gwdetchar >= 2.3.2",
   "gwpy >=2.0.0",
   "gwtrigfind >= 0.8.3",
