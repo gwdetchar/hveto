@@ -19,8 +19,6 @@
 """Segment utilities for hveto
 """
 
-from __future__ import print_function
-
 import os
 import os.path
 from functools import wraps
@@ -38,7 +36,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Joshua Smith <joshua.smith@ligo.org>'
 
 DEFAULT_SEGMENT_SERVER = os.getenv('DEFAULT_SEGMENT_SERVER',
-                                   'https://segments.ligo.org')
+                                   'https://segments.igwn.org')
 
 
 def integer_segments(f):
