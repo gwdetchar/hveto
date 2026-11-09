@@ -46,8 +46,18 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v7
+    - name: Cache conda packages
+      uses: actions/cache@v5
+      env:
+        # increment to reset cache
+        CACHE_NUMBER: 0
+      with:
+        path: ~/conda_pkgs_dir
+        key: ${{ runner.os }}-conda-${{ matrix.python-version }}-${{ env.CACHE_NUMBER }}
+        restore-keys: ${{ runner.os }}-conda-${{ matrix.python-version }}-
+
+    - name: Configure conda
+      uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: ${{ matrix.python-version }}
 
