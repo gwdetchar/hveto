@@ -21,6 +21,7 @@
 
 import os
 import shutil
+from unittest import mock
 
 import pytest
 
@@ -96,7 +97,14 @@ def test_bold_param(args, kwargs, result):
 
 # -- end-to-end tests ---------------------------------------------------------
 
-def test_write_hveto_page(tmpdir):
+@mock.patch(
+    "gwdetchar.io.html.package_list",
+    return_value=[
+        {"name": "package-1", "version": "1.0.0"},
+        {"name": "package-2", "version": "2.0.0"},
+    ],
+)
+def test_write_hveto_page(mock_package_list, tmpdir):
     os.chdir(str(tmpdir))
     config = 'test.ini'
     with open(config, 'w') as fobj:

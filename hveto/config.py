@@ -31,7 +31,7 @@ channels so that the analysis isn't totally meaningless.
 However, the way that things are auto-detected means that the resulting output
 isn't exactly reproducable after-the-fact in general. If someone adds or
 removes data for an auxiliary channel, a rerun will operate over a different
-channel lists, and confusion will reign.
+channel list, and confusion will reign.
 
 So, it is highly recommended that you use a custom configuration file for your
 analyses. It could be that the configuration file never changes, but the very
@@ -71,7 +71,7 @@ in the INI format:
 ``trigger-generator``  The name of the primary trigger generator
 ``snr-threshold``      The minimum threshold on signal-to-noise ratio for
                        primary channel events to be included in the analysis
-``frequency-range``    The `(low, high`) frequency range of interest for this
+``frequency-range``    The `(low, high)` frequency range of interest for this
                        analysis. Note that for CBC trigger generators, the
                        ``'template_duration'`` column is used here.
 ``read-format``        The ``format`` name to use when reading files for this
@@ -184,7 +184,7 @@ in the INI format:
 .. code-block:: ini
 
    [segments]
-   url = https://segments.ligo.org
+   url = https://segments.igwn.org
    ; require full observation mode
    analysis-flag = %(IFO)s:DMT-ANALYSIS_READY:1
    ; no padding by default
