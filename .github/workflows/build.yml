@@ -73,7 +73,7 @@ jobs:
       run: uv run -m coverage xml
 
     - name: Publish coverage to Codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v7
       with:
         files: coverage.xml
         flags: ${{ runner.os }},python${{ matrix.python-version }}
